@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "name": "姐妹团题库",
+    "is_default": false
+  },
+  {
+    "id": 2,
+    "name": "主持题库",
+    "is_default": true
+  }
+]

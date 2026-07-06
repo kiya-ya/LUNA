@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>在线考试系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1677FF',
+                        'primary-dark': '#0958d9',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#F5222D',
+                        bg: '#F5F5F5',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+        input:focus { outline: none; }
+        .input-mobile { height: 52px; }
+        .btn-mobile { height: 48px; }
+        @media (min-width: 768px) {
+            .input-mobile { height: 44px; }
+            .btn-mobile { height: 40px; }
+        }
+    </style>
+</head>
+<body class="bg-bg min-h-screen flex items-center justify-center p-4">
+
+    <!-- 入口卡片 -->
+    <div class="w-full max-w-[420px] bg-white rounded-2xl shadow-lg p-6 md:p-8">
+        
+        <!-- Logo / 标题 -->
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+            </div>
+            <h1 class="text-xl md:text-2xl font-bold text-gray-900">在线考试</h1>
+            <p class="text-sm text-gray-500 mt-1">请填写信息后开始答题</p>
+        </div>
+
+        <!-- 表单 -->
+        <form id="entryForm" class="space-y-5">
+            
+            <!-- 姓名 -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">姓名</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    placeholder="请输入您的姓名"
+                    class="input-mobile w-full px-4 text-base border border-gray-300 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                    required
+                >
+            </div>
+
+            <!-- 手机号 -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">手机号</label>
+                <input 
+                    type="tel" 
+                    id="phone" 
+                    placeholder="请输入手机号"
+                    maxlength="11"
+                    class="input-mobile w-full px-4 text-base border border-gray-300 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                    required
+                >
+            </div>
+
+            <!-- 考试密码（可选，有密码时显示） -->
+            <div id="passwordBox" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-2">考试密码</label>
+                <input 
+                    type="password" 
+                    id="examPassword" 
+                    placeholder="请输入考试密码"
+                    class="input-mobile w-full px-4 text-base border border-gray-300 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                >
+            </div>
+
+            <!-- 考试须知（折叠） -->
+            <div class="border border-gray-200 rounded-xl overflow-hidden">
+                <button type="button" onclick="toggleNotice()" class="w-full px-4 py-3 flex items-center justify-between text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                    <span>📋 考试须知</span>
+                    <svg id="noticeArrow" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div id="noticeContent" class="hidden px-4 pb-4 text-sm text-gray-500 space-y-2">
+                    <p>• 考试时长 <span class="font-semibold text-primary">30分钟</span>，到时间自动交卷</p>
+                    <p>• 共 <span class="font-semibold text-primary">20道</span> 题目，每人题目顺序不同</p>
+                    <p>• 离开页面 <span class="font-semibold text-danger">3次</span> 将警告，<span class="font-semibold text-danger">5次</span> 强制交卷</p>
+                    <p>• 答题过程中自动保存，断网可续考</p>
+                    <p>• 每人仅限答题 <span class="font-semibold text-danger">1次</span></p>
+                </div>
+            </div>
+
+            <!-- 开始按钮 -->
+            <button 
+                type="submit" 
+                class="btn-mobile w-full bg-primary hover:bg-primary-dark text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+            >
+                <span>开始考试</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                </svg>
+            </button>
+
+        </form>
+
+        <!-- 底部提示 -->
+        <p class="text-xs text-gray-400 text-center mt-6">
+            如遇问题请联系管理员
+        </p>
+    </div>
+
+    <script>
+        // 折叠考试须知
+        function toggleNotice() {
+            const content = document.getElementById('noticeContent');
+            const arrow = document.getElementById('noticeArrow');
+            content.classList.toggle('hidden');
+            arrow.classList.toggle('rotate-180');
+        }
+
+        // 表单提交
+        document.getElementById('entryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('name').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            
+            if (!name || !phone) {
+                alert('请填写完整信息');
+                return;
+            }
+            if (!/^1\d{10}$/.test(phone)) {
+                alert('请输入正确的手机号');
+                return;
+            }
+            
+            // 保存到localStorage（断网续考用）
+            localStorage.setItem('exam_user_name', name);
+            localStorage.setItem('exam_user_phone', phone);
+            
+            // 跳转到考试页（后续连接后端时改为AJAX请求）
+            window.location.href = 'exam.html';
+        });
+    </script>
+
+</body>
+</html>

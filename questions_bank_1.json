@@ -1,0 +1,1590 @@
+{
+  "questions": [
+    {
+      "id": 1,
+      "content": "承接老板新人老板，14天获得价值（ ）元的礼物可以全部承接新用户礼包？",
+      "type": "single",
+      "options": [
+        "A218",
+        "B188",
+        "C10",
+        "D388"
+      ],
+      "answer": "D",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 2,
+      "content": "入正式厅第一天的妹妹打不了卡原因可能有哪些",
+      "type": "multiple",
+      "options": [
+        "A错过打卡时间",
+        "B未排档",
+        "C进错入职厅",
+        "D不在档期"
+      ],
+      "answer": "A,B,C,D",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 3,
+      "content": "以下哪种是正确的开车规范?",
+      "type": "multiple",
+      "options": [
+        "A游戏车要有游戏声与老板沟通的声音",
+        "B歌房可以放伴奏你跟唱，不能搁哪里哼哼，也不能放歌",
+        "C自己用小号上车，自己去打游戏",
+        "D和别的小队长互相上车，一起打游戏"
+      ],
+      "answer": "A,B",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 4,
+      "content": "战队赛季更新，四星战队可以共享（）趟车次",
+      "type": "single",
+      "options": [
+        "A1",
+        "B2",
+        "C3",
+        "D 4"
+      ],
+      "answer": "D",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 5,
+      "content": "鼓励新人找老板的方式:",
+      "type": "single",
+      "options": [
+        "A给新人画饼",
+        "B给新人规划每周甚至每天的任务",
+        "C帮助新人分析老板类型和维护手段",
+        "D以上都是"
+      ],
+      "answer": "D",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 6,
+      "content": "新人第三周流水达到1009可以:",
+      "type": "single",
+      "options": [
+        "A正常发薪但是掉初级铜牌",
+        "B正常发薪但会被淘汰",
+        "C正常发薪但无法排档",
+        "D正常发薪且维持铜牌"
+      ],
+      "answer": "A",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 7,
+      "content": "队长排行榜页面的积分车要求:",
+      "type": "single",
+      "options": [
+        "A必须在档时间开",
+        "B必须非档期时间开",
+        "C开5分钟即可",
+        "D在不在档均可"
+      ],
+      "answer": "D",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 8,
+      "content": "刚入职的新人一月可以提现（）次",
+      "type": "single",
+      "options": [
+        "A10",
+        "B1",
+        "C9",
+        "D5"
+      ],
+      "answer": "A",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 9,
+      "content": "新人档期15点开始，如果15点20打卡，一下表述哪个是正确的:",
+      "type": "single",
+      "options": [
+        "A扣一小时工资",
+        "B扣全天工资",
+        "C不扣工资",
+        "D扣两小时工资"
+      ],
+      "answer": "C",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 10,
+      "content": "绑定的第一个妹妹在（）日内达到( )牌子，姐姐可以绑定第二个",
+      "type": "single",
+      "options": [
+        "A30金牌",
+        "B60金牌",
+        "C30 银牌",
+        "D60 银牌"
+      ],
+      "answer": "D",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 11,
+      "content": "姐姐成为“姐姐”的条件是：",
+      "type": "single",
+      "options": [
+        "A:连续两周银牌以上且通过运营审核",
+        "B:连续一周金牌以上",
+        "C:只要有妹妹绑定即可",
+        "D:只需排档即可"
+      ],
+      "answer": "A",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 12,
+      "content": "妹妹在萌新训练营最多可停留几天？",
+      "type": "single",
+      "options": [
+        "A:3",
+        "B:5",
+        "C:7",
+        "D:10"
+      ],
+      "answer": "B",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 13,
+      "content": "以下哪项不属于日常拉分项目？",
+      "type": "single",
+      "options": [
+        "A:唱歌游戏分",
+        "B:活跃时间",
+        "C:承接新用户礼包",
+        "D:陪档分钟数"
+      ],
+      "answer": "C",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 14,
+      "content": "以下哪种情况不属于萌新厅没有小日历图标的原因:",
+      "type": "single",
+      "options": [
+        "A.进错大厅",
+        "B.没有录入",
+        "C.未绑定培训师",
+        "D.没有排档"
+      ],
+      "answer": "D",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 15,
+      "content": "萌新厅如何排档:",
+      "type": "single",
+      "options": [
+        "A.打卡后自动排档",
+        "B.师傅排档",
+        "C.培训师排档",
+        "D.新人自己后台排档"
+      ],
+      "answer": "A",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 16,
+      "content": "平台禁止的行为不包括",
+      "type": "single",
+      "options": [
+        "A涉黄涉政",
+        "B接待未成年人",
+        "C小队长之间互相登号",
+        "D私信老板"
+      ],
+      "answer": "D",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 17,
+      "content": "新人训练营排档时间为19:00-23:00，当日她打卡时间为19:37，当日任务全部完成，收到礼物总价值为3元，且没有与小队长进行过互送，请问她第二天8:00后到看到的点点币为:",
+      "type": "single",
+      "options": [
+        "A:37.8",
+        "B:25.8",
+        "C:19.8",
+        "D:42"
+      ],
+      "answer": "C",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 18,
+      "content": "周四已经毕业的妹妹建议怎么做",
+      "type": "single",
+      "options": [
+        "A:直接进厅排档",
+        "B:休息一天周五再排档",
+        "C:再做一天训练营",
+        "D:下周再排档"
+      ],
+      "answer": "B",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 19,
+      "content": "新人保护期内",
+      "type": "single",
+      "options": [
+        "50",
+        "84",
+        "200",
+        "336"
+      ],
+      "answer": "",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 20,
+      "content": "新人在第一周的主要任务是",
+      "type": "single",
+      "options": [
+        "A:学习做任务并独立完成",
+        "B:大量补流水",
+        "C:上主持位",
+        "D:参加战队赛"
+      ],
+      "answer": "A",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 21,
+      "content": "送礼分一天上限是",
+      "type": "single",
+      "options": [
+        "1000",
+        "1500",
+        "3000",
+        "6000"
+      ],
+      "answer": "C",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 22,
+      "content": "新人流水第三周为1100元，那该新人第四周的时薪为?",
+      "type": "single",
+      "options": [
+        "6",
+        "8",
+        "12",
+        "15"
+      ],
+      "answer": "",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 23,
+      "content": "新人保护期的队长开通一个月紫晶通行证需要",
+      "type": "single",
+      "options": [
+        "450",
+        "480",
+        "680",
+        "980"
+      ],
+      "answer": "",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 24,
+      "content": "新人在萌新训练营做20点-24点的任务，她的打卡区间应该是:",
+      "type": "single",
+      "options": [
+        "A. 19:30-20:00",
+        "B. 19:31-20:00",
+        "C. 19:31-19:59",
+        "D. 随便打卡。"
+      ],
+      "answer": "C",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 25,
+      "content": "几星战队就可以可以拿到战队排行榜排名所有积分?",
+      "type": "single",
+      "options": [
+        "A:4星",
+        "B:5星",
+        "C:6星",
+        "D:7星"
+      ],
+      "answer": "D",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 26,
+      "content": "保护期内首次购买7天紫晶通行证要花多少钻？",
+      "type": "single",
+      "options": [
+        "A:980",
+        "B:450",
+        "C:180",
+        "D:230"
+      ],
+      "answer": "C",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 27,
+      "content": "新人的值班期是19-23点，在17点30的时候收到一个VIP，此时他的任务会？",
+      "type": "single",
+      "options": [
+        "A:增加值班期开车次数一次",
+        "B:增加值班活跃一小时",
+        "C:增加值班开车次数一次值班活跃一小时",
+        "D都不会增加"
+      ],
+      "answer": "C",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 28,
+      "content": "妹妹上周银牌，有两个主持后台，下周想上金牌，要过多少流水？",
+      "type": "single",
+      "options": [
+        "A.4200",
+        "B.5180",
+        "C.4872",
+        "D.5544"
+      ],
+      "answer": "D",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 29,
+      "content": "在正式厅你的档期是19点开始，下列哪个时间打卡会扣一小时工资",
+      "type": "single",
+      "options": [
+        "A.18:10",
+        "B.19:10",
+        "C.19:29",
+        "D.19:31"
+      ],
+      "answer": "D",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 30,
+      "content": "某队长当天送礼5000礼物，会加",
+      "type": "single",
+      "options": [
+        "A:1500",
+        "B:2500",
+        "C:3000",
+        "D:5000"
+      ],
+      "answer": "A",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 31,
+      "content": "周四进厅且排档的新人，最低流水需要过多少才能不被淘汰()",
+      "type": "single",
+      "options": [
+        "A:192",
+        "B:198",
+        "C:200",
+        "D:300"
+      ],
+      "answer": "C",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 32,
+      "content": "官方购买的新人达到什么条件返还全部买人金额？",
+      "type": "single",
+      "options": [
+        "A、新人连续排档4周且达到铜牌及以上",
+        "B、新人连续排挡四周且达到初银及以上",
+        "C、新人连续排挡八周且达到初银及以上",
+        "D、新人连续排挡八周且达到银牌及以上"
+      ],
+      "answer": "D",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 33,
+      "content": "鼓励新人找老板的方式",
+      "type": "multiple",
+      "options": [
+        "A:帮助新人规划分析老板类型和维护手段",
+        "B:带新人去逛厅扣老板",
+        "C:给新人规划每周任务",
+        "D:给新人画饼"
+      ],
+      "answer": "A,C",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 34,
+      "content": "以下哪个是错误的",
+      "type": "single",
+      "options": [
+        "A.1星战队在档可以共享1车",
+        "B.3星战队在档可以共享1车",
+        "C.6星战队在档不限次数"
+      ],
+      "answer": "B",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 35,
+      "content": "新人第二天到训练营做任务，值班时间是15-19，打卡时间为15:48，此时该新人做完任务可以拿到多少工资？",
+      "type": "single",
+      "options": [
+        "A18",
+        "B24",
+        "C36",
+        "D48"
+      ],
+      "answer": "A",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 36,
+      "content": "小A今天的收礼为9000，送礼4500，可以获得多少队长积分",
+      "type": "single",
+      "options": [
+        "A6750",
+        "B4500",
+        "C5500",
+        "D6000"
+      ],
+      "answer": "B",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 37,
+      "content": "以下哪个不是金牌陪档给的奖励",
+      "type": "single",
+      "options": [
+        "A2000贡献值",
+        "B定制头像框",
+        "C3个天使之心",
+        "D时薪增加为25一小时"
+      ],
+      "answer": "D",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 38,
+      "content": "二胎政策成团要求是",
+      "type": "multiple",
+      "options": [
+        "A60日内，姐姐连续两周排档且为金牌及以上",
+        "B60日内，姐妹团期间1位妹妹达到银牌及以上",
+        "C60天内，有一位妹妹达到金牌及以上",
+        "D以上都是"
+      ],
+      "answer": "A,B",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 39,
+      "content": "官方新政策新人开通7日紫晶通行证需要（）钻石",
+      "type": "single",
+      "options": [
+        "A.免费",
+        "B.180",
+        "C.450",
+        "D.980"
+      ],
+      "answer": "B",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 40,
+      "content": "新人周一训练营做完任务，周二毕业正式厅排档，任务差30分钟活跃未完成，周三到周日任务完成，请问她过240流水，次周周一会有什么后果",
+      "type": "single",
+      "options": [
+        "A.发240工资等级不变",
+        "B.掉入门",
+        "C.系统淘汰",
+        "D.发288工资"
+      ],
+      "answer": "A",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 41,
+      "content": "新人入职第一周正常，第二周请假",
+      "type": "single",
+      "options": [
+        "A.新人被淘汰了",
+        "B.新人正常排档",
+        "C.新人掉入门",
+        "D.新人保护期延长一周"
+      ],
+      "answer": "A",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 42,
+      "content": "小红上周打的金牌，接了两个主持，这周流水3000，那她下周是什么牌子",
+      "type": "single",
+      "options": [
+        "A.初银",
+        "B.银牌",
+        "C.金牌",
+        "D.以上都不是"
+      ],
+      "answer": "A",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 43,
+      "content": "每天日常任务拉满最多可以拿到多少队长排行榜积分",
+      "type": "single",
+      "options": [
+        "A.1500",
+        "B.2100",
+        "C.6300",
+        "D.7200"
+      ],
+      "answer": "B",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 44,
+      "content": "小a在一星战队，通过打训练赛获得了500队长积分排行榜的积分，她可以拿到多少积分",
+      "type": "single",
+      "options": [
+        "A.500",
+        "B.370",
+        "C.275",
+        "D.250"
+      ],
+      "answer": "D",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 45,
+      "content": "小a这周是第二周，她承接了4个新用户，应该拿到多少流水包奖励",
+      "type": "single",
+      "options": [
+        "A.200",
+        "B.150",
+        "C.100",
+        "D.50"
+      ],
+      "answer": "C",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 46,
+      "content": "ios用户直充，小队长会被冻结多少天",
+      "type": "single",
+      "options": [
+        "A.14",
+        "B.30",
+        "C.60",
+        "D.90"
+      ],
+      "answer": "D",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 47,
+      "content": "如果你想绑定一个新人作为你的妹妹，那么什么时候可以绑定成功？",
+      "type": "single",
+      "options": [
+        "A.入职点点之后就可以",
+        "B.萌新厅开始做任务之后就可以",
+        "C.毕业回到正式厅之后就可以",
+        "D.正式厅开始做任务之后就可以"
+      ],
+      "answer": "D",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 48,
+      "content": "姐妹团连续多少天未完成陪档任务会被解散？",
+      "type": "single",
+      "options": [
+        "A.1",
+        "B.2",
+        "C.3",
+        "D.4"
+      ],
+      "answer": "C",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 49,
+      "content": "紫晶迎新车队创建需花费多少紫晶？",
+      "type": "single",
+      "options": [
+        "A. 10",
+        "B. 20",
+        "C. 30",
+        "D. 40"
+      ],
+      "answer": "B",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 50,
+      "content": "如果想拿满队长积分，每日任务中，陪档需满足的时长是",
+      "type": "single",
+      "options": [
+        "A:30分钟",
+        "B.50分钟",
+        "C.1小时",
+        "D.2小时"
+      ],
+      "answer": "C",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 51,
+      "content": "绑定第二个妹妹时，妹妹需在姐妹团期间内达到什么等级？",
+      "type": "single",
+      "options": [
+        "A.铜牌",
+        "B.初银",
+        "C.银牌",
+        "D.金牌"
+      ],
+      "answer": "C",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 52,
+      "content": "送礼或收礼多少金额可累积1分？",
+      "type": "single",
+      "options": [
+        "A1元",
+        "B2元",
+        "C5元",
+        "D10元"
+      ],
+      "answer": "B",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 53,
+      "content": "训练营期间新人任务情况哪项表述是正确的",
+      "type": "multiple",
+      "options": [
+        "A训练营完成一天后，只要第二天不打卡，第三天完成也可以毕业",
+        "B训练营完成一天后，第二天不打卡也必须要陪档，不然会被淘汰",
+        "C训练营五天内必须完成两天任务才能毕业",
+        "D可以在训练营完成四天任务再毕业"
+      ],
+      "answer": "A,D",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 54,
+      "content": "战队赛盲盒赛中，打10场可获得多少队长排行积分榜",
+      "type": "single",
+      "options": [
+        "A30",
+        "B50",
+        "C80",
+        "D100"
+      ],
+      "answer": "D",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 55,
+      "content": "以下对礼物收藏家互换功能表述错误的是",
+      "type": "multiple",
+      "options": [
+        "A礼物收藏家互换的紫晶和钻石礼物都是65到账",
+        "B礼物收藏家互换的钻石礼物到账是点点币",
+        "C礼物收藏家互换的紫晶礼物到账是紫晶",
+        "D礼物收藏家互换的礼物可以和五星宠物加成叠加"
+      ],
+      "answer": "A,B,D",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 56,
+      "content": "以下对车队占频的表述正确的是",
+      "type": "multiple",
+      "options": [
+        "A单设备队长游戏麦打开了，所以点点麦检测不到。",
+        "B安卓手机带了耳机会偶尔导致检测不到",
+        "C车队在放音乐，导致队伍麦检测不到",
+        "D双设备队长组队麦打开了，所以导致点点麦检测不到"
+      ],
+      "answer": "A,B",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 57,
+      "content": "与老板绑定游戏CP的正确处理方式是",
+      "type": "single",
+      "options": [
+        "A.积极配合绑定",
+        "B.尽量拒绝",
+        "C.需经厅管理同意",
+        "D.绑定后隐藏关系"
+      ],
+      "answer": "B",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 58,
+      "content": "新妹妹与老板游戏时，第一把需要",
+      "type": "single",
+      "options": [
+        "A.免费体验",
+        "B.9.9",
+        "C.合理定价",
+        "D.52一小时"
+      ],
+      "answer": "A",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 59,
+      "content": "保护期队长开通7日紫晶通行证的费用是___元，新人期过后恢复___元",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "保护期队长开通7日紫晶通行证的费用是___元，新人期过后恢复___元",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "18"
+        },
+        {
+          "blank_no": 2,
+          "answer": "98"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 60,
+      "content": "战队5V5盲盒赛打5场可获___队长排行积分榜。战队等级达___级及以上时积分奖励到账100%",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "战队5V5盲盒赛打5场可获___队长排行积分榜。战队等级达___级及以上时积分奖励到账100%",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "50"
+        },
+        {
+          "blank_no": 2,
+          "answer": "7"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 61,
+      "content": "上周厅支出占比为9%，最多可以买___个档，这周有三个妹妹没排上档，需要买___个档",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "上周厅支出占比为9%，最多可以买___个档，这周有三个妹妹没排上档，需要买___个档",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "6"
+        },
+        {
+          "blank_no": 2,
+          "answer": "3"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 62,
+      "content": "日常分中“送礼收礼”每日上限为__________分",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "日常分中“送礼收礼”每日上限为__________分",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "4500"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 63,
+      "content": "若新人周三来的正式厅，本周流水需要达到___能拿到全部工资",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "若新人周三来的正式厅，本周流水需要达到___能拿到全部工资",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "240"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 64,
+      "content": "一般情况下每日任务会延迟多久_____",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "一般情况下每日任务会延迟多久_____",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "5-10分钟|5-10min|五到十分钟|5到10分钟"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 65,
+      "content": "问银牌队长，当周已经排档2小时主持档，本周目标升金牌，本周需要过___元基础流水",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "5544"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 66,
+      "content": "陪档位活跃可以做的时间范围是_____可做",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "陪档位活跃可以做的时间范围是_____可做",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "全天|24h|24小时|二十四小时"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 67,
+      "content": "厅狗4级5星狗有___加成，持续____小时。",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "厅狗4级5星狗有___加成，持续____小时。",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "2%"
+        },
+        {
+          "blank_no": 2,
+          "answer": "1"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 68,
+      "content": "问题1：_自姐妹团绑定起___________天为姐妹团的成长期，到期后妹妹自动毕业，姐妹团解散。",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "30|三十"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 69,
+      "content": "问新人队长入职的第0周，需要累计达到排档工资的___倍流水。",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "1|一"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 70,
+      "content": "姐妹团每天需要完成___分钟陪档任务",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "姐妹团每天需要完成___分钟陪档任务",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "50"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 71,
+      "content": "在训练营的新人一周可以提现___次",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "在训练营的新人一周可以提现___次",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "1|一"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 72,
+      "content": "直升银牌要___元流水，直升金牌要___元流水，直升王牌要___元流水",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "直升银牌要___元流水，直升金牌要___元流水，直升王牌要___元流水",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "8000|八千"
+        },
+        {
+          "blank_no": 2,
+          "answer": "15000|一万五"
+        },
+        {
+          "blank_no": 3,
+          "answer": "25000|两万五"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 73,
+      "content": "若收到苹果直冲的礼物，会被冻结多少___天",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "若收到苹果直冲的礼物，会被冻结多少___天",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "90|九十"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 74,
+      "content": "若是5星战队，日榜15名，实际能拿到___队长积分",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "若是5星战队，日榜15名，实际能拿到___队长积分",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "150"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 75,
+      "content": "小队长自身在_____可以查看目标流水。",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "小队长自身在_____可以查看目标流水。",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "值班表|主页值班表|我的值班表"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 76,
+      "content": "姐妹团任务连续___天不完成会被系统自动解散。",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "姐妹团任务连续___天不完成会被系统自动解散。",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "3|三"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 77,
+      "content": "单次送礼超过____元会触发封号风险。",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "单次送礼超过____元会触发封号风险。",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "1000|一千"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 78,
+      "content": "问紫晶车队未开车前，系统推送老板小于 ___个时，可免费解散，费用返还",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "5|五"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 79,
+      "content": "问战队赛的周赛在周_____，是___排",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "日|天"
+        },
+        {
+          "blank_no": 2,
+          "answer": "5|五"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 80,
+      "content": "老板账号达到___爵才可以建车",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "老板账号达到___爵才可以建车",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "侯"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 81,
+      "content": "第三周发薪流水要求是___元，定级流水要求是___元",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "第三周发薪流水要求是___元，定级流水要求是___元",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "1008"
+        },
+        {
+          "blank_no": 2,
+          "answer": "1344"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 82,
+      "content": "提现每月限___次",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "提现每月限___次",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "10|十"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 83,
+      "content": "若新人周日来的正式厅，流水到___元可以达到发薪要求",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "若新人周日来的正式厅，流水到___元可以达到发薪要求",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "50|五十"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 84,
+      "content": "队长积分每天免费分（除了送礼收礼）拿满一共___分",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "队长积分每天免费分（除了送礼收礼）拿满一共___分",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "2100|二千一|两千一"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 85,
+      "content": "某队长一天收到了8000元的礼物，会加___分收礼",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "3000|三千"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 86,
+      "content": "vip车队每天第一次价格___元，第二次价格___元",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "vip车队每天第一次价格___元，第二次价格___元",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "52"
+        },
+        {
+          "blank_no": 2,
+          "answer": "131.4"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 87,
+      "content": "上周队长等级金牌，本周有2个主持档，假如本周过初银需要过___元流水",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "上周队长等级金牌，本周有2个主持档，假如本周过初银需要过___元流水",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "2772"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 88,
+      "content": "每个季度离职超过___天的回归队长可以享受恢复最高牌子一次",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "每个季度离职超过___天的回归队长可以享受恢复最高牌子一次",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "14|十四"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 89,
+      "content": "厅狗___级有3%加成，每次加成时长是___",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "厅狗___级有3%加成，每次加成时长是___",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "5|五"
+        },
+        {
+          "blank_no": 2,
+          "answer": "30分钟|三十分钟"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 90,
+      "content": "如果新人第三周只完成了1000块钱的流水，那么他工资会发放___元",
+      "type": "fill",
+      "options": [],
+      "answer": "",
+      "key_points": "",
+      "blanks": [
+        {
+          "blank_no": 1,
+          "answer": "168|一百六十八"
+        }
+      ],
+      "enabled": true
+    },
+    {
+      "id": 91,
+      "content": "老板有萌新驾到的牌子，但是无法承接，原因可能是:",
+      "type": "essay",
+      "options": [],
+      "answer": "",
+      "key_points": "老板有萌新驾到的牌子，但是无法承接，原因可能是:\n1.已经被承接过",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 92,
+      "content": "你的徒弟小红成功完成一次承接收到老板一个88.8的礼物，他可以获得的礼物奖励是",
+      "type": "essay",
+      "options": [],
+      "answer": "",
+      "key_points": "你的徒弟小红成功完成一次承接收到老板一个88.8的礼物，他可以获得的礼物奖励是\n蓝焰狐火，天蝎小宝宝，爱心耳机*2",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 93,
+      "content": "新人总说自己找不到老板，要求师父给挂车怎么办",
+      "type": "essay",
+      "options": [],
+      "answer": "",
+      "key_points": "训练营时候就带着新人扣老板私信，加微信，铺垫两天先聊着，回到正式厅每天也要坚持扣私信，开不上车的时候可以找微信里的老板过来开车，不要一直依赖师父，实在要挂车，可以开培训车，给新人分析扣私信遇到的问题，解决问题，不要纵容新人挂着偷懒。",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 94,
+      "content": "怎么看待战队房混活跃的问题",
+      "type": "essay",
+      "options": [],
+      "answer": "",
+      "key_points": "战队房挂着可以过活跃，但是会影响厅氛围的积极性，大家都去战队房挂着，大厅没人活跃没人陪档，氛围会越来越不好，如果确实临时有事可以在战队房挂一下，但是如果长期每天挂，会影响自己找老板的状态，形成长期摆烂的心态，对新人和整个厅氛围都是有影响的，尤其是新人，在没有老板的时候就在战队房蹭会导致留存率过低。",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 95,
+      "content": "小红有老板之后，只收礼物，不跟老板怼箱子，导致拿不到高工资以及老板有被外厅翘的风险，你如何劝导？",
+      "type": "essay",
+      "options": [],
+      "answer": "",
+      "key_points": "可以拿厅里她熟悉的高牌子队长做对比，讲述流水高工资高等，以及怎么维护住老板，例如假如你是老板，你跟A队长玩，A队长会回礼，跟B队长玩，B队长只入不出，你会选择跟谁玩？，等让小红知道跟老板怼箱子的好处。",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 96,
+      "content": "怎么帮助妹妹定级更高的牌子?",
+      "type": "essay",
+      "options": [],
+      "answer": "",
+      "key_points": "怎么帮助妹妹定级更高的牌子?",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 97,
+      "content": "你和妹妹的陪档任务已经两天没有完成了，今天是第三天也没有完成，请问该怎么办？",
+      "type": "essay",
+      "options": [],
+      "answer": "",
+      "key_points": "你和妹妹的陪档任务已经两天没有完成了，今天是第三天也没有完成，请问该怎么办？\n找其他人协调一下今天剩余时间的主持后台，把后面一个点的主持后台改成自己的，督促妹妹认真完成陪档",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 98,
+      "content": "新妹妹第二周周日，很积极，但是作为学生，身上只剩下50块钱，这时候流水还差了120块钱，请问怎么办？",
+      "type": "essay",
+      "options": [],
+      "answer": "",
+      "key_points": "新妹妹第二周周日，很积极，但是作为学生，身上只剩下50块钱，这时候流水还差了120块钱，请问怎么办？",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 99,
+      "content": "如何正确的创建迎新车队不扣费？",
+      "type": "essay",
+      "options": [],
+      "answer": "",
+      "key_points": "如何正确的创建迎新车队不扣费？\n（1）迎新车队开够20分钟且新用户上车超过15分钟，返还20紫晶\n（2）车队解散时，上车新用户不足5个，返还20紫晶",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 100,
+      "content": "如何分辨老板的消费能力",
+      "type": "essay",
+      "options": [],
+      "answer": "",
+      "key_points": "如何分辨老板的消费能力\n观察老板的uid，数字越大越新。\n观察老板爵位，爵位越高消费越高。\n结合uid和爵位就可以推断老板的月均消费能力。\n看老板的贡献榜和礼物墙，可以推断老板本月消费，中间有没有断层。\n观察老板的地域北上广江浙沪或者一线城市。\n观察老板王者贵族等级，询问老板是否玩其他平台，还玩过什么游戏，判断老板的网络消费意识。",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 101,
+      "content": "萌新训练营触发系统自动离职的原因有（2个）",
+      "type": "essay",
+      "options": [],
+      "answer": "",
+      "key_points": "萌新训练营触发系统自动离职的原因有（2个）\n每日陪档位活跃时长不足20分钟、新人培训厅超5日淘汰",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 102,
+      "content": "如何去看这个妹妹是否值得培养？",
+      "type": "essay",
+      "options": [],
+      "answer": "",
+      "key_points": "如何去看这个妹妹是否值得培养？\n先去看一下这个妹妹时间多不多，在看她是否积极；如果她时间多也很积极，可以重点培养；如果她积极没有时间，也可以多培养一下，多带她去找老板，等后面有老板了，完全可以去走直升；如果这个妹妹发消息不怎么回，厅里见不到人，就不用操心那么多了，不长久只要完成每周流水任务即可",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 103,
+      "content": "假设新人上周档期为20 21 22 23，本周档期为0 1 15 16，那么新人应该如何打卡？",
+      "type": "essay",
+      "options": [],
+      "answer": "",
+      "key_points": "假设新人上周档期为20 21 22 23，本周档期为0 1 15 16，那么新人应该如何打卡？\n周一15点打卡，周二到周日每天0点打卡",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 104,
+      "content": "妹妹提升拉分的方法有哪些？",
+      "type": "essay",
+      "options": [],
+      "answer": "",
+      "key_points": "妹妹提升拉分的方法有哪些？\n每天开5车，送老板10人，活跃5个小时，陪档100分钟，完成每日任务；战队日赛，周赛，月赛也都可以拿积分；如果妹妹每天的积分拉满初银和银排就很好上，如果周日差流水可以找老板怼或者买流水，只要不亏都可以让她去搞",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 105,
+      "content": "老板要和你在游戏中绑定cp关系应如何应对？",
+      "type": "essay",
+      "options": [],
+      "answer": "",
+      "key_points": "老板要和你在游戏中绑定cp关系应如何应对？",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 106,
+      "content": "新妹妹周四入正式厅和周五入正式厅的区别",
+      "type": "essay",
+      "options": [],
+      "answer": "",
+      "key_points": "新妹妹周四入正式厅和周五入正式厅的区别\n周四入职需要新人过第一周336的流水任务，周五入职算第0周，需要完成工资的一倍流水48*3=144的任务，可以减少对新人的压力",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 107,
+      "content": "说明“日常拉分”中“送礼数,收礼数”积分的计算方式,满分分数和上限。",
+      "type": "essay",
+      "options": [],
+      "answer": "",
+      "key_points": "说明“日常拉分”中“送礼数,收礼数”积分的计算方式,满分分数和上限。\n收礼物数: 按导师的实际流水金额计算，每天上限6000分:满分:21000分;队长礼物流水2元=1分; 送礼物数: 按导师的实际送出礼物金额计算，每天上限3000分;满分:10500分;送出礼物额度2元=1分",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 108,
+      "content": "姐妹团妹妹的绑定入口在哪里?绑定第一个妹妹和第二个妹妹的条件分别是什么?",
+      "type": "essay",
+      "options": [],
+      "answer": "",
+      "key_points": "姐妹团妹妹的绑定入口在哪里?绑定第一个妹妹和第二个妹妹的条件分别是什么?",
+      "blanks": [],
+      "enabled": true
+    },
+    {
+      "id": 109,
+      "content": "请列举至少五种帮助妹妹快速找到老板的方式",
+      "type": "essay",
+      "options": [],
+      "answer": "",
+      "key_points": "",
+      "blanks": [],
+      "enabled": true
+    }
+  ],
+  "stats": {
+    "total": 109,
+    "single": 51,
+    "multiple": 7,
+    "fill": 32,
+    "essay": 19
+  }
+}
