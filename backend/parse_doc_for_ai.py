@@ -294,15 +294,14 @@ def main():
             print(json.dumps({'error': 'Unsupported file type. Only .docx and .pdf are supported'}), file=sys.stderr)
             sys.exit(1)
         
-        questions = generate_questions_from_text(text, single_count, multiple_count, fill_count, essay_count)
-        
+        # 只输出提取的文本，不生成题目（题目由 AI 大模型生成）
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump({
-                'text_preview': text[:3000],  # 前 3000 字预览
-                'questions': questions
+                'text': text,
+                'text_preview': text[:3000]
             }, f, ensure_ascii=False, indent=2)
         
-        print(f'Generated {len(questions)} questions from {file_type}')
+        print(f'Extracted {len(text)} chars from {file_type}')
     except Exception as e:
         import traceback
         print(json.dumps({'error': str(e), 'trace': traceback.format_exc()}), file=sys.stderr)

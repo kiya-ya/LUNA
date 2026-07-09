@@ -10,6 +10,9 @@
           <h1 class="text-lg font-bold text-white">点点开黑 · 考试管理后台</h1>
         </div>
         <div class="flex items-center gap-4">
+          <button @click="startAdminTest" class="text-sm px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white font-bold rounded-lg transition-all flex items-center gap-1">
+            <span>🧪</span> 测试考试
+          </button>
           <span class="text-sm text-white/70">管理员</span>
           <button @click="goHome" class="text-sm text-white hover:text-white/80 font-bold">退出</button>
         </div>
@@ -385,6 +388,14 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
           <h2 class="text-lg font-bold text-gray-900">📊 成绩统计</h2>
           <div class="flex items-center gap-3">
+            <!-- 批量删除按钮 -->
+            <button 
+              v-if="selectedResultIds.length > 0"
+              @click="batchDeleteResults" 
+              class="px-4 py-2 bg-danger text-white text-sm font-bold rounded-xl hover:bg-danger/80 transition-colors flex items-center gap-1"
+            >
+              <span>🗑️</span> 批量删除({{ selectedResultIds.length }})
+            </button>
             <!-- 试卷下拉框 -->
             <select v-model="selectedExamId" @change="loadResults" class="px-4 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white">
               <option value="">全部试卷</option>
@@ -399,6 +410,14 @@
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b-2 border-primary-light">
+                <th class="text-left py-3 px-2 font-bold text-gray-500 w-10">
+                  <input 
+                    type="checkbox" 
+                    :checked="isAllResultsSelected" 
+                    @change="toggleSelectAllResults"
+                    class="w-4 h-4 text-primary rounded"
+                  >
+                </th>
                 <th class="text-left py-3 px-4 font-bold text-gray-500">排名</th>
                 <th class="text-left py-3 px-4 font-bold text-gray-500">点点昵称</th>
                 <th class="text-left py-3 px-4 font-bold text-gray-500">点点UID</th>
@@ -410,6 +429,14 @@
             </thead>
             <tbody>
               <tr v-for="(s, i) in filteredResults" :key="s.id" class="border-b border-gray-100 hover:bg-primary-light/20 transition-colors">
+                <td class="py-3 px-2">
+                  <input 
+                    type="checkbox" 
+                    :checked="selectedResultIds.includes(s.id)" 
+                    @change="toggleResultSelect(s.id)"
+                    class="w-4 h-4 text-primary rounded"
+                  >
+                </td>
                 <td class="py-3 px-4 font-bold">{{ i + 1 }}</td>
                 <td class="py-3 px-4">{{ s.user_name }}</td>
                 <td class="py-3 px-4">{{ s.user_uid }}</td>
@@ -422,7 +449,7 @@
                 </td>
               </tr>
               <tr v-if="filteredResults.length === 0">
-                <td colspan="7" class="py-8 text-center text-gray-400">暂无考试记录</td>
+                <td colspan="8" class="py-8 text-center text-gray-400">暂无考试记录</td>
               </tr>
             </tbody>
           </table>
@@ -828,6 +855,58 @@ const recycleBinSettings = ref({ retention_days: 30 })
 const showDetailModal = ref(false)
 const detailResult = ref(null)
 
+// 成绩批量删除
+const selectedResultIds = ref([])
+const isAllResultsSelected = computed(() => {
+  return filteredResults.value.length > 0 && filteredResults.value.every(s => selectedResultIds.value.includes(s.id))
+})
+
+function toggleSelectAllResults() {
+  if (isAllResultsSelected.value) {
+    selectedResultIds.value = []
+  } else {
+    selectedResultIds.value = filteredResults.value.map(s => s.id)
+  }
+}
+
+function toggleResultSelect(id) {
+  const idx = selectedResultIds.value.indexOf(id)
+  if (idx >= 0) {
+    selectedResultIds.value.splice(idx, 1)
+  } else {
+    selectedResultIds.value.push(id)
+  }
+}
+
+async function batchDeleteResults() {
+  if (selectedResultIds.value.length === 0) return
+  if (!confirm(`确定删除选中的 ${selectedResultIds.value.length} 条考试记录？删除后将进入回收站，可在回收站中恢复。`)) return
+  
+  let successCount = 0
+  let failCount = 0
+  
+  for (const id of selectedResultIds.value) {
+    try {
+      const res = await fetch(`/api/results/${id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (data.success) {
+        successCount++
+      } else {
+        failCount++
+      }
+    } catch (err) {
+      failCount++
+      console.error('批量删除失败', err)
+    }
+  }
+  
+  selectedResultIds.value = []
+  await loadResults()
+  await loadRecycleBin()
+  
+  alert(`批量删除完成：成功 ${successCount} 条${failCount > 0 ? '，失败 ' + failCount + ' 条' : ''}`)
+}
+
 // 分页
 const currentPage = ref(1)
 const pageSize = ref(30)
@@ -930,6 +1009,12 @@ function formatTime(iso) {
 }
 
 function goHome() {
+  router.push('/')
+}
+
+// 管理员测试模式：直接进入考试，跳过反作弊检查
+function startAdminTest() {
+  localStorage.setItem('exam_admin_test', '1')
   router.push('/')
 }
 
@@ -1325,6 +1410,7 @@ async function loadExamConfigs() {
 }
 
 async function loadResults() {
+  selectedResultIds.value = []
   try {
     const url = selectedExamId.value ? `/api/results?exam_id=${selectedExamId.value}` : '/api/results'
     const res = await fetch(url)

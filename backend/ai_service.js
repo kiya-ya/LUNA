@@ -12,19 +12,21 @@ function isAIAvailable() {
 }
 
 // 调用 AI 大模型（优先 7B，失败回退到 72B）
-async function callAI(prompt, model = MODEL_7B) {
+async function callAI(prompt, model = MODEL_7B, systemPrompt = null, maxTokens = 1024) {
   if (!API_KEY) {
     throw new Error('AI API Key 未配置');
   }
 
+  const defaultSystem = '你是一个专业的考试阅卷助手。请根据题目、用户答案和评分要点，给出公正的评分。严格按照满分范围评分，不要超出。';
+  
   const requestBody = {
     model: model,
     messages: [
-      { role: 'system', content: '你是一个专业的考试阅卷助手。请根据题目、用户答案和评分要点，给出公正的评分。严格按照满分范围评分，不要超出。' },
+      { role: 'system', content: systemPrompt || defaultSystem },
       { role: 'user', content: prompt }
     ],
     temperature: 0.3,
-    max_tokens: 1024
+    max_tokens: maxTokens
   };
 
   try {
@@ -53,14 +55,14 @@ async function callAI(prompt, model = MODEL_7B) {
   }
 }
 
-// 回退到 72B 模型
-async function callAIWithFallback(prompt) {
+// 回退到 72B 模型（支持自定义 system prompt）
+async function callAIWithFallback(prompt, systemPrompt = null, maxTokens = 1024) {
   try {
     console.log('[AI] 尝试使用 7B 模型...');
-    return await callAI(prompt, MODEL_7B);
+    return await callAI(prompt, MODEL_7B, systemPrompt, maxTokens);
   } catch (err) {
     console.log('[AI] 7B 失败，回退到 72B 模型...');
-    return await callAI(prompt, MODEL_72B);
+    return await callAI(prompt, MODEL_72B, systemPrompt, maxTokens);
   }
 }
 
@@ -177,36 +179,42 @@ function localGradeEssay(userAnswer, keyPoints, maxScore) {
   };
 }
 
-// AI 智能生题（基于文档内容生成题目）
+// AI 智能生题（基于文档内容生成题目）- 调用硅基流动大模型
 async function generateQuestions(text, singleCount = 5, multipleCount = 3, fillCount = 3, essayCount = 2) {
   if (!isAIAvailable()) {
     console.warn('[AI] API Key 未配置，无法使用 AI 生题');
     return [];
   }
 
-  const prompt = `请根据以下材料生成考试题目，材料内容如下：
+  const systemPrompt = '你是一位资深的教育培训专家，擅长根据学习材料设计高质量的考试题目。请严格按照用户要求的格式输出 JSON。';
 
+  const prompt = `请根据以下材料生成考试题目。
+
+## 材料内容
 ${text.substring(0, 4000)}
 
-请生成以下类型的题目：
-- 单选题：${singleCount} 道
-- 多选题：${multipleCount} 道  
-- 填空题：${fillCount} 道
-- 简答题：${essayCount} 道
+## 要求
+请生成以下类型的题目，题目必须与材料内容紧密相关：
+- 单选题：${singleCount} 道（每题4个选项，只有1个正确答案）
+- 多选题：${multipleCount} 道（每题4个选项，2个或以上正确答案，answer用逗号分隔如"A,B,C"）
+- 填空题：${fillCount} 道（每题1-2个空，用 ____ 表示空，需明确标注每个空的答案）
+- 简答题：${essayCount} 道（给出评分要点作为key_points）
 
-请严格按照以下 JSON 格式返回（不要添加其他内容，确保 JSON 格式正确）：
+## 输出格式
+请严格按照以下 JSON 格式返回，不要添加任何其他文字说明：
 
-{\n  "questions": [\n    {\n      "type": "single",\n      "content": "题目内容",\n      "options": ["选项A", "选项B", "选项C", "选项D"],\n      "answer": "A",\n      "key_points": "答案解析"\n    }\n  ]\n}
+{\n  "questions": [\n    {\n      "type": "single",\n      "content": "单选题题干",\n      "options": ["A. 选项1", "B. 选项2", "C. 选项3", "D. 选项4"],\n      "answer": "A",\n      "key_points": "正确答案解析",\n      "blanks": []\n    },\n    {\n      "type": "multiple",\n      "content": "多选题题干",\n      "options": ["A. 选项1", "B. 选项2", "C. 选项3", "D. 选项4"],\n      "answer": "A,B",\n      "key_points": "正确答案解析",\n      "blanks": []\n    },\n    {\n      "type": "fill",\n      "content": "填空题题干，第1空____，第2空____",\n      "options": [],\n      "answer": "",\n      "key_points": "答案解析",\n      "blanks": [{"blank_no": 1, "answer": "答案1"}, {"blank_no": 2, "answer": "答案2"}]\n    },\n    {\n      "type": "essay",\n      "content": "简答题题干",\n      "options": [],\n      "answer": "",\n      "key_points": "评分要点1\\n评分要点2\\n评分要点3",\n      "blanks": []\n    }\n  ]\n}
 
-type 字段说明：single=单选, multiple=多选, fill=填空, essay=简答
-对于多选题，answer 格式为 "A,B,C"（用逗号分隔）
-对于填空题，blanks 字段为 [{"blank_no": 1, "answer": "答案"}]
-对于简答题，options 为空数组，answer 为空字符串`;
+## 注意事项
+1. 单选题和多选题必须有4个选项
+2. 填空题用 ____ 表示空，blanks数组中的blank_no对应第几个空
+3. 简答题的key_points是评分要点，用于AI阅卷
+4. 确保 JSON 格式正确，可以被 JSON.parse 解析`;
 
   try {
-    console.log('[AI Gen] 开始生成题目...');
-    const response = await callAIWithFallback(prompt);
-    console.log('[AI Gen] 原始响应:', response.substring(0, 300));
+    console.log('[AI Gen] 开始调用 AI 大模型生成题目...');
+    const response = await callAIWithFallback(prompt, systemPrompt, 2048);
+    console.log('[AI Gen] 原始响应前500字:', response.substring(0, 500));
 
     // 提取 JSON 部分
     let jsonStr = response;
@@ -224,16 +232,36 @@ type 字段说明：single=单选, multiple=多选, fill=填空, essay=简答
     const parsed = JSON.parse(jsonStr);
     const questions = parsed.questions || [];
 
-    // 标准化题目格式
-    return questions.map(q => ({
-      type: q.type || 'single',
-      content: q.content || q.title || '',
-      options: q.options || [],
-      answer: q.answer || '',
-      key_points: q.key_points || q.keyPoints || q.analysis || '',
-      blanks: q.blanks || [],
-      source: text.substring(0, 200)
-    }));
+    console.log(`[AI Gen] AI 返回 ${questions.length} 道题目`);
+
+    // 标准化题目格式，确保所有字段都存在
+    return questions.map((q, idx) => {
+      const type = q.type || 'single';
+      const content = q.content || q.title || `题目 ${idx + 1}`;
+      const options = q.options || [];
+      const answer = q.answer || '';
+      const key_points = q.key_points || q.keyPoints || q.analysis || '暂无解析';
+      const blanks = q.blanks || [];
+      
+      // 确保填空题有 blanks
+      if (type === 'fill' && blanks.length === 0) {
+        // 尝试从 content 中提取 ____ 作为空
+        const blankCount = (content.match(/____/g) || []).length;
+        for (let i = 1; i <= blankCount; i++) {
+          blanks.push({ blank_no: i, answer: '待填写' });
+        }
+      }
+      
+      return {
+        type: type,
+        content: content,
+        options: options,
+        answer: answer,
+        key_points: key_points,
+        blanks: blanks,
+        source: text.substring(0, 200)
+      };
+    });
   } catch (err) {
     console.error('[AI Gen] 生成题目失败:', err.message);
     return [];

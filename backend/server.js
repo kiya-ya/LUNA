@@ -165,15 +165,22 @@ function shuffle(array) {
   return arr;
 }
 
-// 解析 POST 请求体
+// 解析 POST 请求体（支持 async 回调）
 function parseBody(req, callback) {
   let body = '';
   req.on('data', chunk => { body += chunk; });
-  req.on('end', () => {
+  req.on('end', async () => {
+    let parsed = null;
+    let err = null;
     try {
-      callback(null, JSON.parse(body));
-    } catch (err) {
-      callback(err, null);
+      parsed = JSON.parse(body);
+    } catch (e) {
+      err = e;
+    }
+    try {
+      await callback(err, parsed);
+    } catch (cbErr) {
+      console.error('parseBody callback error:', cbErr);
     }
   });
 }
@@ -624,15 +631,7 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    // 1. 检查 UID 是否已考过
-    const existingByUid = db.getResultsByUid(uid);
-    if (existingByUid.length > 0) {
-      res.writeHead(200);
-      res.end(JSON.stringify({ success: false, code: 'UID_USED', error: '该 UID 已参加过考试，每人仅限答题1次' }));
-      return;
-    }
-
-    // 2. 检查设备指纹是否已被其他 UID 使用
+    // 1. 检查设备指纹是否已被其他 UID 使用（同一设备只能绑定一个 UID）
     if (deviceId) {
       const existingByDevice = db.checkDeviceUsed(deviceId, uid);
       if (existingByDevice) {
@@ -650,7 +649,7 @@ const server = http.createServer((req, res) => {
       }
     }
 
-    // 3. IP 辅助检查（仅预警，不阻止进入）
+    // 2. IP 辅助检查（仅预警，不阻止进入）
     let ipWarning = false;
     const ipResults = db.getRecentResultsByIp(clientIp, 24);
     if (ipResults.length >= 5) {
@@ -856,15 +855,7 @@ const server = http.createServer((req, res) => {
       if (isAdminTest) {
         console.log('[ADMIN] 提交时使用管理员测试模式，跳过反作弊检查');
       } else {
-        // 1. 检查 UID 是否已考过
-        const existingByUid = db.getResultsByUid(userUid);
-        if (existingByUid.length > 0) {
-          res.writeHead(403);
-          res.end(JSON.stringify({ success: false, error: '该 UID 已参加过考试，每人仅限答题 1 次' }));
-          return;
-        }
-
-        // 2. 检查设备指纹是否已被其他 UID 使用（反作弊核心）
+        // 1. 检查设备指纹是否已被其他 UID 使用（反作弊核心：设备只能绑定一个 UID）
         if (deviceId) {
           const existingByDevice = db.checkDeviceUsed(deviceId, userUid);
           if (existingByDevice) {
@@ -883,7 +874,7 @@ const server = http.createServer((req, res) => {
         }
       }
 
-      // 3. IP 辅助检查：同一 IP 24 小时内超过 5 个不同 UID 则预警（不阻止，仅记录）
+      // 2. IP 辅助检查：同一 IP 24 小时内超过 5 个不同 UID 则预警（不阻止，仅记录）
       let ipWarning = false;
       if (!isAdminTest) {
         const ipResults = db.getRecentResultsByIp(clientIp, 24);
@@ -1072,8 +1063,16 @@ const server = http.createServer((req, res) => {
 
       const percentage = maxScore > 0 ? (totalScore / maxScore * 100) : 0;
 
+      // 检查该 UID 是否已有记录：有则更新（补考），无则插入新记录
+      let resultId = db.nextResultId();
+      const existingResults = db.getResultsByUid(userUid);
+      if (existingResults && existingResults.length > 0) {
+        // 补考：使用现有记录的 ID，更新整条记录（保留设备指纹绑定关系）
+        resultId = existingResults[0].id;
+        console.log(`[SUBMIT] UID ${userUid} 补考：更新记录 #${resultId}`);
+      }
+
       // 保存结果（含设备指纹和 IP）
-      const resultId = db.nextResultId();
       const startTime = body.startTime || new Date().toISOString();
       const endTime = new Date().toISOString();
       const resultRecord = {
@@ -1115,7 +1114,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // ===== 智能生题：上传文档解析并生成题目 =====
+  // ===== 智能生题：上传文档解析并生成题目（AI 大模型版）=====
   if (pathname === '/api/generate-questions' && req.method === 'POST') {
     parseMultipart(req, (err, fields) => {
       if (err || !fields.file) {
@@ -1155,12 +1154,12 @@ const server = http.createServer((req, res) => {
           return;
         }
         const scriptPath = path.join(__dirname, 'parse_doc_for_ai.py');
-        execFile(pythonPath, [scriptPath, tmpPath, fileType, outputPath, String(singleCount), String(multipleCount), String(fillCount), String(essayCount)], { timeout: 60000, windowsHide: true }, (error, stdout, stderr) => {
+        execFile(pythonPath, [scriptPath, tmpPath, fileType, outputPath], { timeout: 30000, windowsHide: true }, (error, stdout, stderr) => {
           try { if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath); } catch (e) {}
           if (error) {
             try { if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath); } catch (e) {}
             res.writeHead(500);
-            res.end(JSON.stringify({ success: false, error: stderr || '解析失败' }));
+            res.end(JSON.stringify({ success: false, error: stderr || '文档解析失败' }));
             return;
           }
           try {
@@ -1171,8 +1170,49 @@ const server = http.createServer((req, res) => {
             }
             const result = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
             try { if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath); } catch (e) {}
-            res.writeHead(200);
-            res.end(JSON.stringify({ success: true, data: result }));
+            
+            const text = result.text || '';
+            if (!text || text.length < 50) {
+              res.writeHead(500);
+              res.end(JSON.stringify({ success: false, error: '文档内容太短或无法提取文本' }));
+              return;
+            }
+            
+            // 检查 AI 是否可用
+            if (!aiService || !aiService.generateQuestions) {
+              res.writeHead(500);
+              res.end(JSON.stringify({ success: false, error: 'AI 服务未初始化，请配置 SILICONFLOW_API_KEY' }));
+              return;
+            }
+            
+            console.log('[AI Gen] 开始调用 AI 大模型生成题目...');
+            console.log('[AI Gen] 文档字符数:', text.length, '单选:', singleCount, '多选:', multipleCount, '填空:', fillCount, '简答:', essayCount);
+            
+            // 调用 AI 大模型生成题目
+            aiService.generateQuestions(text, singleCount, multipleCount, fillCount, essayCount).then(aiQuestions => {
+              if (!aiQuestions || aiQuestions.length === 0) {
+                console.warn('[AI Gen] AI 返回空题目列表');
+                res.writeHead(500);
+                res.end(JSON.stringify({ success: false, error: 'AI 生成题目失败，请检查 API Key 配置和文档内容' }));
+                return;
+              }
+              
+              console.log('[AI Gen] AI 生成题目成功:', aiQuestions.length, '道');
+              
+              res.writeHead(200);
+              res.end(JSON.stringify({
+                success: true,
+                data: {
+                  text_preview: text.substring(0, 3000),
+                  questions: aiQuestions
+                }
+              }));
+            }).catch(aiErr => {
+              console.error('[AI Gen] AI 生成失败:', aiErr.message);
+              res.writeHead(500);
+              res.end(JSON.stringify({ success: false, error: 'AI 生成题目失败: ' + aiErr.message }));
+            });
+            
           } catch (e) {
             try { if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath); } catch (e) {}
             res.writeHead(500);

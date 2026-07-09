@@ -51,43 +51,7 @@
             </div>
           </div>
 
-          <!-- 管理员测试入口 -->
-          <div class="bg-white/10 border border-white/20 rounded-2xl overflow-hidden backdrop-blur-sm">
-            <button type="button" @click="showAdminInput = !showAdminInput" class="w-full px-4 py-3 flex items-center justify-between text-sm font-medium text-white/90 hover:bg-white/10 transition-colors">
-              <span class="flex items-center gap-2">
-                <span class="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">🔧</span>
-                <span>管理员测试入口</span>
-              </span>
-              <svg :class="showAdminInput ? 'rotate-180' : ''" class="w-5 h-5 text-white/60 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            </button>
-            <Transition name="slide-down">
-              <div v-show="showAdminInput" class="px-4 pb-4">
-                <div class="flex gap-2">
-                  <input 
-                    v-model="adminPassword"
-                    type="password" 
-                    placeholder="请输入管理员密码"
-                    class="flex-1 h-[48px] px-4 text-base border border-white/30 rounded-2xl focus:border-white/60 focus:ring-2 focus:ring-white/20 transition-all bg-white/20 backdrop-blur-sm text-white placeholder-white/50"
-                    @keyup.enter="verifyAdminPassword"
-                  >
-                  <button 
-                    @click="verifyAdminPassword"
-                    class="h-[48px] px-4 bg-white/20 hover:bg-white/30 text-white font-bold rounded-2xl transition-all border border-white/30"
-                  >
-                    验证
-                  </button>
-                </div>
-                <p v-if="adminVerified" class="text-xs text-green-400 mt-2 flex items-center gap-1">
-                  <span>✅</span> 管理员验证通过，将跳过反作弊检查
-                </p>
-                <p v-if="adminError" class="text-xs text-red-300 mt-2 flex items-center gap-1">
-                  <span>❌</span> 密码错误
-                </p>
-              </div>
-            </Transition>
-          </div>
+          <!-- 考试须知 -->
           <div class="bg-white/10 border border-white/20 rounded-2xl overflow-hidden backdrop-blur-sm">
             <button type="button" @click="showNotice = !showNotice" class="w-full px-4 py-3.5 flex items-center justify-between text-sm font-medium text-white/90 hover:bg-white/10 transition-colors">
               <span class="flex items-center gap-2">
@@ -278,12 +242,11 @@ const router = useRouter()
 const store = useExamStore()
 const showToast = inject('showToast')
 
+// 每次进入首页时自动清除管理员测试标记（防止残留影响正常考试）
+localStorage.removeItem('exam_admin_test')
+
 const form = ref({ name: '', phone: '' })
 const showNotice = ref(false)
-const showAdminInput = ref(false)
-const adminPassword = ref('')
-const adminVerified = ref(false)
-const adminError = ref(false)
 const examInfo = ref(null)
 
 // 加载已发布考试信息（题目数量等）
@@ -372,19 +335,6 @@ function formatTime(iso) {
   if (!iso) return ''
   const d = new Date(iso)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-}
-
-function verifyAdminPassword() {
-  if (adminPassword.value === 'admin123') {
-    adminVerified.value = true
-    adminError.value = false
-    localStorage.setItem('exam_admin_test', '1')
-    showToast('管理员验证通过', 'success')
-  } else {
-    adminError.value = true
-    adminVerified.value = false
-    localStorage.removeItem('exam_admin_test')
-  }
 }
 
 async function handleSubmit() {

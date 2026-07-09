@@ -360,6 +360,14 @@ function deleteResult(id) {
   db.prepare('DELETE FROM exam_results WHERE id = ?').run(id);
 }
 
+// 删除同一 UID 的所有旧记录（用于补考覆盖）
+function deleteResultsByUid(uid) {
+  if (!uid) return 0;
+  const stmt = db.prepare('DELETE FROM exam_results WHERE user_uid = ?');
+  const result = stmt.run(uid);
+  return result.changes || 0;
+}
+
 function nextResultId() {
   const row = db.prepare('SELECT MAX(id) as max_id FROM exam_results').get();
   return (row.max_id || 0) + 1;
@@ -636,6 +644,7 @@ module.exports = {
   saveResult,
   saveResults,
   deleteResult,
+  deleteResultsByUid,
   nextResultId,
   getResultsByUid,
   checkDeviceUsed,

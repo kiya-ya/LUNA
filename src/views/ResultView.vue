@@ -109,30 +109,48 @@
                   </div>
                   <p class="text-xs" :class="q.statusClass">
                     <span class="font-bold">{{ q.statusText }}</span>
-                    <span v-if="q.userAnswer && q.type === 'essay'" class="ml-1">（{{ q.score }}/{{ q.maxScore }}分）</span>
-                    <span v-else-if="q.userAnswer">{{ formatAnswer(q.userAnswer) }}</span>
-                    <span v-else>未作答</span>
+                    <span v-if="q.userAnswer && q.type !== 'essay'" class="ml-1">{{ formatAnswer(q.userAnswer) }}</span>
+                    <span v-else-if="!q.userAnswer">未作答</span>
                   </p>
-                  <p v-if="!q.isCorrect && q.correctAnswer" class="text-xs mt-1" style="color: #444444;">
-                    ✅ 正确答案：{{ formatCorrectAnswer(q.correctAnswer) }}
-                  </p>
-                  <p v-if="q.feedback" class="text-xs mt-1" style="color: #444444;">
-                    💡 {{ q.feedback }}
-                  </p>
-                  <!-- AI 阅卷反馈 -->
-                  <div v-if="q.aiGrade" class="mt-2 p-2 rounded-lg" style="background: rgba(100,200,255,0.15); border: 1px solid rgba(100,200,255,0.3);">
+                  
+                  <!-- 简答题：显示你的答案、遗漏要点、答案解析 -->
+                  <template v-if="q.type === 'essay'">
+                    <p v-if="q.userAnswer" class="text-xs mt-1" style="color: #444444;">
+                      <span class="font-bold" style="color: #1a1a2e;">📝 你的答案：</span>
+                      <span class="whitespace-pre-wrap">{{ q.userAnswer }}</span>
+                    </p>
+                    <p v-if="q.aiGrade && q.aiGrade.ai_missed && q.aiGrade.ai_missed.length > 0" class="text-xs mt-1" style="color: #CC4444;">
+                      <span class="font-bold">❌ 遗漏要点：</span>
+                      <span>{{ q.aiGrade.ai_missed.join('、') }}</span>
+                    </p>
+                    <p v-if="q.keyPoints && q.keyPoints.length > 0" class="text-xs mt-1" style="color: #444444;">
+                      <span class="font-bold" style="color: #B8860B;">📖 答案解析：</span>
+                      <span class="whitespace-pre-wrap">{{ q.keyPoints }}</span>
+                    </p>
+                  </template>
+                  
+                  <!-- 非简答题：显示正确答案和反馈 -->
+                  <template v-else>
+                    <p v-if="!q.isCorrect && q.correctAnswer" class="text-xs mt-1" style="color: #444444;">
+                      ✅ 正确答案：{{ formatCorrectAnswer(q.correctAnswer) }}
+                    </p>
+                    <p v-if="q.feedback" class="text-xs mt-1" style="color: #444444;">
+                      💡 {{ q.feedback }}
+                    </p>
+                  </template>
+                  
+                  <!-- 简答题 AI 评分反馈（仅保留反馈文字，匹配/遗漏已单独显示） -->
+                  <div v-if="q.type === 'essay' && q.aiGrade && q.aiGrade.ai_feedback" class="mt-2 p-2 rounded-lg" style="background: rgba(100,200,255,0.15); border: 1px solid rgba(100,200,255,0.3);">
                     <p class="text-xs font-bold mb-1" style="color: #0066CC;">🤖 AI 评分反馈：</p>
-                    <p class="text-xs mb-1" style="color: #1a1a2e;">{{ q.aiGrade.ai_feedback }}</p>
+                    <p class="text-xs" style="color: #1a1a2e;">{{ q.aiGrade.ai_feedback }}</p>
                     <div v-if="q.aiGrade.ai_matched && q.aiGrade.ai_matched.length > 0" class="mt-1">
                       <p class="text-xs" style="color: #228B22;">✅ 匹配要点：</p>
                       <p class="text-xs pl-2" style="color: #1a1a2e;">{{ q.aiGrade.ai_matched.join('、') }}</p>
                     </div>
-                    <div v-if="q.aiGrade.ai_missed && q.aiGrade.ai_missed.length > 0" class="mt-1">
-                      <p class="text-xs" style="color: #CC4444;">❌ 遗漏要点：</p>
-                      <p class="text-xs pl-2" style="color: #1a1a2e;">{{ q.aiGrade.ai_missed.join('、') }}</p>
-                    </div>
                   </div>
-                  <div v-if="q.keyPoints && q.keyPoints.length > 0" class="mt-2 p-2 rounded-lg" style="background: rgba(255,204,0,0.15); border: 1px solid rgba(255,204,0,0.3);">
+                  
+                  <!-- 非简答题的答案解析 -->
+                  <div v-if="q.type !== 'essay' && q.keyPoints && q.keyPoints.length > 0" class="mt-2 p-2 rounded-lg" style="background: rgba(255,204,0,0.15); border: 1px solid rgba(255,204,0,0.3);">
                     <p class="text-xs font-bold mb-1" style="color: #B8860B;">📖 答案解析：</p>
                     <p class="text-xs whitespace-pre-wrap" style="color: #1a1a2e;">{{ q.keyPoints }}</p>
                   </div>
