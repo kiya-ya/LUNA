@@ -65,6 +65,14 @@ async function callAIWithFallback(prompt, systemPrompt = null, maxTokens = 1024)
     return await callAI(prompt, MODEL_FALLBACK, systemPrompt, maxTokens);
   }
 }
+  try {
+    console.log(`[AI] 尝试使用 ${MODEL_PRIMARY}...`);
+    return await callAI(prompt, MODEL_PRIMARY, systemPrompt, maxTokens);
+  } catch (err) {
+    console.log(`[AI] ${MODEL_PRIMARY} 失败，回退到 ${MODEL_FALLBACK}...`);
+    return await callAI(prompt, MODEL_FALLBACK, systemPrompt, maxTokens);
+  }
+}
 
 // 提取关键词（本地备用）
 function extractKeywords(text) {
