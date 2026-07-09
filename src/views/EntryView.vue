@@ -79,6 +79,9 @@
                 <div class="flex items-start gap-2">
                   <p>每人仅限答题 <span class="font-bold text-white">1次</span></p>
                 </div>
+                <div class="flex items-start gap-2">
+                  <p>同一设备仅允许 <span class="font-bold text-white">1个</span> 账号登录</p>
+                </div>
               </div>
             </Transition>
           </div>

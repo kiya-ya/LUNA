@@ -121,6 +121,12 @@ async function gradeEssay(question, userAnswer, keyPoints, maxScore = 10) {
 
 注意：
 1. 请严格按照满分${maxScore}分来评分，不要给出超出范围的分值
+2. 评分标准请宽松一些：只要用户答案提及了部分评分要点，就应该给较高的分数（匹配要点越多分数越高）
+3. 匹配到大部分要点（约60%以上）即可给满分或接近满分
+4. 匹配到部分要点（约30%-60%）可以给70%-85%的分数
+5. 即使只匹配到少量要点，也至少给30%-50%的分数，不要轻易给0分
+6. 鼓励性评分：只要用户认真作答且有相关内容的，最低给分不低于满分的30%`;
+1. 请严格按照满分${maxScore}分来评分，不要给出超出范围的分值
 2. 如果用户答案完全未提及评分要点，请给 0 分
 3. 如果用户答案部分正确，请给出适当分数（不要非 0 即满分）`;
 
@@ -173,6 +179,12 @@ function localGradeEssay(userAnswer, keyPoints, maxScore) {
   const coverage = keywords.length > 0 ? matched.length / keywords.length : 0;
 
   let score;
+  if (coverage >= 1) score = maxScore;
+  else if (coverage >= 0.6) score = Math.round(maxScore * 0.9);
+  else if (coverage >= 0.4) score = Math.round(maxScore * 0.8);
+  else if (coverage >= 0.2) score = Math.round(maxScore * 0.7);
+  else if (coverage > 0) score = Math.round(maxScore * 0.5);
+  else score = 0;
   if (coverage >= 1) score = maxScore;
   else if (coverage >= 0.7) score = Math.round(maxScore * 0.8);
   else if (coverage >= 0.4) score = Math.round(maxScore * 0.6);
