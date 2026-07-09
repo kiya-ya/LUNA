@@ -3,16 +3,16 @@
 
 const API_KEY = process.env.SILICONFLOW_API_KEY || '';
 const BASE_URL = 'https://api.siliconflow.cn/v1';
-const MODEL_7B = 'Qwen/Qwen2.5-7B-Instruct';
-const MODEL_72B = 'Qwen/Qwen2.5-72B-Instruct';
+const MODEL_PRIMARY = 'zai-org/GLM-4.5-Air';
+const MODEL_FALLBACK = 'zai-org/GLM-4.5-Air';
 
 // 检查 AI 是否可用
 function isAIAvailable() {
   return !!API_KEY;
 }
 
-// 调用 AI 大模型（优先 7B，失败回退到 72B）
-async function callAI(prompt, model = MODEL_7B, systemPrompt = null, maxTokens = 1024) {
+// 调用 AI 大模型
+async function callAI(prompt, model = MODEL_PRIMARY, systemPrompt = null, maxTokens = 1024) {
   if (!API_KEY) {
     throw new Error('AI API Key 未配置');
   }
@@ -55,14 +55,14 @@ async function callAI(prompt, model = MODEL_7B, systemPrompt = null, maxTokens =
   }
 }
 
-// 回退到 72B 模型（支持自定义 system prompt）
+// 回退调用
 async function callAIWithFallback(prompt, systemPrompt = null, maxTokens = 1024) {
   try {
-    console.log('[AI] 尝试使用 7B 模型...');
-    return await callAI(prompt, MODEL_7B, systemPrompt, maxTokens);
+    console.log(`[AI] 尝试使用 ${MODEL_PRIMARY}...`);
+    return await callAI(prompt, MODEL_PRIMARY, systemPrompt, maxTokens);
   } catch (err) {
-    console.log('[AI] 7B 失败，回退到 72B 模型...');
-    return await callAI(prompt, MODEL_72B, systemPrompt, maxTokens);
+    console.log(`[AI] ${MODEL_PRIMARY} 失败，回退到 ${MODEL_FALLBACK}...`);
+    return await callAI(prompt, MODEL_FALLBACK, systemPrompt, maxTokens);
   }
 }
 

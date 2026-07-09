@@ -11,3 +11,6 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
+      # AI 阅卷/生题 API Key（硅基流动）
+      # 请替换为你的真实 API Key，或在宿主机设置环境变量后引用：
+      # - SILICONFLOW_API_KEY=${SILICONFLOW_API_KEY}
