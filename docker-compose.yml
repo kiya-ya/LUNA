@@ -1,0 +1,13 @@
+name: exam-system
+
+services:
+  exam:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      # 持久化 SQLite 数据库（防止容器重启数据丢失）
+      - ./data.db:/app/data.db
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production

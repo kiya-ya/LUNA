@@ -25,6 +25,43 @@ function getClientIp(req) {
     'unknown';
 }
 
+// 静态文件服务：serve 前端 dist 目录（Docker 部署）
+function serveStatic(req, res, pathname) {
+  const distPath = path.join(__dirname, '..', 'dist');
+  if (!fs.existsSync(distPath)) {
+    return false;
+  }
+  let filePath = path.join(distPath, pathname);
+  // 如果路径是目录或不存在，尝试 index.html（SPA 路由）
+  if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+    filePath = path.join(distPath, 'index.html');
+  }
+  if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+    const ext = path.extname(filePath);
+    const mimeTypes = {
+      '.html': 'text/html',
+      '.js': 'application/javascript',
+      '.css': 'text/css',
+      '.json': 'application/json',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif',
+      '.svg': 'image/svg+xml',
+      '.ico': 'image/x-icon',
+      '.woff': 'font/woff',
+      '.woff2': 'font/woff2',
+      '.ttf': 'font/ttf',
+      '.eot': 'application/vnd.ms-fontobject',
+      '.map': 'application/json'
+    };
+    res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream');
+    fs.createReadStream(filePath).pipe(res);
+    return true;
+  }
+  return false;
+}
+
 // 题库管理
 function loadQuestions() {
   return db.loadQuestionsByBank(1);
@@ -1358,6 +1395,11 @@ const server = http.createServer((req, res) => {
     let results = db.getResultsByUid(uid);
     res.writeHead(200);
     res.end(JSON.stringify({ success: true, data: results }));
+    return;
+  }
+
+  // 尝试 serve 前端静态文件（Docker 部署时使用）
+  if (serveStatic(req, res, pathname)) {
     return;
   }
 
