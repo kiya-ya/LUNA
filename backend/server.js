@@ -4,6 +4,7 @@ const path = require('path');
 const url = require('url');
 const { exec, execFile } = require('child_process');
 const db = require('./db.js');
+const aiService = require('./ai_service.js');
 
 const PORT = 5000;
 
@@ -613,6 +614,15 @@ const server = http.createServer((req, res) => {
     const uid = query.uid || '';
     const deviceId = query.device_id || '';
     const clientIp = getClientIp(req);
+    const isAdminTest = query.admin_mode === '1' || query.admin_mode === 'true';
+
+    // 管理员测试模式：跳过所有反作弊检查
+    if (isAdminTest) {
+      console.log('[ADMIN] 管理员测试模式，跳过反作弊检查');
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, admin_mode: true }));
+      return;
+    }
 
     // 1. 检查 UID 是否已考过
     const existingByUid = db.getResultsByUid(uid);
@@ -829,7 +839,7 @@ const server = http.createServer((req, res) => {
 
   // 提交考试
   if (pathname === '/api/submit' && req.method === 'POST') {
-    parseBody(req, (err, body) => {
+    parseBody(req, async (err, body) => {
       if (err) {
         res.writeHead(400);
         res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }));
@@ -840,39 +850,47 @@ const server = http.createServer((req, res) => {
       const userUid = body.userUid || '';
       const deviceId = body.deviceId || req.headers['x-device-id'] || '';
       const clientIp = getClientIp(req);
+      const isAdminTest = body.admin_mode === true || body.admin_mode === 'true' || body.admin_mode === 1;
 
-      // 1. 检查 UID 是否已考过
-      const existingByUid = db.getResultsByUid(userUid);
-      if (existingByUid.length > 0) {
-        res.writeHead(403);
-        res.end(JSON.stringify({ success: false, error: '该 UID 已参加过考试，每人仅限答题 1 次' }));
-        return;
-      }
-
-      // 2. 检查设备指纹是否已被其他 UID 使用（反作弊核心）
-      if (deviceId) {
-        const existingByDevice = db.checkDeviceUsed(deviceId, userUid);
-        if (existingByDevice) {
+      // 管理员测试模式：跳过反作弊检查
+      if (isAdminTest) {
+        console.log('[ADMIN] 提交时使用管理员测试模式，跳过反作弊检查');
+      } else {
+        // 1. 检查 UID 是否已考过
+        const existingByUid = db.getResultsByUid(userUid);
+        if (existingByUid.length > 0) {
           res.writeHead(403);
-          res.end(JSON.stringify({
-            success: false,
-            error: '检测到该设备已有人提交过考试。每台设备仅限一位考生答题。',
-            code: 'DEVICE_USED',
-            detail: {
-              used_by: existingByDevice.user_name || existingByDevice.user_uid,
-              time: existingByDevice.created_at
-            }
-          }));
+          res.end(JSON.stringify({ success: false, error: '该 UID 已参加过考试，每人仅限答题 1 次' }));
           return;
+        }
+
+        // 2. 检查设备指纹是否已被其他 UID 使用（反作弊核心）
+        if (deviceId) {
+          const existingByDevice = db.checkDeviceUsed(deviceId, userUid);
+          if (existingByDevice) {
+            res.writeHead(403);
+            res.end(JSON.stringify({
+              success: false,
+              error: '检测到该设备已有人提交过考试。每台设备仅限一位考生答题。',
+              code: 'DEVICE_USED',
+              detail: {
+                used_by: existingByDevice.user_name || existingByDevice.user_uid,
+                time: existingByDevice.created_at
+              }
+            }));
+            return;
+          }
         }
       }
 
       // 3. IP 辅助检查：同一 IP 24 小时内超过 5 个不同 UID 则预警（不阻止，仅记录）
       let ipWarning = false;
-      const ipResults = db.getRecentResultsByIp(clientIp, 24);
-      if (ipResults.length >= 5) {
-        ipWarning = true;
-        console.log(`[ANTI-CHEAT] IP ${clientIp} 在24小时内有 ${ipResults.length} 个不同 UID 提交，疑似批量代考`);
+      if (!isAdminTest) {
+        const ipResults = db.getRecentResultsByIp(clientIp, 24);
+        if (ipResults.length >= 5) {
+          ipWarning = true;
+          console.log(`[ANTI-CHEAT] IP ${clientIp} 在24小时内有 ${ipResults.length} 个不同 UID 提交，疑似批量代考`);
+        }
       }
 
       // 根据 examId 找到对应的考试配置，从而确定使用哪个题库和分值
@@ -914,6 +932,7 @@ const server = http.createServer((req, res) => {
       };
 
       const results = [];
+      const essayAIGrades = {};  // 保存 AI 阅卷结果
       let totalScore = 0;
       let maxScore = 0;
 
@@ -969,23 +988,59 @@ const server = http.createServer((req, res) => {
             feedback = `正确答案：${blanks.map(b => b.answer).join(' / ')}`;
           }
         } else if (qType === 'essay') {
-          if (keyPoints) {
-            const keywords = extractKeywords(keyPoints);
-            const userText = String(userAnswer).toLowerCase();
-            const matched = keywords.filter(kw => userText.includes(kw)).length;
-            const coverage = keywords.length > 0 ? matched / keywords.length : 0;
-
-            if (coverage >= 1) score = maxQScore;
-            else if (coverage >= 0.7) score = Math.round(maxQScore * 0.8);
-            else if (coverage >= 0.4) score = Math.round(maxQScore * 0.6);
-            else if (coverage >= 0.2) score = Math.round(maxQScore * 0.4);
-            else score = Math.round(maxQScore * 0.2);
-
-            feedback = `关键词覆盖率：${Math.round(coverage * 100)}%`;
-          } else {
-            score = Math.round(maxQScore * 0.4);
-            feedback = '请等待人工审核';
+          let aiScore = null;
+          let aiFeedback = '';
+          let aiMatched = [];
+          let aiMissed = [];
+          
+          if (keyPoints && aiService && aiService.gradeEssay) {
+            try {
+              console.log(`[AI Grade] 正在评分简答题 #${qId}，满分 ${maxQScore} 分...`);
+              // 传入 maxQScore，让 AI 直接按实际满分评分
+              const aiResult = await aiService.gradeEssay(q.content, String(userAnswer), keyPoints, maxQScore);
+              if (aiResult && aiResult.score !== undefined) {
+                // AI 已按 maxQScore 评分，直接取值并限制在范围内
+                aiScore = Math.max(0, Math.min(maxQScore, aiResult.score));
+                aiFeedback = aiResult.feedback || '';
+                aiMatched = aiResult.matched_points || [];
+                aiMissed = aiResult.missed_points || [];
+                score = aiScore;
+                feedback = aiFeedback;
+                console.log(`[AI Grade] 题目 #${qId} AI评分: ${score}/${maxQScore}`);
+              }
+            } catch (aiErr) {
+              console.warn(`[AI Grade] 题目 #${qId} AI评分失败，回退到关键词匹配:`, aiErr.message);
+            }
           }
+          
+          // 如果 AI 失败或未启用，回退到关键词匹配
+          if (aiScore === null) {
+            if (keyPoints) {
+              const keywords = extractKeywords(keyPoints);
+              const userText = String(userAnswer).toLowerCase();
+              const matched = keywords.filter(kw => userText.includes(kw)).length;
+              const coverage = keywords.length > 0 ? matched / keywords.length : 0;
+
+              if (coverage >= 1) score = maxQScore;
+              else if (coverage >= 0.7) score = Math.round(maxQScore * 0.8);
+              else if (coverage >= 0.4) score = Math.round(maxQScore * 0.6);
+              else if (coverage >= 0.2) score = Math.round(maxQScore * 0.4);
+              else score = Math.round(maxQScore * 0.2);
+
+              feedback = `关键词覆盖率：${Math.round(coverage * 100)}%`;
+            } else {
+              score = Math.round(maxQScore * 0.4);
+              feedback = '请等待人工审核';
+            }
+          }
+          
+          // 保存 AI 评分详情到结果中
+          essayAIGrades[qId] = {
+            ai_score: aiScore,
+            ai_feedback: aiFeedback,
+            ai_matched: aiMatched,
+            ai_missed: aiMissed
+          };
         }
 
         totalScore += score;
@@ -1010,7 +1065,8 @@ const server = http.createServer((req, res) => {
           max_score: maxQScore,
           feedback,
           key_points: keyPoints,
-          is_correct: score === maxQScore
+          is_correct: score === maxQScore,
+          ai_grade: essayAIGrades[qId] || null  // AI 阅卷详情
         });
       }
 

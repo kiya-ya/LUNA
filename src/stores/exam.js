@@ -199,6 +199,9 @@ export const useExamStore = defineStore('exam', () => {
       answers[q.id] = userAnswers.value[idx] || ''
     })
 
+    // 检查是否是管理员测试模式
+    const isAdminTest = localStorage.getItem('exam_admin_test') === '1'
+
     try {
       const res = await fetch('/api/submit', {
         method: 'POST',
@@ -209,12 +212,15 @@ export const useExamStore = defineStore('exam', () => {
           examId: examId.value,
           startTime: startTime.value,
           deviceId: deviceId.value,
+          admin_mode: isAdminTest,
           answers
         })
       })
       const data = await res.json()
       if (data.success) {
         examResult.value = data.data
+        // 保存完整结果到 localStorage（防止刷新后数据丢失）
+        localStorage.setItem('exam_result_full', JSON.stringify(data.data))
       }
     } catch (err) {
       console.error('提交失败', err)

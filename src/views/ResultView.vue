@@ -81,8 +81,8 @@
           </div>
         </div>
 
-        <!-- 答题明细（管理员可见） -->
-        <div v-if="isAdmin" class="rounded-2xl overflow-hidden mb-6" style="background: rgba(245, 245, 245, 0.95); border: 1px solid rgba(0,0,0,0.05);">
+        <!-- 答题明细 -->
+        <div class="rounded-2xl overflow-hidden mb-6" style="background: rgba(245, 245, 245, 0.95); border: 1px solid rgba(0,0,0,0.05);">
           <button @click="showDetail = !showDetail" class="w-full px-4 py-3 flex items-center justify-between text-sm hover:bg-white/30 transition-colors">
             <span class="flex items-center gap-2 font-medium" style="color: #1a1a2e;">
               <span>📋</span> 查看答题明细
@@ -95,14 +95,23 @@
             <div v-for="(q, i) in detail" :key="i" class="py-3 border-b last:border-0" style="border-color: rgba(0,0,0,0.05);">
               <div class="flex items-start gap-2">
                 <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
-                  :class="q.isCorrect ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'">
+                  :class="q.statusClass === 'text-success' ? 'bg-success/10 text-success' : (q.statusClass === 'text-warning' ? 'bg-warning/10 text-warning' : 'bg-danger/10 text-danger')">
                   {{ i + 1 }}
                 </span>
                 <div class="flex-1 min-w-0">
-                  <p class="text-sm font-bold mb-1" style="color: #1a1a2e;">{{ q.title }}</p>
-                  <p class="text-xs" :class="q.isCorrect ? 'text-success' : 'text-danger'">
-                    {{ q.userAnswer ? '你的答案：' + formatAnswer(q.userAnswer) : '未作答' }}
-                    <span>（得分：{{ q.score }}/{{ q.maxScore }} 分）</span>
+                  <div class="flex items-center justify-between mb-1">
+                    <p class="text-sm font-bold" style="color: #1a1a2e;">{{ q.title }}</p>
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-lg shrink-0 ml-2"
+                      :class="q.score === q.maxScore ? 'bg-success/10 text-success' : (q.score > 0 ? 'bg-warning/10 text-warning' : 'bg-danger/10 text-danger')"
+                      style="border: 1px solid currentColor;">
+                      {{ q.score !== undefined ? q.score : '?' }}/{{ q.maxScore !== undefined ? q.maxScore : '?' }}分
+                    </span>
+                  </div>
+                  <p class="text-xs" :class="q.statusClass">
+                    <span class="font-bold">{{ q.statusText }}</span>
+                    <span v-if="q.userAnswer && q.type === 'essay'" class="ml-1">（{{ q.score }}/{{ q.maxScore }}分）</span>
+                    <span v-else-if="q.userAnswer">{{ formatAnswer(q.userAnswer) }}</span>
+                    <span v-else>未作答</span>
                   </p>
                   <p v-if="!q.isCorrect && q.correctAnswer" class="text-xs mt-1" style="color: #444444;">
                     ✅ 正确答案：{{ formatCorrectAnswer(q.correctAnswer) }}
@@ -110,6 +119,19 @@
                   <p v-if="q.feedback" class="text-xs mt-1" style="color: #444444;">
                     💡 {{ q.feedback }}
                   </p>
+                  <!-- AI 阅卷反馈 -->
+                  <div v-if="q.aiGrade" class="mt-2 p-2 rounded-lg" style="background: rgba(100,200,255,0.15); border: 1px solid rgba(100,200,255,0.3);">
+                    <p class="text-xs font-bold mb-1" style="color: #0066CC;">🤖 AI 评分反馈：</p>
+                    <p class="text-xs mb-1" style="color: #1a1a2e;">{{ q.aiGrade.ai_feedback }}</p>
+                    <div v-if="q.aiGrade.ai_matched && q.aiGrade.ai_matched.length > 0" class="mt-1">
+                      <p class="text-xs" style="color: #228B22;">✅ 匹配要点：</p>
+                      <p class="text-xs pl-2" style="color: #1a1a2e;">{{ q.aiGrade.ai_matched.join('、') }}</p>
+                    </div>
+                    <div v-if="q.aiGrade.ai_missed && q.aiGrade.ai_missed.length > 0" class="mt-1">
+                      <p class="text-xs" style="color: #CC4444;">❌ 遗漏要点：</p>
+                      <p class="text-xs pl-2" style="color: #1a1a2e;">{{ q.aiGrade.ai_missed.join('、') }}</p>
+                    </div>
+                  </div>
                   <div v-if="q.keyPoints && q.keyPoints.length > 0" class="mt-2 p-2 rounded-lg" style="background: rgba(255,204,0,0.15); border: 1px solid rgba(255,204,0,0.3);">
                     <p class="text-xs font-bold mb-1" style="color: #B8860B;">📖 答案解析：</p>
                     <p class="text-xs whitespace-pre-wrap" style="color: #1a1a2e;">{{ q.keyPoints }}</p>
@@ -155,6 +177,16 @@ const starAnimReady = ref(false)
 onMounted(() => {
   // 延迟触发动画，确保元素已渲染
   setTimeout(() => { starAnimReady.value = true }, 100)
+  
+  // 从 localStorage 恢复考试结果（防止刷新后数据丢失）
+  const storedFull = localStorage.getItem('exam_result_full')
+  if (storedFull && !store.examResult) {
+    try {
+      store.examResult = JSON.parse(storedFull)
+    } catch (e) {
+      console.warn('恢复考试结果失败', e)
+    }
+  }
 })
 
 const isAdmin = computed(() => {
@@ -277,11 +309,36 @@ function formatCorrectAnswer(ans) {
 }
 
 const detail = computed(() => {
+  // 优先使用后端返回的 details（包含完整评分和AI阅卷结果）
   if (store.examResult?.details && store.examResult.details.length > 0) {
     return store.examResult.details.map((d, i) => {
-      const q = store.questions[i] || {}
+      // 简答题状态：根据得分比例显示不同状态
+      let statusText = ''
+      let statusClass = ''
+      if (d.type === 'essay') {
+        if (d.score === 0) {
+          statusText = '回答错误'
+          statusClass = 'text-danger'
+        } else if (d.score >= d.max_score) {
+          statusText = '回答正确'
+          statusClass = 'text-success'
+        } else {
+          statusText = '部分正确'
+          statusClass = 'text-warning'
+        }
+      } else {
+        // 单选/多选/填空：只有对或错
+        if (d.score >= d.max_score) {
+          statusText = '回答正确'
+          statusClass = 'text-success'
+        } else {
+          statusText = '回答错误'
+          statusClass = 'text-danger'
+        }
+      }
+      
       return {
-        title: q.title || `题目 ${d.q_id}`,
+        title: d.title || d.content || `题目 ${d.q_id}`,
         type: d.type,
         userAnswer: d.user_answer,
         correctAnswer: d.correct_answer,
@@ -289,34 +346,53 @@ const detail = computed(() => {
         maxScore: d.max_score,
         feedback: d.feedback,
         keyPoints: d.key_points || '',
-        isCorrect: d.score >= d.max_score
+        isCorrect: d.score >= d.max_score,
+        statusText,
+        statusClass,
+        aiGrade: d.ai_grade || null
       }
     })
   }
 
+  // 备用：从 store.questions 和 store.userAnswers 构建
   return store.questions.map((q, i) => {
     const ans = store.userAnswers[i] || ''
     let isCorrect = false
     let score = 0
     let correctAnswer = ''
+    let statusText = ''
+    let statusClass = ''
     const maxScore = q.score || 5
 
     if (q.type === 'single' || q.type === 'multiple') {
       isCorrect = ans === q.answer
       score = isCorrect ? maxScore : 0
       correctAnswer = q.answer
+      statusText = isCorrect ? '回答正确' : '回答错误'
+      statusClass = isCorrect ? 'text-success' : 'text-danger'
     } else if (q.type === 'fill') {
       isCorrect = true
       score = maxScore
       correctAnswer = q.blanks?.map(b => b.answer).join(' / ') || ''
+      statusText = '回答正确'
+      statusClass = 'text-success'
     } else {
+      // 简答题：根据得分比例显示状态
       score = store.aiGrade(ans, q.keyPoints)
-      if (score >= 5) score = maxScore
-      else if (score >= 4) score = Math.round(maxScore * 0.8)
-      else if (score >= 3) score = Math.round(maxScore * 0.6)
-      else if (score >= 2) score = Math.round(maxScore * 0.4)
-      else score = Math.round(maxScore * 0.2)
-      isCorrect = score >= maxScore * 0.6
+      if (score >= maxScore) {
+        score = maxScore
+        isCorrect = true
+        statusText = '回答正确'
+        statusClass = 'text-success'
+      } else if (score >= maxScore * 0.4) {
+        isCorrect = false
+        statusText = '部分正确'
+        statusClass = 'text-warning'
+      } else {
+        isCorrect = false
+        statusText = '回答错误'
+        statusClass = 'text-danger'
+      }
       correctAnswer = q.keyPoints
     }
 
@@ -329,7 +405,10 @@ const detail = computed(() => {
       maxScore,
       feedback: '',
       keyPoints: q.keyPoints || '',
-      isCorrect
+      isCorrect,
+      statusText,
+      statusClass,
+      aiGrade: null
     }
   })
 })

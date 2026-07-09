@@ -310,9 +310,9 @@ function confirmSubmit() {
   showSubmitConfirm.value = true
 }
 
-function submitExam() {
+async function submitExam() {
   showSubmitConfirm.value = false
-  store.submit()
+  await store.submit()
   router.push('/result')
 }
 
