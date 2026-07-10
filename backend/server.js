@@ -1241,7 +1241,6 @@ const server = http.createServer((req, res) => {
       }
       
       // 解析生成参数
-      const autoDetect = fields.auto_detect === 'true' || fields.auto_detect === '1';
       const singleCount = parseInt(fields.single_count || '5');
       const multipleCount = parseInt(fields.multiple_count || '3');
       const fillCount = parseInt(fields.fill_count || '3');
@@ -1250,6 +1249,7 @@ const server = http.createServer((req, res) => {
       const tmpId = Date.now();
       const tmpPath = path.join(__dirname, '..', 'tmp_ai_' + tmpId + '.' + fileType);
       const outputPath = path.join(__dirname, '..', 'tmp_ai_output_' + tmpId + '.json');
+      
       fs.writeFileSync(tmpPath, file.buffer);
       
       findPython((err, pythonPath) => {
@@ -1292,10 +1292,10 @@ const server = http.createServer((req, res) => {
             }
             
             console.log('[AI Gen] 开始调用 AI 大模型生成题目...');
-            console.log('[AI Gen] 文档字符数:', text.length, '单选:', singleCount, '多选:', multipleCount, '填空:', fillCount, '简答:', essayCount, '自动判断:', autoDetect);
+            console.log('[AI Gen] 文档字符数:', text.length, '单选:', singleCount, '多选:', multipleCount, '填空:', fillCount, '简答:', essayCount);
             
             // 调用 AI 大模型生成题目
-            aiService.generateQuestions(text, singleCount, multipleCount, fillCount, essayCount, autoDetect).then(aiQuestions => {
+            aiService.generateQuestions(text, singleCount, multipleCount, fillCount, essayCount).then(aiQuestions => {
               if (!aiQuestions || aiQuestions.length === 0) {
                 console.warn('[AI Gen] AI 返回空题目列表');
                 res.writeHead(500);
@@ -1315,21 +1315,8 @@ const server = http.createServer((req, res) => {
               }));
             }).catch(aiErr => {
               console.error('[AI Gen] AI 生成失败:', aiErr.message);
-              // 提取用户友好的错误信息
-              let userError = 'AI 生成题目失败，请稍后重试';
-              if (aiErr.message.includes('AI_RATE_LIMIT')) {
-                userError = 'AI 接口调用过于频繁，请等待 5-10 秒后重试';
-              } else if (aiErr.message.includes('AI_API_KEY_INVALID')) {
-                userError = 'AI API Key 无效或已过期，请联系管理员检查配置';
-              } else if (aiErr.message.includes('AI_SERVER_ERROR')) {
-                userError = 'AI 服务暂时不可用，请稍后重试';
-              } else if (aiErr.message.includes('AI_API_KEY_MISSING')) {
-                userError = 'AI 服务未配置，请联系管理员设置 SILICONFLOW_API_KEY';
-              } else if (aiErr.message.includes('AI_RESPONSE_INVALID')) {
-                userError = 'AI 返回格式异常，请尝试更换文档或调整题目数量后重试';
-              }
               res.writeHead(500);
-              res.end(JSON.stringify({ success: false, error: userError }));
+              res.end(JSON.stringify({ success: false, error: 'AI 生成题目失败: ' + aiErr.message }));
             });
             
           } catch (e) {
@@ -1339,63 +1326,6 @@ const server = http.createServer((req, res) => {
           }
         });
       });
-    });
-    return;
-  }
-
-
-  // ===== 基于现有题目生成变体题（相似题替换选项）=====
-  if (pathname === '/api/generate-variants' && req.method === 'POST') {
-    parseBody(req, async (err, body) => {
-      if (err) {
-        res.writeHead(400);
-        res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }));
-        return;
-      }
-      
-      const question = body.question;
-      const variantCount = parseInt(body.variant_count || '3');
-      
-      if (!question || !question.content) {
-        res.writeHead(400);
-        res.end(JSON.stringify({ success: false, error: '缺少原题数据' }));
-        return;
-      }
-      
-      // 检查 AI 是否可用
-      if (!aiService || !aiService.generateVariants) {
-        res.writeHead(500);
-        res.end(JSON.stringify({ success: false, error: 'AI 服务未初始化，请配置 SILICONFLOW_API_KEY' }));
-        return;
-      }
-      
-      console.log('[AI Variant] 开始生成变体题...');
-      console.log('[AI Variant] 原题:', question.content.substring(0, 50), '...');
-      console.log('[AI Variant] 变体数量:', variantCount);
-      
-      try {
-        const variants = await aiService.generateVariants(question, variantCount);
-        if (!variants || variants.length === 0) {
-          console.warn('[AI Variant] AI 返回空变体列表');
-          res.writeHead(500);
-          res.end(JSON.stringify({ success: false, error: 'AI 生成变体题失败，请检查 API Key 配置' }));
-          return;
-        }
-        
-        console.log('[AI Variant] AI 生成变体题成功:', variants.length, '道');
-        
-        res.writeHead(200);
-        res.end(JSON.stringify({
-          success: true,
-          data: {
-            variants: variants
-          }
-        }));
-      } catch (aiErr) {
-        console.error('[AI Variant] AI 生成变体题失败:', aiErr.message);
-        res.writeHead(500);
-        res.end(JSON.stringify({ success: false, error: 'AI 生成变体题失败: ' + aiErr.message }));
-      }
     });
     return;
   }
@@ -1537,24 +1467,6 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // ===== AI 诊断测试（测试 API Key 是否有效）=====
-  if (pathname === '/api/ai-status' && req.method === 'GET') {
-    if (!aiService || !aiService.isAIAvailable || !aiService.isAIAvailable()) {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: false, available: false, error: 'AI 服务未配置（缺少 SILICONFLOW_API_KEY）' }));
-      return;
-    }
-    const testPrompt = '请只回复一个字：OK';
-    aiService.callAIWithFallback(testPrompt, null, 10).then(response => {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, available: true, response: response ? response.substring(0, 100) : null }));
-    }).catch(err => {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: false, available: false, error: err.message }));
-    });
-    return;
-  }
-
   // 尝试 serve 前端静态文件（Docker 部署时使用）
   if (serveStatic(req, res, pathname)) {
     return;
@@ -1564,10 +1476,6 @@ const server = http.createServer((req, res) => {
   res.writeHead(404);
   res.end(JSON.stringify({ success: false, error: 'Not found' }));
 });
-
-
-// ===== AI 诊断测试（测试 API Key 是否有效）=====
-// 这个端点挂载在 server 上，方便测试
 
 // 定时任务：自动发布/截止试卷（每分钟检查一次）
 function checkScheduledExams() {

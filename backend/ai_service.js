@@ -14,79 +14,6 @@ function isAIAvailable() {
 // 调用 AI 大模型
 async function callAI(prompt, model = MODEL_PRIMARY, systemPrompt = null, maxTokens = 1024) {
   if (!API_KEY) {
-    throw new Error('AI_API_KEY_MISSING');
-  }
-
-  const defaultSystem = '你是一个富有同理心的考试阅卷助手。你明白考生可能紧张、表达不够完美，但用心作答值得鼓励。评分时请兼顾：答案准确性、回答字数（至少要有一定篇幅）、答题态度（是否认真对待）。对于态度认真、字数充足但要点匹配不全的答案，请给予人情分。严格按照满分范围评分，不要超出。';
-  
-  const requestBody = {
-    model: model,
-    messages: [
-      { role: 'system', content: systemPrompt || defaultSystem },
-      { role: 'user', content: prompt }
-    ],
-    temperature: 0.3,
-    max_tokens: maxTokens
-  };
-
-  try {
-    const res = await fetch(`${BASE_URL}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      },
-      body: JSON.stringify(requestBody)
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      // 根据状态码返回不同的错误类型
-      if (res.status === 401) {
-        throw new Error('AI_API_KEY_INVALID: API Key 无效或已过期，请检查 SILICONFLOW_API_KEY 配置');
-      } else if (res.status === 429) {
-        throw new Error('AI_RATE_LIMIT: API 调用过于频繁，请稍等几秒后再试');
-      } else if (res.status >= 500) {
-        throw new Error(`AI_SERVER_ERROR: 模型服务暂时不可用 (${res.status})，请稍后重试`);
-      } else {
-        throw new Error(`AI_API_ERROR: HTTP ${res.status}: ${errorText.substring(0, 200)}`);
-      }
-    }
-
-    const data = await res.json();
-    if (data.choices && data.choices[0] && data.choices[0].message) {
-      return data.choices[0].message.content;
-    }
-    throw new Error('AI_RESPONSE_INVALID: AI 返回格式错误');
-  } catch (err) {
-    console.error(`[AI] ${model} 调用失败:`, err.message);
-    throw err;
-  }
-}
-
-// 回退调用（带重试）
-async function callAIWithFallback(prompt, systemPrompt = null, maxTokens = 1024) {
-  try {
-    console.log(`[AI] 尝试使用 ${MODEL_PRIMARY}...`);
-    return await callAI(prompt, MODEL_PRIMARY, systemPrompt, maxTokens);
-  } catch (err) {
-    // 如果是限流错误，等待 3 秒后重试一次
-    if (err.message.includes('AI_RATE_LIMIT')) {
-      console.log('[AI] 触发速率限制，等待 3 秒后重试...');
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      try {
-        return await callAI(prompt, MODEL_PRIMARY, systemPrompt, maxTokens);
-      } catch (retryErr) {
-        console.log(`[AI] ${MODEL_PRIMARY} 重试失败:`, retryErr.message);
-      }
-    }
-    // 尝试回退模型
-    console.log(`[AI] ${MODEL_PRIMARY} 失败，回退到 ${MODEL_FALLBACK}...`);
-    return await callAI(prompt, MODEL_FALLBACK, systemPrompt, maxTokens);
-  }
-}
-async function callAI(prompt, model = MODEL_PRIMARY, systemPrompt = null, maxTokens = 1024) {
-  if (!API_KEY) {
     throw new Error('AI API Key 未配置');
   }
 
@@ -299,7 +226,7 @@ function localGradeEssay(userAnswer, keyPoints, maxScore) {
 }
 
 // AI 智能生题（基于文档内容生成题目）- 调用硅基流动大模型
-async function generateQuestions(text, singleCount = 5, multipleCount = 3, fillCount = 3, essayCount = 2, autoDetectCount = false) {
+async function generateQuestions(text, singleCount = 5, multipleCount = 3, fillCount = 3, essayCount = 2) {
   if (!isAIAvailable()) {
     console.warn('[AI] API Key 未配置，无法使用 AI 生题');
     return [];
@@ -307,30 +234,7 @@ async function generateQuestions(text, singleCount = 5, multipleCount = 3, fillC
 
   const systemPrompt = '你是一位资深的教育培训专家，擅长根据学习材料设计高质量的考试题目。请严格按照用户要求的格式输出 JSON。';
 
-  let prompt;
-  if (autoDetectCount) {
-    // 自动判断模式：不指定具体数量，让AI根据材料自行判断
-    prompt = `请根据以下材料生成考试题目。
-
-## 材料内容
-${text.substring(0, 4000)}
-
-## 要求
-请根据材料的内容丰富程度，自动生成合理数量的各类题目。请按照以下原则判断：
-- 如果材料内容较少（<500字），生成少量题目（总计5-8题）
-- 如果材料内容适中（500-1500字），生成中等数量题目（总计10-15题）
-- 如果材料内容较多（>1500字），生成较多题目（总计15-25题）
-
-题目类型比例建议：单选题约占40%，多选题约占20%，填空题约占20%，简答题约占20%。如果材料不适合某类题型，可以减少或跳过该类题型。
-
-请生成以下类型的题目，题目必须与材料内容紧密相关：
-- 单选题：根据材料自动生成合理数量（每题4个选项，只有1个正确答案）
-- 多选题：根据材料自动生成合理数量（每题4个选项，2个或以上正确答案，answer用逗号分隔如"A,B,C"）
-- 填空题：根据材料自动生成合理数量（每题1-2个空，用 ____ 表示空，需明确标注每个空的答案）
-- 简答题：根据材料自动生成合理数量（给出评分要点作为key_points）`;
-  } else {
-    // 手动指定数量模式（保持原有逻辑）
-    prompt = `请根据以下材料生成考试题目。
+  const prompt = `请根据以下材料生成考试题目。
 
 ## 材料内容
 ${text.substring(0, 4000)}
@@ -340,10 +244,7 @@ ${text.substring(0, 4000)}
 - 单选题：${singleCount} 道（每题4个选项，只有1个正确答案）
 - 多选题：${multipleCount} 道（每题4个选项，2个或以上正确答案，answer用逗号分隔如"A,B,C"）
 - 填空题：${fillCount} 道（每题1-2个空，用 ____ 表示空，需明确标注每个空的答案）
-- 简答题：${essayCount} 道（给出评分要点作为key_points）`;
-  }
-
-  prompt += `
+- 简答题：${essayCount} 道（给出评分要点作为key_points）
 
 ## 输出格式
 请严格按照以下 JSON 格式返回，不要添加任何其他文字说明：
@@ -354,16 +255,10 @@ ${text.substring(0, 4000)}
 1. 单选题和多选题必须有4个选项
 2. 填空题用 ____ 表示空，blanks数组中的blank_no对应第几个空
 3. 简答题的key_points是评分要点，用于AI阅卷
-4. 确保 JSON 格式正确，可以被 JSON.parse 解析
-${autoDetectCount ? '5. 自动判断模式下，请合理分配各题型数量，不要生成过多或过少的题目' : ''}`;
+4. 确保 JSON 格式正确，可以被 JSON.parse 解析`;
 
   try {
     console.log('[AI Gen] 开始调用 AI 大模型生成题目...');
-    if (autoDetectCount) {
-      console.log('[AI Gen] 自动判断题目数量模式');
-    }
-    console.log('[AI Gen] 文档字符数:', text.length, '单选:', singleCount, '多选:', multipleCount, '填空:', fillCount, '简答:', essayCount);
-
     const response = await callAIWithFallback(prompt, systemPrompt, 2048);
     console.log('[AI Gen] 原始响应前500字:', response.substring(0, 500));
 
@@ -384,11 +279,6 @@ ${autoDetectCount ? '5. 自动判断模式下，请合理分配各题型数量�
     const questions = parsed.questions || [];
 
     console.log(`[AI Gen] AI 返回 ${questions.length} 道题目`);
-
-    // 过滤掉 null/undefined/非对象元素，防止前端渲染崩溃
-    questions = questions.filter(q => q && typeof q === 'object');
-
-    // 标准化题目格式，确保所有字段都存在
 
     // 标准化题目格式，确保所有字段都存在
     return questions.map((q, idx) => {
@@ -420,116 +310,6 @@ ${autoDetectCount ? '5. 自动判断模式下，请合理分配各题型数量�
     });
   } catch (err) {
     console.error('[AI Gen] 生成题目失败:', err.message);
-    // 抛出错误让上层处理，而不是静默返回空数组
-    throw new Error('AI题目生成失败: ' + err.message);
-  }
-}
-// 基于现有题目生成变体题（相似题替换选项）
-async function generateVariants(question, variantCount = 3) {
-  if (!isAIAvailable()) {
-    console.warn('[AI] API Key 未配置，无法使用变体生成');
-    return [];
-  }
-
-  const systemPrompt = '你是一位资深的教育培训专家，擅长基于现有题目生成高质量的变体题。请严格按照用户要求的格式输出 JSON。';
-
-  const typeLabel = question.type === 'single' ? '单选题' : question.type === 'multiple' ? '多选题' : question.type === 'fill' ? '填空题' : '简答题';
-  
-  let questionDesc = `题目类型：${typeLabel}\n题干：${question.content}\n`;
-  if (question.options && question.options.length > 0) {
-    questionDesc += `选项：\n${question.options.join('\n')}\n`;
-  }
-  questionDesc += `正确答案：${question.answer || '-'}\n`;
-  if (question.key_points) {
-    questionDesc += `解析/要点：${question.key_points}\n`;
-  }
-  if (question.blanks && question.blanks.length > 0) {
-    questionDesc += `填空答案：${question.blanks.map(b => `空${b.blank_no}: ${b.answer}`).join(', ')}\n`;
-  }
-
-  const prompt = `请基于以下现有题目生成 ${variantCount} 道变体题。
-
-## 原题
-${questionDesc}
-
-## 变体要求
-1. 变体题必须与原题考查相同的知识点，但题干、选项或答案必须有所不同
-2. 对于选择题：可以更换题干表述方式，替换选项内容，确保正确答案不同（与原题答案不同）
-3. 对于填空题：可以改变题干，更换填空内容，确保答案不同
-4. 对于简答题：可以更换问法角度，确保考查点相同但答案组织方式不同
-5. 每道变体题都是独立的，可以单独使用
-6. 变体题的难度应与原题相近
-
-## 输出格式
-请严格按照以下 JSON 格式返回，不要添加任何其他文字说明：
-
-{\n  "variants": [\n    {\n      "type": "${question.type}",\n      "content": "变体题1题干",\n      "options": ${question.type === 'single' || question.type === 'multiple' ? '["A. 选项1", "B. 选项2", "C. 选项3", "D. 选项4"]' : '[]'},\n      "answer": "${question.type === 'single' ? 'A' : question.type === 'multiple' ? 'A,B' : ''}",\n      "key_points": "解析",\n      "blanks": ${question.type === 'fill' ? '[{"blank_no": 1, "answer": "答案1"}]' : '[]'}\n    }\n  ]\n}
-
-## 注意事项
-1. 变体题必须与原文考查相同知识点
-2. 选择题必须有4个选项
-3. 多选题答案用逗号分隔
-4. 填空题用 ____ 表示空
-5. 简答题的key_points是评分要点
-6. 确保 JSON 格式正确，可以被 JSON.parse 解析`;
-
-  try {
-    console.log('[AI Variant] 开始生成变体题...');
-    const response = await callAIWithFallback(prompt, systemPrompt, 2048);
-    console.log('[AI Variant] 原始响应前500字:', response.substring(0, 500));
-
-    // 提取 JSON 部分
-    let jsonStr = response;
-    const codeBlockMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
-    if (codeBlockMatch) {
-      jsonStr = codeBlockMatch[1];
-    } else {
-      const braceMatch = response.match(/\{[\s\S]*\}/);
-      if (braceMatch) {
-        jsonStr = braceMatch[0];
-      }
-    }
-
-    const parsed = JSON.parse(jsonStr);
-    const variants = parsed.variants || [];
-
-    console.log(`[AI Variant] AI 返回 ${variants.length} 道变体题`);
-
-    // 过滤掉 null/undefined/非对象元素
-    variants = variants.filter(q => q && typeof q === 'object');
-
-    // 标准化题目格式
-
-    // 标准化题目格式
-    return variants.map((q, idx) => {
-      const type = q.type || question.type;
-      const content = q.content || `变体题 ${idx + 1}`;
-      const options = q.options || [];
-      const answer = q.answer || '';
-      const key_points = q.key_points || q.keyPoints || '暂无解析';
-      const blanks = q.blanks || [];
-      
-      // 确保填空题有 blanks
-      if (type === 'fill' && blanks.length === 0) {
-        const blankCount = (content.match(/____/g) || []).length;
-        for (let i = 1; i <= blankCount; i++) {
-          blanks.push({ blank_no: i, answer: '待填写' });
-        }
-      }
-      
-      return {
-        type: type,
-        content: content,
-        options: options,
-        answer: answer,
-        key_points: key_points,
-        blanks: blanks,
-        variant_of: question.id || null,
-        source: 'variant'
-      };
-    });
-  } catch (err) {
-    console.error('[AI Variant] 生成变体题失败:', err.message);
     return [];
   }
 }
@@ -537,7 +317,5 @@ ${questionDesc}
 module.exports = {
   isAIAvailable,
   gradeEssay,
-  generateQuestions,
-  generateVariants,
-  callAIWithFallback
+  generateQuestions
 };
