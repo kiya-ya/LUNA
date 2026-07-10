@@ -1241,7 +1241,6 @@ const server = http.createServer((req, res) => {
       }
       
       // 解析生成参数
-      const autoDetect = fields.auto_detect === 'true' || fields.auto_detect === '1';
       const singleCount = parseInt(fields.single_count || '5');
       const multipleCount = parseInt(fields.multiple_count || '3');
       const fillCount = parseInt(fields.fill_count || '3');
@@ -1293,9 +1292,10 @@ const server = http.createServer((req, res) => {
             }
             
             console.log('[AI Gen] 开始调用 AI 大模型生成题目...');
-            console.log('[AI Gen] 文档字符数:', text.length, '单选:', singleCount, '多选:', multipleCount, '填空:', fillCount, '简答:', essayCount, '自动判断:', autoDetect);
+            console.log('[AI Gen] 文档字符数:', text.length, '单选:', singleCount, '多选:', multipleCount, '填空:', fillCount, '简答:', essayCount);
             
-            aiService.generateQuestions(text, singleCount, multipleCount, fillCount, essayCount, autoDetect).then(aiQuestions => {
+            // 调用 AI 大模型生成题目
+            aiService.generateQuestions(text, singleCount, multipleCount, fillCount, essayCount).then(aiQuestions => {
               if (!aiQuestions || aiQuestions.length === 0) {
                 console.warn('[AI Gen] AI 返回空题目列表');
                 res.writeHead(500);
@@ -1326,51 +1326,6 @@ const server = http.createServer((req, res) => {
           }
         });
       });
-    });
-    return;
-  }
-
-  // ===== 基于现有题目生成变体题（相似题替换选项）=====
-  if (pathname === '/api/generate-variants' && req.method === 'POST') {
-    parseBody(req, async (err, body) => {
-      if (err) {
-        res.writeHead(400);
-        res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }));
-        return;
-      }
-      
-      const question = body.question;
-      const variantCount = parseInt(body.variant_count || '3');
-      
-      if (!question || !question.content) {
-        res.writeHead(400);
-        res.end(JSON.stringify({ success: false, error: '缺少原题数据' }));
-        return;
-      }
-      
-      if (!aiService || !aiService.generateVariants) {
-        res.writeHead(500);
-        res.end(JSON.stringify({ success: false, error: 'AI 服务未初始化' }));
-        return;
-      }
-      
-      try {
-        const variants = await aiService.generateVariants(question, variantCount);
-        if (!variants || variants.length === 0) {
-          res.writeHead(500);
-          res.end(JSON.stringify({ success: false, error: 'AI 生成变体题失败' }));
-          return;
-        }
-        
-        res.writeHead(200);
-        res.end(JSON.stringify({
-          success: true,
-          data: { variants: variants }
-        }));
-      } catch (aiErr) {
-        res.writeHead(500);
-        res.end(JSON.stringify({ success: false, error: 'AI 生成变体题失败: ' + aiErr.message }));
-      }
     });
     return;
   }
