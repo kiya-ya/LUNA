@@ -538,9 +538,14 @@
               <div><label class="block text-sm font-bold text-gray-700 mb-1">简答</label><input v-model.number="aiGenEssay" type="number" min="0" max="10" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
             </div>
             <p class="text-xs text-gray-400">💡 每类题型最多 10 题，防止 AI 调用超出限制</p>
-            <button @click="submitAiGen" :disabled="!aiGenFileName || aiGenLoading" class="w-full h-12 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-2xl hover:shadow-lg transition-all disabled:opacity-50">
-              {{ aiGenLoading ? '生成中...' : '🤖 开始生成题目' }}
-            </button>
+            <div class="grid grid-cols-2 gap-3">
+              <button @click="submitAiGen" :disabled="!aiGenFileName || aiGenLoading || aiGenUpdateLoading" class="h-12 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-2xl hover:shadow-lg transition-all disabled:opacity-50">
+                {{ aiGenLoading ? '生成中...' : '🤖 开始生成题目' }}
+              </button>
+              <button @click="submitAiGenUpdate" :disabled="!aiGenFileName || aiGenLoading || aiGenUpdateLoading" class="h-12 bg-gradient-to-r from-success to-primary text-white font-bold rounded-2xl hover:shadow-lg transition-all disabled:opacity-50">
+                {{ aiGenUpdateLoading ? '分析中...' : '🔄 更新题库' }}
+              </button>
+            </div>
           </div>
         </div>
         
@@ -565,6 +570,60 @@
               <button @click="submitAiGenVariants" :disabled="!aiGenVariantSourceId || aiGenVariantLoading" class="h-11 px-4 bg-gradient-to-r from-secondary to-primary text-white font-bold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 text-sm whitespace-nowrap">
                 {{ aiGenVariantLoading ? '...' : '🔄 生成' }}
               </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 智能更新结果展示 -->
+        <div v-if="aiGenUpdateResult && (aiGenUpdateResult.updated.length > 0 || aiGenUpdateResult.added.length > 0)" class="space-y-4 mb-8">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-gray-900">
+              📋 智能更新建议（更新 {{ aiGenUpdateResult.updated.length }} 题 / 新增 {{ aiGenUpdateResult.added.length }} 题）
+            </h3>
+            <div class="flex items-center gap-2">
+              <button @click="importAllUpdateSuggestions" class="text-sm px-4 py-1.5 bg-success text-white font-bold rounded-lg hover:bg-success/90 transition-all">
+                导入全部建议
+              </button>
+              <button @click="aiGenUpdateResult = null" class="text-sm px-3 py-1.5 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200 transition-all">
+                清除
+              </button>
+            </div>
+          </div>
+          
+          <!-- 需要更新的题目 -->
+          <div v-if="aiGenUpdateResult.updated.length > 0" class="space-y-3">
+            <h4 class="text-sm font-bold text-orange-600">📝 建议更新（{{ aiGenUpdateResult.updated.length }} 题）</h4>
+            <div v-for="(q, idx) in aiGenUpdateResult.updated" :key="'u'+idx" class="p-4 rounded-2xl border-2 border-orange-200 bg-orange-50">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-orange-100 text-orange-700">更新</span>
+                <span class="text-xs text-gray-400">原题ID: {{ q.original_id }}</span>
+                <span class="text-xs text-orange-500">{{ q.update_reason }}</span>
+              </div>
+              <p class="text-sm font-bold text-gray-900 mb-2">{{ q.content }}</p>
+              <div v-if="q.options && q.options.length > 0" class="space-y-1 mb-2">
+                <p v-for="opt in q.options" :key="opt" class="text-xs text-gray-600">{{ opt }}</p>
+              </div>
+              <div class="text-xs text-gray-500">
+                <span class="font-bold">答案：</span>{{ q.answer || q.key_points || '-' }}
+              </div>
+            </div>
+          </div>
+          
+          <!-- 新增的题目 -->
+          <div v-if="aiGenUpdateResult.added.length > 0" class="space-y-3">
+            <h4 class="text-sm font-bold text-green-600">➕ 建议新增（{{ aiGenUpdateResult.added.length }} 题）</h4>
+            <div v-for="(q, idx) in aiGenUpdateResult.added" :key="'a'+idx" class="p-4 rounded-2xl border-2 border-green-200 bg-green-50">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-green-100 text-green-700">新增</span>
+                <span class="text-xs text-gray-400">#{{ idx + 1 }}</span>
+              </div>
+              <p class="text-sm font-bold text-gray-900 mb-2">{{ q.content }}</p>
+              <div v-if="q.options && q.options.length > 0" class="space-y-1 mb-2">
+                <p v-for="opt in q.options" :key="opt" class="text-xs text-gray-600">{{ opt }}</p>
+              </div>
+              <div class="text-xs text-gray-500">
+                <span class="font-bold">答案：</span>{{ q.answer || q.key_points || '-' }}
+              </div>
             </div>
           </div>
         </div>
@@ -1001,6 +1060,8 @@ const aiGenVariantCount = ref(3)
 const aiGenVariantLoading = ref(false)
 const lastGeneratedFile = ref('')
 const lastGeneratedTime = ref(0)
+const aiGenUpdateLoading = ref(false)
+const aiGenUpdateResult = ref(null)
 const showAiGenNewBank = ref(false)
 const aiGenNewBankName = ref('')
 const aiFileInput = ref(null)
@@ -1246,6 +1307,91 @@ async function submitAiGen() {
   } finally {
     aiGenLoading.value = false
   }
+}
+
+// 基于文档智能更新题库
+async function submitAiGenUpdate() {
+  if (!aiGenFileName.value || !aiGenFile.value) {
+    showToast('请先上传文档', 'warning')
+    return
+  }
+  
+  const file = aiGenFile.value
+  
+  aiGenUpdateLoading.value = true
+  aiGenUpdateResult.value = null
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    
+    const res = await fetch('/api/update-questions-from-doc', {
+      method: 'POST',
+      body: formData
+    })
+    const data = await res.json()
+    if (data.success) {
+      aiGenUpdateResult.value = {
+        updated: data.data.updated || [],
+        added: data.data.added || []
+      }
+      aiGenTextPreview.value = data.data.text_preview || ''
+      const total = (data.data.updated || []).length + (data.data.added || []).length
+      if (total === 0) {
+        showToast('现有题库与文档内容一致，无需更新', 'success')
+      } else {
+        showToast(`分析完成！建议更新 ${(data.data.updated || []).length} 题，新增 ${(data.data.added || []).length} 题`, 'success')
+      }
+    } else {
+      showToast(data.error || '更新分析失败', 'error')
+    }
+  } catch (err) {
+    console.error('智能更新失败', err)
+    showToast('更新分析失败，请检查后端服务', 'error')
+  } finally {
+    aiGenUpdateLoading.value = false
+  }
+}
+
+// 导入全部更新建议（更新+新增）
+async function importAllUpdateSuggestions() {
+  if (!aiGenUpdateResult.value) return
+  
+  const allQuestions = [
+    ...(aiGenUpdateResult.value.updated || []),
+    ...(aiGenUpdateResult.value.added || [])
+  ]
+  
+  if (allQuestions.length === 0) {
+    showToast('没有可导入的建议', 'warning')
+    return
+  }
+  
+  let successCount = 0
+  for (const q of allQuestions) {
+    try {
+      const payload = {
+        type: q.type || 'single',
+        title: q.content || '',
+        options: q.options || [],
+        answer: q.answer || '',
+        keyPoints: q.key_points || '',
+        blanks: q.blanks || [],
+        bankId: aiGenBankId.value
+      }
+      const res = await fetch('/api/questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      if (res.ok) successCount++
+    } catch (e) {
+      console.error('导入失败', e)
+    }
+  }
+  
+  showToast(`成功导入 ${successCount}/${allQuestions.length} 题`, 'success')
+  await loadQuestions()
+  aiGenUpdateResult.value = null
 }
 
 // 基于现有题目生成变体题

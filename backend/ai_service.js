@@ -395,6 +395,128 @@ async function generateVariants(question, variantCount = 3) {
   }
 }
 
+// 基于文档内容更新题库中的题目（智能匹配并更新）
+async function updateQuestionsFromDoc(text, existingQuestions) {
+  if (!isAIAvailable()) {
+    console.warn('[AI] API Key 未配置，无法使用智能更新');
+    return { updated: [], added: [] };
+  }
+
+  // 限制现有题目数量，避免 token 过多
+  const limitedQuestions = existingQuestions.slice(0, 20);
+  
+  const systemPrompt = '你是一位资深的教育培训专家，擅长根据最新材料评估和更新考试题库。请严格按照用户要求的格式输出 JSON。';
+
+  // 构建现有题目描述
+  let questionsDesc = '';
+  for (let i = 0; i < limitedQuestions.length; i++) {
+    const q = limitedQuestions[i];
+    questionsDesc += `\n[题目${i + 1}] ID:${q.id} 类型:${q.type}\n题干:${q.title}\n`;
+    if (q.options && q.options.length > 0) {
+      questionsDesc += `选项:${q.options.join(' | ')}\n`;
+    }
+    questionsDesc += `答案:${q.answer || '-'}\n`;
+  }
+
+  const prompt = `请根据以下最新材料，评估现有题库中的题目是否需要更新，并找出可以新增的题目。
+
+## 最新材料（前3000字）
+${text.substring(0, 3000)}
+
+## 现有题库题目（共${limitedQuestions.length}题）
+${questionsDesc}
+
+## 任务要求
+1. **更新题目**：找出题干表述不准确、选项内容过时、或答案与材料不一致的题目，给出修正版本
+2. **新增题目**：找出材料中有但题库中未覆盖的重要知识点，生成新题目
+3. 只返回确实有变更的题目，如果现有题目完全正确，不要返回
+
+## 输出格式
+请严格按照以下 JSON 格式返回，不要添加任何其他文字说明：
+
+{
+  "updated": [
+    {
+      "original_id": 1,
+      "type": "single",
+      "content": "更新后的题干",
+      "options": ["A. 选项1", "B. 选项2", "C. 选项3", "D. 选项4"],
+      "answer": "A",
+      "key_points": "解析",
+      "blanks": [],
+      "update_reason": "题干表述与材料第3段不一致，已修正"
+    }
+  ],
+  "added": [
+    {
+      "type": "single",
+      "content": "新增题目题干",
+      "options": ["A. 选项1", "B. 选项2", "C. 选项3", "D. 选项4"],
+      "answer": "A",
+      "key_points": "解析",
+      "blanks": []
+    }
+  ]
+}
+
+## 注意事项
+1. updated 数组中的 original_id 必须是现有题目的ID
+2. 如果没有需要更新的题目，updated 为空数组
+3. 如果没有需要新增的题目，added 为空数组
+4. 选择题必须有4个选项
+5. 确保 JSON 格式正确，可以被 JSON.parse 解析`;
+
+  try {
+    console.log('[AI Update] 开始智能更新题库...');
+    console.log('[AI Update] 文档字符数:', text.length, '现有题目数:', limitedQuestions.length);
+    
+    const response = await callAIWithFallback(prompt, systemPrompt, 2048);
+    console.log('[AI Update] 原始响应前500字:', response.substring(0, 500));
+
+    let jsonStr = response;
+    const codeBlockMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
+    if (codeBlockMatch) {
+      jsonStr = codeBlockMatch[1];
+    } else {
+      const braceMatch = response.match(/\{[\s\S]*\}/);
+      if (braceMatch) {
+        jsonStr = braceMatch[0];
+      }
+    }
+
+    const parsed = JSON.parse(jsonStr);
+    let updated = parsed.updated || [];
+    let added = parsed.added || [];
+    
+    // 过滤掉 null/undefined/非对象元素
+    updated = updated.filter(q => q && typeof q === 'object');
+    added = added.filter(q => q && typeof q === 'object');
+
+    console.log(`[AI Update] AI 返回: 更新 ${updated.length} 题, 新增 ${added.length} 题`);
+
+    // 标准化格式
+    const normalize = (q, idx) => ({
+      type: q.type || 'single',
+      content: q.content || q.title || `题目 ${idx + 1}`,
+      options: q.options || [],
+      answer: q.answer || '',
+      key_points: q.key_points || q.keyPoints || '暂无解析',
+      blanks: q.blanks || [],
+      original_id: q.original_id || null,
+      update_reason: q.update_reason || '根据最新材料更新',
+      source: 'update'
+    });
+
+    return {
+      updated: updated.map(normalize),
+      added: added.map(normalize)
+    };
+  } catch (err) {
+    console.error('[AI Update] 智能更新失败:', err.message);
+    return { updated: [], added: [] };
+  }
+}
+
 module.exports = {
   isAIAvailable,
   gradeEssay,

@@ -1375,6 +1375,118 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // ===== 基于文档智能更新题库 =====
+  if (pathname === '/api/update-questions-from-doc' && req.method === 'POST') {
+    parseMultipart(req, (err, fields) => {
+      if (err || !fields.file) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: 'No file uploaded' }));
+        return;
+      }
+      const file = fields.file;
+      const filename = file.filename || '';
+      const ext = path.extname(filename).toLowerCase();
+      let fileType;
+      if (ext === '.docx') fileType = 'docx';
+      else if (ext === '.pdf') fileType = 'pdf';
+      else {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: '仅支持 .docx 和 .pdf 文件' }));
+        return;
+      }
+      
+      const tmpId = Date.now();
+      const tmpPath = path.join(__dirname, '..', 'tmp_ai_' + tmpId + '.' + fileType);
+      const outputPath = path.join(__dirname, '..', 'tmp_ai_output_' + tmpId + '.json');
+      
+      fs.writeFileSync(tmpPath, file.buffer);
+      
+      findPython((err, pythonPath) => {
+        if (err) {
+          try { fs.unlinkSync(tmpPath); } catch (e) {}
+          res.writeHead(500);
+          res.end(JSON.stringify({ success: false, error: err.message }));
+          return;
+        }
+        const scriptPath = path.join(__dirname, 'parse_doc_for_ai.py');
+        execFile(pythonPath, [scriptPath, tmpPath, fileType, outputPath], { timeout: 30000, windowsHide: true }, (error, stdout, stderr) => {
+          try { if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath); } catch (e) {}
+          if (error) {
+            try { if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath); } catch (e) {}
+            res.writeHead(500);
+            res.end(JSON.stringify({ success: false, error: stderr || '文档解析失败' }));
+            return;
+          }
+          try {
+            if (!fs.existsSync(outputPath)) {
+              res.writeHead(500);
+              res.end(JSON.stringify({ success: false, error: '解析输出文件丢失' }));
+              return;
+            }
+            const result = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
+            try { if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath); } catch (e) {}
+            
+            const text = result.text || '';
+            if (!text || text.length < 50) {
+              res.writeHead(500);
+              res.end(JSON.stringify({ success: false, error: '文档内容太短或无法提取文本' }));
+              return;
+            }
+            
+            // 检查 AI 是否可用
+            if (!aiService || !aiService.updateQuestionsFromDoc) {
+              res.writeHead(500);
+              res.end(JSON.stringify({ success: false, error: 'AI 服务未初始化，请配置 SILICONFLOW_API_KEY' }));
+              return;
+            }
+            
+            // 获取当前题库题目
+            const bankQuestions = db.loadQuestionsByBank(1).questions || [];
+            const existingQuestions = bankQuestions.map(q => ({
+              id: q.id,
+              type: q.type,
+              title: q.title,
+              options: q.options || [],
+              answer: q.answer || '',
+              keyPoints: q.keyPoints || '',
+              blanks: q.blanks || []
+            }));
+            
+            console.log('[AI Update] 开始智能更新题库...');
+            console.log('[AI Update] 文档字符数:', text.length, '现有题目数:', existingQuestions.length);
+            
+            aiService.updateQuestionsFromDoc(text, existingQuestions).then(updateResult => {
+              const updated = updateResult.updated || [];
+              const added = updateResult.added || [];
+              
+              console.log(`[AI Update] 智能更新完成: 更新 ${updated.length} 题, 新增 ${added.length} 题`);
+              
+              res.writeHead(200);
+              res.end(JSON.stringify({
+                success: true,
+                data: {
+                  text_preview: text.substring(0, 3000),
+                  updated: updated,
+                  added: added
+                }
+              }));
+            }).catch(aiErr => {
+              console.error('[AI Update] AI 更新失败:', aiErr.message);
+              res.writeHead(500);
+              res.end(JSON.stringify({ success: false, error: 'AI 更新题库失败: ' + aiErr.message }));
+            });
+            
+          } catch (e) {
+            try { if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath); } catch (e) {}
+            res.writeHead(500);
+            res.end(JSON.stringify({ success: false, error: '解析结果无效: ' + e.message }));
+          }
+        });
+      });
+    });
+    return;
+  }
+
   // 获取所有结果（支持 exam_id 筛选）
   if (pathname === '/api/results' && req.method === 'GET') {
     let results = db.loadResults().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
