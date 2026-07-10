@@ -532,11 +532,12 @@
               </select>
             </div>
             <div class="grid grid-cols-4 gap-3">
-              <div><label class="block text-sm font-bold text-gray-700 mb-1">单选</label><input v-model.number="aiGenSingle" type="number" min="0" max="20" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
-              <div><label class="block text-sm font-bold text-gray-700 mb-1">多选</label><input v-model.number="aiGenMultiple" type="number" min="0" max="20" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
-              <div><label class="block text-sm font-bold text-gray-700 mb-1">填空</label><input v-model.number="aiGenFill" type="number" min="0" max="20" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
-              <div><label class="block text-sm font-bold text-gray-700 mb-1">简答</label><input v-model.number="aiGenEssay" type="number" min="0" max="20" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
+              <div><label class="block text-sm font-bold text-gray-700 mb-1">单选</label><input v-model.number="aiGenSingle" type="number" min="0" max="10" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
+              <div><label class="block text-sm font-bold text-gray-700 mb-1">多选</label><input v-model.number="aiGenMultiple" type="number" min="0" max="10" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
+              <div><label class="block text-sm font-bold text-gray-700 mb-1">填空</label><input v-model.number="aiGenFill" type="number" min="0" max="10" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
+              <div><label class="block text-sm font-bold text-gray-700 mb-1">简答</label><input v-model.number="aiGenEssay" type="number" min="0" max="10" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
             </div>
+            <p class="text-xs text-gray-400">💡 每类题型最多 10 题，防止 AI 调用超出限制</p>
             <button @click="submitAiGen" :disabled="!aiGenFileName || aiGenLoading" class="w-full h-12 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-2xl hover:shadow-lg transition-all disabled:opacity-50">
               {{ aiGenLoading ? '生成中...' : '🤖 开始生成题目' }}
             </button>
