@@ -513,36 +513,93 @@
       <div v-if="currentTab === 'ai-gen'" class="glass-card relative z-10 p-6">
         <h2 class="text-lg font-bold text-gray-900 mb-6">🤖 智能生题</h2>
         
-        <!-- 上传区 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div class="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-primary transition-all cursor-pointer" @click="$refs.aiFileInput.click()">
-            <div class="text-3xl mb-2">📄</div>
-            <p class="text-sm text-gray-600 font-bold">点击上传 Word (.docx) 或 PDF (.pdf)</p>
-            <p class="text-xs text-gray-400 mt-1">{{ aiGenFileName || '支持 .docx / .pdf' }}</p>
-          </div>
-          <input ref="aiFileInput" type="file" accept=".docx,.pdf" class="hidden" @change="handleAiGenFile">
-          
-          <!-- 生成参数 -->
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-2">目标题库</label>
-              <select v-model="aiGenBankId" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white">
-                <option v-for="bank in questionBanks" :key="bank.id" :value="bank.id">{{ bank.name }}</option>
-                <option :value="-1">➕ 新建题库</option>
-              </select>
+        <!-- 文档生题区域 -->
+        <div class="mb-8">
+          <h3 class="text-md font-bold text-gray-800 mb-4">📄 文档智能生题</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+            <div class="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-primary transition-all cursor-pointer" @click="$refs.aiFileInput.click()">
+              <div class="text-3xl mb-2">📄</div>
+              <p class="text-sm text-gray-600 font-bold">点击上传 Word (.docx) 或 PDF (.pdf)</p>
+              <p class="text-xs text-gray-400 mt-1">{{ aiGenFileName || '支持 .docx / .pdf' }}</p>
             </div>
-            <div class="grid grid-cols-4 gap-3">
-              <div><label class="block text-sm font-bold text-gray-700 mb-1">单选</label><input v-model.number="aiGenSingle" type="number" min="0" max="20" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
-              <div><label class="block text-sm font-bold text-gray-700 mb-1">多选</label><input v-model.number="aiGenMultiple" type="number" min="0" max="20" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
-              <div><label class="block text-sm font-bold text-gray-700 mb-1">填空</label><input v-model.number="aiGenFill" type="number" min="0" max="20" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
-              <div><label class="block text-sm font-bold text-gray-700 mb-1">简答</label><input v-model.number="aiGenEssay" type="number" min="0" max="20" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
+            <input ref="aiFileInput" type="file" accept=".docx,.pdf" class="hidden" @change="handleAiGenFile">
+            
+            <!-- 生成参数 -->
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">目标题库</label>
+                <select v-model="aiGenBankId" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white">
+                  <option v-for="bank in questionBanks" :key="bank.id" :value="bank.id">{{ bank.name }}</option>
+                  <option :value="-1">➕ 新建题库</option>
+                </select>
+              </div>
+              
+              <!-- 自动判断开关 -->
+              <div class="flex items-center gap-2 p-3 rounded-xl bg-primary/5 border border-primary/10">
+                <input type="checkbox" id="aiGenAutoDetect" v-model="aiGenAutoDetect" class="w-4 h-4 text-primary rounded">
+                <label for="aiGenAutoDetect" class="text-sm font-bold text-gray-700 cursor-pointer">🤖 AI自动判断题目数量和类型</label>
+              </div>
+              
+              <!-- 手动数量输入（非自动判断时显示） -->
+              <div v-if="!aiGenAutoDetect" class="grid grid-cols-4 gap-3">
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">单选</label><input v-model.number="aiGenSingle" type="number" min="0" max="20" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">多选</label><input v-model.number="aiGenMultiple" type="number" min="0" max="20" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">填空</label><input v-model.number="aiGenFill" type="number" min="0" max="20" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">简答</label><input v-model.number="aiGenEssay" type="number" min="0" max="20" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
+              </div>
+              <div v-else class="p-3 bg-blue-50 rounded-xl text-sm text-gray-600 border border-blue-100">
+                <span class="font-bold text-primary">💡</span> AI将根据文档内容的长度和丰富程度，自动判断各类题目的合理数量
+              </div>
+              
+              <button @click="submitAiGen" :disabled="!aiGenFileName || aiGenLoading" class="w-full h-12 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-2xl hover:shadow-lg transition-all disabled:opacity-50">
+                {{ aiGenLoading ? '生成中...' : '🤖 开始生成题目' }}
+              </button>
             </div>
-            <button @click="submitAiGen" :disabled="!aiGenFileName || aiGenLoading" class="w-full h-12 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-2xl hover:shadow-lg transition-all disabled:opacity-50">
-              {{ aiGenLoading ? '生成中...' : '🤖 开始生成题目' }}
-            </button>
           </div>
         </div>
         
+        <!-- 变体生成区域 -->
+        <div class="border-t-2 border-gray-100 pt-6 mb-6">
+          <h3 class="text-md font-bold text-gray-800 mb-2">🔄 题库变体生成</h3>
+          <p class="text-sm text-gray-500 mb-4">选择现有题目，AI将基于原题生成相似但选项/答案不同的变体题，用于扩充题库</p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- 选择原题 -->
+            <div class="md:col-span-2">
+              <label class="block text-sm font-bold text-gray-700 mb-2">选择原题（当前题库共 {{ questions.length }} 题）</label>
+              <select v-model="aiGenVariantSourceId" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white text-sm">
+                <option value="">请选择一道题目</option>
+                <option v-for="q in questions" :key="q.id" :value="q.id">【{{ typeLabel(q.type) }}】{{ q.title.length > 40 ? q.title.substring(0, 40) + '...' : q.title }}</option>
+              </select>
+            </div>
+            <div class="flex items-end gap-2">
+              <div class="flex-1">
+                <label class="block text-sm font-bold text-gray-700 mb-2">变体数量</label>
+                <input v-model.number="aiGenVariantCount" type="number" min="1" max="10" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm text-center">
+              </div>
+              <button @click="submitAiGenVariants" :disabled="!aiGenVariantSourceId || aiGenVariantLoading" class="h-11 px-4 bg-gradient-to-r from-secondary to-primary text-white font-bold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 text-sm whitespace-nowrap">
+                {{ aiGenVariantLoading ? '...' : '🔄 生成' }}
+              </button>
+            </div>
+          </div>
+          
+          <!-- 选中的原题预览 -->
+          <div v-if="aiGenVariantSourceId" class="mt-4 p-4 rounded-2xl bg-gray-50 border border-gray-200">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="px-2 py-0.5 rounded-lg text-xs font-bold" :class="typeClass(aiGenVariantSourceQuestion?.type)">{{ typeLabel(aiGenVariantSourceQuestion?.type) }}</span>
+              <span class="text-xs text-gray-400">原题预览</span>
+            </div>
+            <p class="text-sm font-bold text-gray-800">{{ aiGenVariantSourceQuestion?.title }}</p>
+            <div v-if="aiGenVariantSourceQuestion?.options && aiGenVariantSourceQuestion.options.length > 0" class="mt-2 space-y-1">
+              <p v-for="opt in aiGenVariantSourceQuestion.options" :key="opt" class="text-xs text-gray-600">{{ opt }}</p>
+            </div>
+            <div class="mt-2 text-xs text-gray-500">
+              <span class="font-bold">答案：</span>{{ aiGenVariantSourceQuestion?.answer || aiGenVariantSourceQuestion?.keyPoints || '-' }}
+            </div>
+          </div>
+        </div>
+        
+        <!-- 生成结果展示（文档生题 + 变体题共用） -->
         <!-- 解析结果展示 -->
         <div v-if="aiGenQuestions.length > 0 || aiGenTextPreview" class="space-y-4">
           <!-- 原文预览 -->
@@ -578,6 +635,7 @@
                 <div class="flex items-center justify-between mb-2">
                   <div class="flex items-center gap-2">
                     <span class="px-2 py-0.5 rounded-lg text-xs font-bold" :class="typeClass(q.type)">{{ typeLabel(q.type) }}</span>
+                    <span v-if="q.variant_of" class="px-2 py-0.5 rounded-lg text-xs font-bold bg-purple-100 text-purple-700">🔄 变体</span>
                     <span class="text-xs text-gray-400">#{{ idx + 1 }}</span>
                   </div>
                   <button @click.stop="openAiGenEdit(idx)" class="text-xs px-2 py-1 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all">✏️ 编辑</button>
@@ -969,10 +1027,21 @@ const aiGenSingle = ref(5)
 const aiGenMultiple = ref(3)
 const aiGenFill = ref(3)
 const aiGenEssay = ref(2)
+const aiGenAutoDetect = ref(false)
 const showAiGenNewBank = ref(false)
 const aiGenNewBankName = ref('')
 const aiFileInput = ref(null)
 const aiGenTextPreview = ref('')
+
+// 变体生成
+const aiGenVariantSourceId = ref('')
+const aiGenVariantCount = ref(3)
+const aiGenVariantLoading = ref(false)
+
+const aiGenVariantSourceQuestion = computed(() => {
+  if (!aiGenVariantSourceId.value) return null
+  return questions.value.find(q => q.id === parseInt(aiGenVariantSourceId.value))
+})
 
 // 智能生题编辑弹窗
 const showAiGenEditModal = ref(false)
@@ -1179,10 +1248,13 @@ async function submitAiGen() {
   try {
     const formData = new FormData()
     formData.append('file', file)
-    formData.append('single_count', String(aiGenSingle.value))
-    formData.append('multiple_count', String(aiGenMultiple.value))
-    formData.append('fill_count', String(aiGenFill.value))
-    formData.append('essay_count', String(aiGenEssay.value))
+    formData.append('auto_detect', String(aiGenAutoDetect.value))
+    if (!aiGenAutoDetect.value) {
+      formData.append('single_count', String(aiGenSingle.value))
+      formData.append('multiple_count', String(aiGenMultiple.value))
+      formData.append('fill_count', String(aiGenFill.value))
+      formData.append('essay_count', String(aiGenEssay.value))
+    }
     
     const res = await fetch('/api/generate-questions', {
       method: 'POST',
@@ -1209,6 +1281,66 @@ async function submitAiGen() {
   }
 }
 
+// 基于现有题目生成变体题
+async function submitAiGenVariants() {
+  const sourceId = aiGenVariantSourceId.value
+  if (!sourceId) {
+    showToast('请先选择一道原题', 'warning')
+    return
+  }
+  
+  const sourceQ = questions.value.find(q => q.id === parseInt(sourceId))
+  if (!sourceQ) {
+    showToast('原题不存在，请重新选择', 'error')
+    return
+  }
+  
+  aiGenVariantLoading.value = true
+  try {
+    const payload = {
+      question: {
+        id: sourceQ.id,
+        type: sourceQ.type,
+        content: sourceQ.title,
+        options: sourceQ.options || [],
+        answer: sourceQ.answer || '',
+        key_points: sourceQ.keyPoints || '',
+        blanks: sourceQ.blanks || []
+      },
+      variant_count: aiGenVariantCount.value
+    }
+    
+    const res = await fetch('/api/generate-variants', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    const data = await res.json()
+    if (data.success) {
+      const variants = data.data.variants || []
+      if (variants.length === 0) {
+        showToast('未能生成变体题，请重试', 'warning')
+      } else {
+        // 将变体题追加到生成结果中
+        aiGenQuestions.value = [...aiGenQuestions.value, ...variants]
+        // 自动选中新添加的变体题
+        const startIdx = aiGenQuestions.value.length - variants.length
+        for (let i = 0; i < variants.length; i++) {
+          aiGenSelectedIds.value.push(startIdx + i)
+        }
+        aiGenTextPreview.value = ''
+        showToast(`变体生成成功！共 ${variants.length} 道变体题`, 'success')
+      }
+    } else {
+      showToast(data.error || '变体生成失败', 'error')
+    }
+  } catch (err) {
+    console.error('变体生成失败', err)
+    showToast('变体生成失败，请检查网络或AI配置', 'error')
+  } finally {
+    aiGenVariantLoading.value = false
+  }
+}
 function openAiGenEdit(idx) {
   editingAiGenIdx.value = idx
   const q = aiGenQuestions.value[idx]

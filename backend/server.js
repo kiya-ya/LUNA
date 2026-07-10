@@ -1241,6 +1241,7 @@ const server = http.createServer((req, res) => {
       }
       
       // 解析生成参数
+      const autoDetect = fields.auto_detect === 'true' || fields.auto_detect === '1';
       const singleCount = parseInt(fields.single_count || '5');
       const multipleCount = parseInt(fields.multiple_count || '3');
       const fillCount = parseInt(fields.fill_count || '3');
@@ -1249,7 +1250,6 @@ const server = http.createServer((req, res) => {
       const tmpId = Date.now();
       const tmpPath = path.join(__dirname, '..', 'tmp_ai_' + tmpId + '.' + fileType);
       const outputPath = path.join(__dirname, '..', 'tmp_ai_output_' + tmpId + '.json');
-      
       fs.writeFileSync(tmpPath, file.buffer);
       
       findPython((err, pythonPath) => {
@@ -1292,10 +1292,10 @@ const server = http.createServer((req, res) => {
             }
             
             console.log('[AI Gen] 开始调用 AI 大模型生成题目...');
-            console.log('[AI Gen] 文档字符数:', text.length, '单选:', singleCount, '多选:', multipleCount, '填空:', fillCount, '简答:', essayCount);
+            console.log('[AI Gen] 文档字符数:', text.length, '单选:', singleCount, '多选:', multipleCount, '填空:', fillCount, '简答:', essayCount, '自动判断:', autoDetect);
             
             // 调用 AI 大模型生成题目
-            aiService.generateQuestions(text, singleCount, multipleCount, fillCount, essayCount).then(aiQuestions => {
+            aiService.generateQuestions(text, singleCount, multipleCount, fillCount, essayCount, autoDetect).then(aiQuestions => {
               if (!aiQuestions || aiQuestions.length === 0) {
                 console.warn('[AI Gen] AI 返回空题目列表');
                 res.writeHead(500);
@@ -1326,6 +1326,63 @@ const server = http.createServer((req, res) => {
           }
         });
       });
+    });
+    return;
+  }
+
+
+  // ===== 基于现有题目生成变体题（相似题替换选项）=====
+  if (pathname === '/api/generate-variants' && req.method === 'POST') {
+    parseBody(req, async (err, body) => {
+      if (err) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }));
+        return;
+      }
+      
+      const question = body.question;
+      const variantCount = parseInt(body.variant_count || '3');
+      
+      if (!question || !question.content) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: '缺少原题数据' }));
+        return;
+      }
+      
+      // 检查 AI 是否可用
+      if (!aiService || !aiService.generateVariants) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ success: false, error: 'AI 服务未初始化，请配置 SILICONFLOW_API_KEY' }));
+        return;
+      }
+      
+      console.log('[AI Variant] 开始生成变体题...');
+      console.log('[AI Variant] 原题:', question.content.substring(0, 50), '...');
+      console.log('[AI Variant] 变体数量:', variantCount);
+      
+      try {
+        const variants = await aiService.generateVariants(question, variantCount);
+        if (!variants || variants.length === 0) {
+          console.warn('[AI Variant] AI 返回空变体列表');
+          res.writeHead(500);
+          res.end(JSON.stringify({ success: false, error: 'AI 生成变体题失败，请检查 API Key 配置' }));
+          return;
+        }
+        
+        console.log('[AI Variant] AI 生成变体题成功:', variants.length, '道');
+        
+        res.writeHead(200);
+        res.end(JSON.stringify({
+          success: true,
+          data: {
+            variants: variants
+          }
+        }));
+      } catch (aiErr) {
+        console.error('[AI Variant] AI 生成变体题失败:', aiErr.message);
+        res.writeHead(500);
+        res.end(JSON.stringify({ success: false, error: 'AI 生成变体题失败: ' + aiErr.message }));
+      }
     });
     return;
   }
