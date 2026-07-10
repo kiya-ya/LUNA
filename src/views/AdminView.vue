@@ -1512,13 +1512,34 @@ async function saveQuestion() {
   if (form.type === 'fill') {
     const blanks = []
     const lines = form.blanksText.split('\n').map(s => s.trim()).filter(s => s)
-    for (const line of lines) {
-      const match = line.match(/^空(\d+)答案:(.+)$/)
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      // 支持多种格式：空1答案:xxx、空1:xxx、1:xxx、直接写答案
+      const match = line.match(/^空?(\d+)答案?[：:]\s*(.+)$/)
       if (match) {
         blanks.push({ blank_no: parseInt(match[1]), answer: match[2].trim() })
+      } else if (line.includes(':') || line.includes('：')) {
+        // 尝试用冒号分割
+        const parts = line.split(/[：:]/)
+        if (parts.length >= 2) {
+          const left = parts[0].replace(/^空/, '').replace(/答案?$/, '').trim()
+          const right = parts.slice(1).join(':').trim()
+          const no = left ? parseInt(left) : (i + 1)
+          if (!isNaN(no) && right) {
+            blanks.push({ blank_no: no, answer: right })
+          }
+        }
+      } else if (line) {
+        // 没有冒号，直接作为当前空的答案
+        blanks.push({ blank_no: i + 1, answer: line })
       }
     }
     payload.blanks = blanks
+    // 如果解析出了空行但一个都没匹配上，提示用户
+    if (lines.length > 0 && blanks.length === 0) {
+      showToast('填空答案格式不正确，请按 "空1答案:xxx" 格式填写', 'warning')
+      return
+    }
   } else {
     payload.blanks = []
   }
