@@ -191,6 +191,20 @@
         </div>
       </div>
     </div>
+
+    <!-- 正在阅卷中弹窗 -->
+    <div v-if="showGradingLoading" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+      <div class="glass-modal rounded-3xl p-8 max-w-sm w-full text-center relative z-10">
+        <div class="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+          <span class="text-3xl">📝</span>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 mb-2">正在阅卷中...</h3>
+        <p class="text-gray-600 text-sm mb-4">AI 正在批改您的简答题，请稍候</p>
+        <div class="flex justify-center">
+          <div class="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -207,6 +221,7 @@ const textCount = ref(0)
 const fillAnswers = ref({})
 const showLeaveWarning = ref(false)
 const showSubmitConfirm = ref(false)
+const showGradingLoading = ref(false)
 const keyboardHeight = ref(0)
 
 // 题型标签
@@ -312,8 +327,15 @@ function confirmSubmit() {
 
 async function submitExam() {
   showSubmitConfirm.value = false
-  await store.submit()
-  router.push('/result')
+  showGradingLoading.value = true
+  try {
+    await store.submit()
+  } catch (err) {
+    console.error('提交失败', err)
+  } finally {
+    showGradingLoading.value = false
+    router.push('/result')
+  }
 }
 
 // ========== 输入法弹起保护 ==========
