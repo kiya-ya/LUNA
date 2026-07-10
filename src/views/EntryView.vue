@@ -77,7 +77,7 @@
                   <p>答题自动保存，断网可续考</p>
                 </div>
                 <div class="flex items-start gap-2">
-                  <p>每人仅限答题 <span class="font-bold text-white">1次</span></p>
+                  <p>每人仅限答题 <span class="font-bold text-white">1次</span>（同一试卷），新试卷发布后可重新考试</p>
                 </div>
                 <div class="flex items-start gap-2">
                   <p>同一设备仅允许 <span class="font-bold text-white">1个</span> 账号登录</p>
@@ -361,7 +361,13 @@ async function handleSubmit() {
       const checkRes = await fetch(`/api/check-eligibility?uid=${encodeURIComponent(phone)}&device_id=${encodeURIComponent(deviceId)}`)
       const checkData = await checkRes.json()
       if (!checkData.success) {
-        showToast(checkData.error || '无法进入考试', 'error')
+        if (checkData.code === 'EXAM_TAKEN') {
+          showToast(checkData.error || '您已参加过该试卷的考试', 'warning')
+        } else if (checkData.code === 'DEVICE_USED') {
+          showToast(checkData.error || '该设备已有人提交过考试', 'error')
+        } else {
+          showToast(checkData.error || '无法进入考试', 'error')
+        }
         return
       }
     } catch (e) {

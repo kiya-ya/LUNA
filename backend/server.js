@@ -686,7 +686,21 @@ const server = http.createServer((req, res) => {
       }
     }
 
-    // 2. IP 辅助检查（仅预警，不阻止进入）
+  // 2. 检查该UID是否已参加过当前发布的试卷（同试卷不能重复考，新试卷可补考）
+    const examConfigs = db.loadExamConfigs();
+    const publishedExam = examConfigs.find(c => c.status === 'published');
+    const examId = publishedExam ? publishedExam.id : (query.exam_id || 1);
+    if (uid && examId && db.checkExamTaken(uid, examId)) {
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        success: false,
+        code: 'EXAM_TAKEN',
+        error: '您已参加过该试卷的考试。同一试卷仅限答题1次，请等待管理员发布新试卷后再考。'
+      }));
+      return;
+    }
+
+    // 3. IP 辅助检查（仅预警，不阻止进入）
     let ipWarning = false;
     const ipResults = db.getRecentResultsByIp(clientIp, 24);
     if (ipResults.length >= 5) {
@@ -694,7 +708,7 @@ const server = http.createServer((req, res) => {
     }
 
     res.writeHead(200);
-    res.end(JSON.stringify({ success: true, ip_warning: ipWarning }));
+    res.end(JSON.stringify({ success: true, ip_warning: ipWarning, exam_id: examId }));
     return;
   }
 
@@ -1093,13 +1107,23 @@ const server = http.createServer((req, res) => {
 
       const percentage = maxScore > 0 ? (totalScore / maxScore * 100) : 0;
 
-      // 检查该 UID 是否已有记录：有则更新（补考），无则插入新记录
+      // 检查该 UID 是否已参加过该试卷（同试卷不能重复考，新试卷可补考）
+      if (!isAdminTest && db.checkExamTaken(userUid, examConfig.id)) {
+        res.writeHead(403);
+        res.end(JSON.stringify({
+          success: false,
+          error: '您已参加过该试卷的考试，同一试卷不能重复提交。请等待管理员发布新试卷后再考。',
+          code: 'EXAM_TAKEN'
+        }));
+        return;
+      }
+
+      // 保存结果（新记录）
       let resultId = db.nextResultId();
       const existingResults = db.getResultsByUid(userUid);
       if (existingResults && existingResults.length > 0) {
-        // 补考：使用现有记录的 ID，更新整条记录（保留设备指纹绑定关系）
-        resultId = existingResults[0].id;
-        console.log(`[SUBMIT] UID ${userUid} 补考：更新记录 #${resultId}`);
+        // 保留同一设备指纹绑定关系，但使用新记录ID（不同试卷）
+        console.log(`[SUBMIT] UID ${userUid} 新试卷考试：插入新记录 #${resultId}`);
       }
 
       // 保存结果（含设备指纹和 IP）

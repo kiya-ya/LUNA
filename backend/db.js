@@ -396,6 +396,13 @@ function getResultsByUid(uid) {
   }));
 }
 
+// 检查某UID是否已参加过某试卷
+function checkExamTaken(uid, examId) {
+  if (!uid || !examId) return false;
+  const stmt = db.prepare('SELECT id FROM exam_results WHERE user_uid = ? AND exam_id = ? LIMIT 1');
+  return !!stmt.get(uid, examId);
+}
+
 // 检查设备指纹是否已被其他 UID 使用过
 function checkDeviceUsed(deviceId, excludeUid) {
   if (!deviceId) return null;
@@ -648,6 +655,7 @@ module.exports = {
   nextResultId,
   getResultsByUid,
   checkDeviceUsed,
+  checkExamTaken,
   getRecentResultsByIp,
   // 回收站
   loadRecycleBin,
