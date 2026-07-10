@@ -1537,6 +1537,24 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // ===== AI 诊断测试（测试 API Key 是否有效）=====
+  if (pathname === '/api/ai-status' && req.method === 'GET') {
+    if (!aiService || !aiService.isAIAvailable || !aiService.isAIAvailable()) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, available: false, error: 'AI 服务未配置（缺少 SILICONFLOW_API_KEY）' }));
+      return;
+    }
+    const testPrompt = '请只回复一个字：OK';
+    aiService.callAIWithFallback(testPrompt, null, 10).then(response => {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, available: true, response: response ? response.substring(0, 100) : null }));
+    }).catch(err => {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, available: false, error: err.message }));
+    });
+    return;
+  }
+
   // 尝试 serve 前端静态文件（Docker 部署时使用）
   if (serveStatic(req, res, pathname)) {
     return;
@@ -1547,28 +1565,9 @@ const server = http.createServer((req, res) => {
   res.end(JSON.stringify({ success: false, error: 'Not found' }));
 });
 
+
 // ===== AI 诊断测试（测试 API Key 是否有效）=====
 // 这个端点挂载在 server 上，方便测试
-server.on('request', async (req, res) => {
-  const parsed = require('url').parse(req.url, true);
-  if (parsed.pathname === '/api/ai-status' && req.method === 'GET') {
-    if (!aiService || !aiService.isAIAvailable || !aiService.isAIAvailable()) {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: false, available: false, error: 'AI 服务未配置（缺少 SILICONFLOW_API_KEY）' }));
-      return;
-    }
-    // 尝试调用一次 AI
-    try {
-      const testPrompt = '请只回复一个字：OK';
-      const response = await aiService.callAIWithFallback(testPrompt, null, 10);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, available: true, response: response ? response.substring(0, 100) : null }));
-    } catch (err) {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: false, available: false, error: err.message }));
-    }
-  }
-});
 
 // 定时任务：自动发布/截止试卷（每分钟检查一次）
 function checkScheduledExams() {
