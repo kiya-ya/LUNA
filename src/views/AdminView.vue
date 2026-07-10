@@ -1019,6 +1019,7 @@ const importing = ref(false)
 // 智能生题
 const aiGenCount = ref(0)
 const aiGenFileName = ref('')
+const aiGenFile = ref(null)
 const aiGenLoading = ref(false)
 const aiGenQuestions = ref([])
 const aiGenSelectedIds = ref([])
@@ -1228,21 +1229,16 @@ function handleAiGenFile(e) {
   const file = e.target.files[0]
   if (file) {
     aiGenFileName.value = file.name
+    aiGenFile.value = file
   }
 }
 
 async function submitAiGen() {
-  if (!aiGenFileName.value) return
-  const fileInput = aiFileInput.value
-  if (!fileInput) {
-    showToast('文件输入未就绪，请刷新页面重试', 'error')
-    return
-  }
-  const file = fileInput.files[0]
-  if (!file) {
+  if (!aiGenFileName.value || !aiGenFile.value) {
     showToast('请选择文件', 'warning')
     return
   }
+  const file = aiGenFile.value
   
   aiGenLoading.value = true
   try {
