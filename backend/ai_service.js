@@ -521,5 +521,6 @@ module.exports = {
   isAIAvailable,
   gradeEssay,
   generateQuestions,
-  generateVariants
+  generateVariants,
+  updateQuestionsFromDoc
 };
