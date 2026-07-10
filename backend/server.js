@@ -961,6 +961,7 @@ const server = http.createServer((req, res) => {
 
       const results = [];
       const essayAIGrades = {};  // 保存 AI 阅卷结果
+      const pendingAIEssays = [];  // 收集需要AI异步阅卷的简答题
       let totalScore = 0;
       let maxScore = 0;
 
@@ -1016,59 +1017,51 @@ const server = http.createServer((req, res) => {
             feedback = `正确答案：${blanks.map(b => b.answer).join(' / ')}`;
           }
         } else if (qType === 'essay') {
+          // 先用本地关键词匹配快速给分（不等AI），AI阅卷异步进行
           let aiScore = null;
           let aiFeedback = '';
           let aiMatched = [];
           let aiMissed = [];
           
-          if (keyPoints && aiService && aiService.gradeEssay) {
-            try {
-              console.log(`[AI Grade] 正在评分简答题 #${qId}，满分 ${maxQScore} 分...`);
-              // 传入 maxQScore，让 AI 直接按实际满分评分
-              const aiResult = await aiService.gradeEssay(q.content, String(userAnswer), keyPoints, maxQScore);
-              if (aiResult && aiResult.score !== undefined) {
-                // AI 已按 maxQScore 评分，直接取值并限制在范围内
-                aiScore = Math.max(0, Math.min(maxQScore, aiResult.score));
-                aiFeedback = aiResult.feedback || '';
-                aiMatched = aiResult.matched_points || [];
-                aiMissed = aiResult.missed_points || [];
-                score = aiScore;
-                feedback = aiFeedback;
-                console.log(`[AI Grade] 题目 #${qId} AI评分: ${score}/${maxQScore}`);
-              }
-            } catch (aiErr) {
-              console.warn(`[AI Grade] 题目 #${qId} AI评分失败，回退到关键词匹配:`, aiErr.message);
-            }
+          // 本地关键词匹配快速给分（作为初始分数）
+          if (keyPoints) {
+            const keywords = extractKeywords(keyPoints);
+            const userText = String(userAnswer).toLowerCase();
+            const matched = keywords.filter(kw => userText.includes(kw)).length;
+            const coverage = keywords.length > 0 ? matched / keywords.length : 0;
+
+            if (coverage >= 1) score = maxQScore;
+            else if (coverage >= 0.7) score = Math.round(maxQScore * 0.8);
+            else if (coverage >= 0.4) score = Math.round(maxQScore * 0.6);
+            else if (coverage >= 0.2) score = Math.round(maxQScore * 0.4);
+            else score = Math.round(maxQScore * 0.2);
+
+            feedback = `关键词覆盖率：${Math.round(coverage * 100)}%`;
+          } else {
+            score = Math.round(maxQScore * 0.4);
+            feedback = '请等待人工审核';
           }
           
-          // 如果 AI 失败或未启用，回退到关键词匹配
-          if (aiScore === null) {
-            if (keyPoints) {
-              const keywords = extractKeywords(keyPoints);
-              const userText = String(userAnswer).toLowerCase();
-              const matched = keywords.filter(kw => userText.includes(kw)).length;
-              const coverage = keywords.length > 0 ? matched / keywords.length : 0;
-
-              if (coverage >= 1) score = maxQScore;
-              else if (coverage >= 0.7) score = Math.round(maxQScore * 0.8);
-              else if (coverage >= 0.4) score = Math.round(maxQScore * 0.6);
-              else if (coverage >= 0.2) score = Math.round(maxQScore * 0.4);
-              else score = Math.round(maxQScore * 0.2);
-
-              feedback = `关键词覆盖率：${Math.round(coverage * 100)}%`;
-            } else {
-              score = Math.round(maxQScore * 0.4);
-              feedback = '请等待人工审核';
-            }
-          }
-          
-          // 保存 AI 评分详情到结果中
+          // 保存 AI 评分详情占位（异步阅卷后会更新）
           essayAIGrades[qId] = {
             ai_score: aiScore,
             ai_feedback: aiFeedback,
             ai_matched: aiMatched,
-            ai_missed: aiMissed
+            ai_missed: aiMissed,
+            pending: true  // 标记为待AI阅卷
           };
+          
+          // 收集需要AI异步阅卷的题目（有评分要点且AI服务可用）
+          if (keyPoints && aiService && aiService.gradeEssay) {
+            pendingAIEssays.push({
+              qId: parseInt(qId),
+              content: q.content,
+              userAnswer: String(userAnswer),
+              keyPoints: keyPoints,
+              maxQScore: maxQScore,
+              resultIndex: results.length  // 记录在第几个位置，方便后续更新
+            });
+          }
         }
 
         totalScore += score;
@@ -1147,6 +1140,58 @@ const server = http.createServer((req, res) => {
           ip_warning: ipWarning
         }
       }));
+      
+      // ===== 异步AI阅卷（不阻塞前端跳转）=====
+      if (pendingAIEssays.length > 0) {
+        setImmediate(async () => {
+          console.log(`[AI Async] 开始异步阅卷 ${pendingAIEssays.length} 道简答题...`);
+          let aiTotalScore = 0;
+          let aiMaxScore = 0;
+          
+          for (const essay of pendingAIEssays) {
+            try {
+              console.log(`[AI Async] 异步评分题目 #${essay.qId}...`);
+              const aiResult = await aiService.gradeEssay(essay.content, essay.userAnswer, essay.keyPoints, essay.maxQScore);
+              if (aiResult && aiResult.score !== undefined) {
+                const finalScore = Math.max(0, Math.min(essay.maxQScore, aiResult.score));
+                
+                // 更新 results 中的分数和反馈
+                const idx = essay.resultIndex;
+                if (results[idx]) {
+                  results[idx].score = finalScore;
+                  results[idx].feedback = aiResult.feedback || '';
+                  results[idx].ai_grade = {
+                    ai_score: finalScore,
+                    ai_feedback: aiResult.feedback || '',
+                    ai_matched: aiResult.matched_points || [],
+                    ai_missed: aiResult.missed_points || [],
+                    pending: false
+                  };
+                  aiTotalScore += finalScore;
+                  aiMaxScore += essay.maxQScore;
+                  console.log(`[AI Async] 题目 #${essay.qId} AI评分完成: ${finalScore}/${essay.maxQScore}`);
+                }
+              }
+            } catch (aiErr) {
+              console.warn(`[AI Async] 题目 #${essay.qId} AI异步评分失败:`, aiErr.message);
+            }
+          }
+          
+          // 重新计算总分并更新数据库
+          const newTotalScore = results.reduce((sum, r) => sum + r.score, 0);
+          const newMaxScore = results.reduce((sum, r) => sum + r.max_score, 0);
+          const newPercentage = newMaxScore > 0 ? Math.round((newTotalScore / newMaxScore * 100) * 10) / 10 : 0;
+          
+          const updatedRecord = {
+            ...resultRecord,
+            total_score: newTotalScore,
+            percentage: newPercentage,
+            details: results
+          };
+          db.saveResult(updatedRecord);
+          console.log(`[AI Async] 异步阅卷完成，总分更新: ${newTotalScore}/${newMaxScore} (${newPercentage}%)`);
+        });
+      }
     });
     return;
   }
