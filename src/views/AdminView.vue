@@ -544,6 +544,31 @@
           </div>
         </div>
         
+        <!-- 题库变体生成 -->
+        <div class="border-t-2 border-gray-100 pt-6 mb-6">
+          <h3 class="text-md font-bold text-gray-800 mb-2">🔄 题库变体生成</h3>
+          <p class="text-sm text-gray-500 mb-4">选择现有题目，AI将基于原题生成相似但选项/答案不同的变体题，用于扩充题库</p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="md:col-span-2">
+              <label class="block text-sm font-bold text-gray-700 mb-2">选择原题</label>
+              <select v-model="aiGenVariantSourceId" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white text-sm">
+                <option value="">请选择一道题目</option>
+                <option v-for="q in questions" :key="q.id" :value="q.id">【{{ typeLabel(q.type) }}】{{ q.title.length > 40 ? q.title.substring(0, 40) + '...' : q.title }}</option>
+              </select>
+            </div>
+            <div class="flex items-end gap-2">
+              <div class="flex-1">
+                <label class="block text-sm font-bold text-gray-700 mb-2">变体数量</label>
+                <input v-model.number="aiGenVariantCount" type="number" min="1" max="5" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm text-center">
+              </div>
+              <button @click="submitAiGenVariants" :disabled="!aiGenVariantSourceId || aiGenVariantLoading" class="h-11 px-4 bg-gradient-to-r from-secondary to-primary text-white font-bold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 text-sm whitespace-nowrap">
+                {{ aiGenVariantLoading ? '...' : '🔄 生成' }}
+              </button>
+            </div>
+          </div>
+        </div>
+        
         <!-- 解析结果展示 -->
         <div v-if="aiGenQuestions.length > 0 || aiGenTextPreview" class="space-y-4">
           <!-- 原文预览 -->
@@ -971,6 +996,11 @@ const aiGenSingle = ref(5)
 const aiGenMultiple = ref(3)
 const aiGenFill = ref(3)
 const aiGenEssay = ref(2)
+const aiGenVariantSourceId = ref('')
+const aiGenVariantCount = ref(3)
+const aiGenVariantLoading = ref(false)
+const lastGeneratedFile = ref('')
+const lastGeneratedTime = ref(0)
 const showAiGenNewBank = ref(false)
 const aiGenNewBankName = ref('')
 const aiFileInput = ref(null)
@@ -1170,6 +1200,16 @@ async function submitAiGen() {
     showToast('请选择文件', 'warning')
     return
   }
+  
+  // 禁止重复生成：同一文件5分钟内不能重复生成
+  const now = Date.now()
+  const cooldown = 5 * 60 * 1000 // 5分钟
+  if (lastGeneratedFile.value === aiGenFileName.value && (now - lastGeneratedTime.value) < cooldown) {
+    const remain = Math.ceil((cooldown - (now - lastGeneratedTime.value)) / 1000)
+    showToast(`该文件已生成过，请等待 ${remain} 秒后再试`, 'warning')
+    return
+  }
+  
   const file = aiGenFile.value
   
   aiGenLoading.value = true
@@ -1193,7 +1233,9 @@ async function submitAiGen() {
       if (aiGenQuestions.value.length === 0) {
         showToast('文档解析完成，但未提取到有效题目。请检查原文预览', 'warning')
       } else {
-        showToast(`生成成功！共 ${aiGenQuestions.value.length} 道题目`, 'success')
+        lastGeneratedFile.value = aiGenFileName.value
+      lastGeneratedTime.value = Date.now()
+      showToast(`生成成功！共 ${aiGenQuestions.value.length} 道题目`, 'success')
       }
     } else {
       showToast(data.error || '生成失败', 'error')
@@ -1203,6 +1245,65 @@ async function submitAiGen() {
     showToast('生成失败，请检查文件格式', 'error')
   } finally {
     aiGenLoading.value = false
+  }
+}
+
+// 基于现有题目生成变体题
+async function submitAiGenVariants() {
+  const sourceId = aiGenVariantSourceId.value
+  if (!sourceId) {
+    showToast('请先选择一道原题', 'warning')
+    return
+  }
+  
+  const sourceQ = questions.value.find(q => q.id === parseInt(sourceId))
+  if (!sourceQ) {
+    showToast('原题不存在，请重新选择', 'error')
+    return
+  }
+  
+  aiGenVariantLoading.value = true
+  try {
+    const payload = {
+      question: {
+        id: sourceQ.id,
+        type: sourceQ.type,
+        content: sourceQ.title,
+        options: sourceQ.options || [],
+        answer: sourceQ.answer || '',
+        key_points: sourceQ.keyPoints || '',
+        blanks: sourceQ.blanks || []
+      },
+      variant_count: aiGenVariantCount.value
+    }
+    
+    const res = await fetch('/api/generate-variants', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    const data = await res.json()
+    if (data.success) {
+      const variants = data.data.variants || []
+      if (variants.length === 0) {
+        showToast('未能生成变体题，请重试', 'warning')
+      } else {
+        aiGenQuestions.value = [...aiGenQuestions.value, ...variants]
+        const startIdx = aiGenQuestions.value.length - variants.length
+        for (let i = 0; i < variants.length; i++) {
+          aiGenSelectedIds.value.push(startIdx + i)
+        }
+        aiGenTextPreview.value = ''
+        showToast(`变体生成成功！共 ${variants.length} 道变体题`, 'success')
+      }
+    } else {
+      showToast(data.error || '变体生成失败', 'error')
+    }
+  } catch (err) {
+    console.error('变体生成失败', err)
+    showToast('变体生成失败，请检查网络或AI配置', 'error')
+  } finally {
+    aiGenVariantLoading.value = false
   }
 }
 

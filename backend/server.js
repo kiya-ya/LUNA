@@ -1330,6 +1330,51 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // ===== 基于现有题目生成变体题（相似题替换选项）=====
+  if (pathname === '/api/generate-variants' && req.method === 'POST') {
+    parseBody(req, async (err, body) => {
+      if (err) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }));
+        return;
+      }
+      
+      const question = body.question;
+      const variantCount = parseInt(body.variant_count || '3');
+      
+      if (!question || !question.content) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: '缺少原题数据' }));
+        return;
+      }
+      
+      if (!aiService || !aiService.generateVariants) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ success: false, error: 'AI 服务未初始化，请配置 SILICONFLOW_API_KEY' }));
+        return;
+      }
+      
+      try {
+        const variants = await aiService.generateVariants(question, variantCount);
+        if (!variants || variants.length === 0) {
+          res.writeHead(500);
+          res.end(JSON.stringify({ success: false, error: 'AI 生成变体题失败' }));
+          return;
+        }
+        
+        res.writeHead(200);
+        res.end(JSON.stringify({
+          success: true,
+          data: { variants: variants }
+        }));
+      } catch (aiErr) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ success: false, error: 'AI 生成变体题失败: ' + aiErr.message }));
+      }
+    });
+    return;
+  }
+
   // 获取所有结果（支持 exam_id 筛选）
   if (pathname === '/api/results' && req.method === 'GET') {
     let results = db.loadResults().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
