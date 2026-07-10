@@ -1231,7 +1231,10 @@ function handleAiGenFile(e) {
     aiGenFileName.value = file.name
     aiGenFile.value = file
   }
+  // 重置 input value，允许重复选择同一文件
+  if (e.target) e.target.value = ''
 }
+
 
 async function submitAiGen() {
   if (!aiGenFileName.value || !aiGenFile.value) {
@@ -1271,7 +1274,7 @@ async function submitAiGen() {
     }
   } catch (err) {
     console.error('智能生题失败', err)
-    showToast('生成失败，请检查文件格式', 'error')
+    showToast('网络请求失败，请检查后端服务是否运行中', 'error')
   } finally {
     aiGenLoading.value = false
   }

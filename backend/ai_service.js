@@ -14,6 +14,79 @@ function isAIAvailable() {
 // 调用 AI 大模型
 async function callAI(prompt, model = MODEL_PRIMARY, systemPrompt = null, maxTokens = 1024) {
   if (!API_KEY) {
+    throw new Error('AI_API_KEY_MISSING');
+  }
+
+  const defaultSystem = '你是一个富有同理心的考试阅卷助手。你明白考生可能紧张、表达不够完美，但用心作答值得鼓励。评分时请兼顾：答案准确性、回答字数（至少要有一定篇幅）、答题态度（是否认真对待）。对于态度认真、字数充足但要点匹配不全的答案，请给予人情分。严格按照满分范围评分，不要超出。';
+  
+  const requestBody = {
+    model: model,
+    messages: [
+      { role: 'system', content: systemPrompt || defaultSystem },
+      { role: 'user', content: prompt }
+    ],
+    temperature: 0.3,
+    max_tokens: maxTokens
+  };
+
+  try {
+    const res = await fetch(`${BASE_URL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      // 根据状态码返回不同的错误类型
+      if (res.status === 401) {
+        throw new Error('AI_API_KEY_INVALID: API Key 无效或已过期，请检查 SILICONFLOW_API_KEY 配置');
+      } else if (res.status === 429) {
+        throw new Error('AI_RATE_LIMIT: API 调用过于频繁，请稍等几秒后再试');
+      } else if (res.status >= 500) {
+        throw new Error(`AI_SERVER_ERROR: 模型服务暂时不可用 (${res.status})，请稍后重试`);
+      } else {
+        throw new Error(`AI_API_ERROR: HTTP ${res.status}: ${errorText.substring(0, 200)}`);
+      }
+    }
+
+    const data = await res.json();
+    if (data.choices && data.choices[0] && data.choices[0].message) {
+      return data.choices[0].message.content;
+    }
+    throw new Error('AI_RESPONSE_INVALID: AI 返回格式错误');
+  } catch (err) {
+    console.error(`[AI] ${model} 调用失败:`, err.message);
+    throw err;
+  }
+}
+
+// 回退调用（带重试）
+async function callAIWithFallback(prompt, systemPrompt = null, maxTokens = 1024) {
+  try {
+    console.log(`[AI] 尝试使用 ${MODEL_PRIMARY}...`);
+    return await callAI(prompt, MODEL_PRIMARY, systemPrompt, maxTokens);
+  } catch (err) {
+    // 如果是限流错误，等待 3 秒后重试一次
+    if (err.message.includes('AI_RATE_LIMIT')) {
+      console.log('[AI] 触发速率限制，等待 3 秒后重试...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      try {
+        return await callAI(prompt, MODEL_PRIMARY, systemPrompt, maxTokens);
+      } catch (retryErr) {
+        console.log(`[AI] ${MODEL_PRIMARY} 重试失败:`, retryErr.message);
+      }
+    }
+    // 尝试回退模型
+    console.log(`[AI] ${MODEL_PRIMARY} 失败，回退到 ${MODEL_FALLBACK}...`);
+    return await callAI(prompt, MODEL_FALLBACK, systemPrompt, maxTokens);
+  }
+}
+async function callAI(prompt, model = MODEL_PRIMARY, systemPrompt = null, maxTokens = 1024) {
+  if (!API_KEY) {
     throw new Error('AI API Key 未配置');
   }
 
@@ -342,10 +415,10 @@ ${autoDetectCount ? '5. 自动判断模式下，请合理分配各题型数量�
     });
   } catch (err) {
     console.error('[AI Gen] 生成题目失败:', err.message);
-    return [];
+    // 抛出错误让上层处理，而不是静默返回空数组
+    throw new Error('AI题目生成失败: ' + err.message);
   }
 }
-
 // 基于现有题目生成变体题（相似题替换选项）
 async function generateVariants(question, variantCount = 3) {
   if (!isAIAvailable()) {

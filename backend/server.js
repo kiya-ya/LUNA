@@ -1315,8 +1315,21 @@ const server = http.createServer((req, res) => {
               }));
             }).catch(aiErr => {
               console.error('[AI Gen] AI 生成失败:', aiErr.message);
+              // 提取用户友好的错误信息
+              let userError = 'AI 生成题目失败，请稍后重试';
+              if (aiErr.message.includes('AI_RATE_LIMIT')) {
+                userError = 'AI 接口调用过于频繁，请等待 5-10 秒后重试';
+              } else if (aiErr.message.includes('AI_API_KEY_INVALID')) {
+                userError = 'AI API Key 无效或已过期，请联系管理员检查配置';
+              } else if (aiErr.message.includes('AI_SERVER_ERROR')) {
+                userError = 'AI 服务暂时不可用，请稍后重试';
+              } else if (aiErr.message.includes('AI_API_KEY_MISSING')) {
+                userError = 'AI 服务未配置，请联系管理员设置 SILICONFLOW_API_KEY';
+              } else if (aiErr.message.includes('AI_RESPONSE_INVALID')) {
+                userError = 'AI 返回格式异常，请尝试更换文档或调整题目数量后重试';
+              }
               res.writeHead(500);
-              res.end(JSON.stringify({ success: false, error: 'AI 生成题目失败: ' + aiErr.message }));
+              res.end(JSON.stringify({ success: false, error: userError }));
             });
             
           } catch (e) {
