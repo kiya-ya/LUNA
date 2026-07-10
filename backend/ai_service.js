@@ -385,6 +385,11 @@ ${autoDetectCount ? '5. 自动判断模式下，请合理分配各题型数量�
 
     console.log(`[AI Gen] AI 返回 ${questions.length} 道题目`);
 
+    // 过滤掉 null/undefined/非对象元素，防止前端渲染崩溃
+    questions = questions.filter(q => q && typeof q === 'object');
+
+    // 标准化题目格式，确保所有字段都存在
+
     // 标准化题目格式，确保所有字段都存在
     return questions.map((q, idx) => {
       const type = q.type || 'single';
@@ -489,6 +494,11 @@ ${questionDesc}
     const variants = parsed.variants || [];
 
     console.log(`[AI Variant] AI 返回 ${variants.length} 道变体题`);
+
+    // 过滤掉 null/undefined/非对象元素
+    variants = variants.filter(q => q && typeof q === 'object');
+
+    // 标准化题目格式
 
     // 标准化题目格式
     return variants.map((q, idx) => {
