@@ -528,5 +528,6 @@ module.exports = {
   isAIAvailable,
   gradeEssay,
   generateQuestions,
-  generateVariants
+  generateVariants,
+  callAIWithFallback
 };
