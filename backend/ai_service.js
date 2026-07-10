@@ -17,7 +17,7 @@ async function callAI(prompt, model = MODEL_PRIMARY, systemPrompt = null, maxTok
     throw new Error('AI API Key 未配置');
   }
 
-  const defaultSystem = '你是一个专业的考试阅卷助手。请根据题目、用户答案和评分要点，给出公正的评分。严格按照满分范围评分，不要超出。';
+  const defaultSystem = '你是一个富有同理心的考试阅卷助手。你明白考生可能紧张、表达不够完美，但用心作答值得鼓励。评分时请兼顾：答案准确性、回答字数（至少要有一定篇幅）、答题态度（是否认真对待）。对于态度认真、字数充足但要点匹配不全的答案，请给予人情分。严格按照满分范围评分，不要超出。';
   
   const requestBody = {
     model: model,
@@ -57,14 +57,6 @@ async function callAI(prompt, model = MODEL_PRIMARY, systemPrompt = null, maxTok
 
 // 回退调用
 async function callAIWithFallback(prompt, systemPrompt = null, maxTokens = 1024) {
-  try {
-    console.log(`[AI] 尝试使用 ${MODEL_PRIMARY}...`);
-    return await callAI(prompt, MODEL_PRIMARY, systemPrompt, maxTokens);
-  } catch (err) {
-    console.log(`[AI] ${MODEL_PRIMARY} 失败，回退到 ${MODEL_FALLBACK}...`);
-    return await callAI(prompt, MODEL_FALLBACK, systemPrompt, maxTokens);
-  }
-}
   try {
     console.log(`[AI] 尝试使用 ${MODEL_PRIMARY}...`);
     return await callAI(prompt, MODEL_PRIMARY, systemPrompt, maxTokens);
@@ -121,14 +113,18 @@ async function gradeEssay(question, userAnswer, keyPoints, maxScore = 10) {
 
 注意：
 1. 请严格按照满分${maxScore}分来评分，不要给出超出范围的分值
-2. 评分标准请宽松一些：只要用户答案提及了部分评分要点，就应该给较高的分数（匹配要点越多分数越高）
-3. 匹配到大部分要点（约60%以上）即可给满分或接近满分
-4. 匹配到部分要点（约30%-60%）可以给70%-85%的分数
-5. 即使只匹配到少量要点，也至少给30%-50%的分数，不要轻易给0分
-6. 鼓励性评分：只要用户认真作答且有相关内容的，最低给分不低于满分的30%`;
-1. 请严格按照满分${maxScore}分来评分，不要给出超出范围的分值
-2. 如果用户答案完全未提及评分要点，请给 0 分
-3. 如果用户答案部分正确，请给出适当分数（不要非 0 即满分）`;
+2. 评分维度（综合判断，不要只看要点匹配）：
+   - 要点匹配度（最重要）：用户答案是否提到了评分要点
+   - 回答字数：用户是否认真写了足够多的内容（字数多说明态度认真）
+   - 答题态度：是否围绕题目展开，有没有敷衍（如只写"不知道""不会"等）
+3. 给分规则（非常宽松，鼓励为主）：
+   - 要点匹配60%以上：给满分或接近满分（90%-100%）
+   - 要点匹配30%-60%：给70%-90%的分数
+   - 要点匹配较少但字数充足、态度认真：给50%-70%的人情分
+   - 要点完全没匹配但字数较多且态度认真：给30%-50%的人情分（辛苦分）
+   - 完全空白、或只写"不会""不知道"等敷衍答案：给0分
+4. 鼓励性评分：只要用户认真作答、围绕题目写了内容，即使要点没完全匹配，也至少给满分的30%-40%
+5. 反馈要温和，指出遗漏要点的同时也要肯定用户的努力`;
 
   try {
     const response = await callAIWithFallback(prompt);
@@ -161,7 +157,7 @@ async function gradeEssay(question, userAnswer, keyPoints, maxScore = 10) {
   }
 }
 
-// 本地简答题评分（关键词匹配）
+// 本地简答题评分（关键词匹配 + 人情分）
 function localGradeEssay(userAnswer, keyPoints, maxScore) {
   if (!userAnswer || !keyPoints) {
     return {
@@ -177,23 +173,53 @@ function localGradeEssay(userAnswer, keyPoints, maxScore) {
   const matched = keywords.filter(kw => userText.includes(kw));
   const missed = keywords.filter(kw => !userText.includes(kw));
   const coverage = keywords.length > 0 ? matched.length / keywords.length : 0;
-
+  
+  // 计算回答字数（用于人情分）
+  const userAnswerLen = String(userAnswer).trim().length;
+  const hasContent = userAnswerLen > 20; // 超过20字认为有认真作答
+  const isPerfunctory = /不知道|不会|不懂|没学过|不清楚|不会写|略|无/.test(userAnswer);
+  
+  // 基础分（根据要点匹配）
+  let baseScore;
+  if (coverage >= 1) baseScore = maxScore;
+  else if (coverage >= 0.6) baseScore = Math.round(maxScore * 0.9);
+  else if (coverage >= 0.4) baseScore = Math.round(maxScore * 0.75);
+  else if (coverage >= 0.2) baseScore = Math.round(maxScore * 0.6);
+  else if (coverage > 0) baseScore = Math.round(maxScore * 0.45);
+  else baseScore = 0;
+  
+  // 人情分加成（字数 + 态度）
+  let bonusScore = 0;
+  if (!isPerfunctory && hasContent) {
+    if (coverage === 0) {
+      // 完全没匹配到要点，但字数充足且态度认真 → 给辛苦分 30%-45%
+      bonusScore = Math.round(maxScore * 0.4);
+    } else if (coverage < 0.2) {
+      // 匹配很少，但有认真写 → 额外加 10%-15%
+      bonusScore = Math.round(maxScore * 0.15);
+    }
+  }
+  
+  // 敷衍答案直接0分
   let score;
-  if (coverage >= 1) score = maxScore;
-  else if (coverage >= 0.6) score = Math.round(maxScore * 0.9);
-  else if (coverage >= 0.4) score = Math.round(maxScore * 0.8);
-  else if (coverage >= 0.2) score = Math.round(maxScore * 0.7);
-  else if (coverage > 0) score = Math.round(maxScore * 0.5);
-  else score = 0;
-  if (coverage >= 1) score = maxScore;
-  else if (coverage >= 0.7) score = Math.round(maxScore * 0.8);
-  else if (coverage >= 0.4) score = Math.round(maxScore * 0.6);
-  else if (coverage >= 0.2) score = Math.round(maxScore * 0.4);
-  else score = Math.round(maxScore * 0.2);
+  if (isPerfunctory && coverage === 0) {
+    score = 0;
+  } else {
+    score = Math.min(maxScore, baseScore + bonusScore);
+  }
+  
+  // 构建反馈
+  let feedbackMsg = `要点匹配${Math.round(coverage * 100)}%`;
+  if (bonusScore > 0) {
+    feedbackMsg += `，含人情分（${userAnswerLen}字）`;
+  }
+  if (isPerfunctory) {
+    feedbackMsg = '答案过于敷衍';
+  }
 
   return {
     score,
-    feedback: `关键词覆盖率：${Math.round(coverage * 100)}%`,
+    feedback: feedbackMsg,
     matched_points: matched,
     missed_points: missed
   };
