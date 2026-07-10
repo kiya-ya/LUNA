@@ -296,7 +296,7 @@ async function generateQuestions(text, singleCount = 5, multipleCount = 3, fillC
     });
   } catch (err) {
     console.error('[AI Gen] 生成题目失败:', err.message);
-    return [];
+    throw new Error('AI题目生成失败: ' + err.message);
   }
 }
 
