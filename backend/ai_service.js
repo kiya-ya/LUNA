@@ -30,14 +30,22 @@ async function callAI(prompt, model = MODEL_PRIMARY, systemPrompt = null, maxTok
   };
 
   try {
+    const bodyStr = JSON.stringify(requestBody);
+    console.log(`[AI] 请求体大小: ${Buffer.byteLength(bodyStr, 'utf8')} bytes, prompt长度: ${prompt.length} 字符`);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60秒超时
+    
     const res = await fetch(`${BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${API_KEY}`
       },
-      body: JSON.stringify(requestBody)
+      body: bodyStr,
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
 
     if (!res.ok) {
       const errorText = await res.text();
@@ -50,7 +58,14 @@ async function callAI(prompt, model = MODEL_PRIMARY, systemPrompt = null, maxTok
     }
     throw new Error('AI 返回格式错误');
   } catch (err) {
+    if (err.name === 'AbortError') {
+      console.error(`[AI] ${model} 调用失败: 请求超时(60秒)`);
+      throw new Error('请求超时(60秒)');
+    }
     console.error(`[AI] ${model} 调用失败:`, err.message);
+    if (err.cause) {
+      console.error(`[AI] ${model} 失败原因:`, err.cause.message || err.cause);
+    }
     throw err;
   }
 }
@@ -403,7 +418,7 @@ async function updateQuestionsFromDoc(text, existingQuestions) {
   }
 
   // 限制现有题目数量，避免 token 过多
-  const limitedQuestions = existingQuestions.slice(0, 20);
+  const limitedQuestions = existingQuestions.slice(0, 10);
   
   const systemPrompt = '你是一位资深的教育培训专家，擅长根据最新材料评估和更新考试题库。请严格按照用户要求的格式输出 JSON。';
 
@@ -411,47 +426,45 @@ async function updateQuestionsFromDoc(text, existingQuestions) {
   let questionsDesc = '';
   for (let i = 0; i < limitedQuestions.length; i++) {
     const q = limitedQuestions[i];
-    questionsDesc += `\n[题目${i + 1}] ID:${q.id} 类型:${q.type}\n题干:${q.title}\n`;
+    questionsDesc += `\n[题${i + 1}]ID:${q.id}类型:${q.type}\n题干:${q.title}\n`;
     if (q.options && q.options.length > 0) {
       questionsDesc += `选项:${q.options.join(' | ')}\n`;
     }
     questionsDesc += `答案:${q.answer || '-'}\n`;
   }
 
-  const prompt = `请根据以下最新材料，评估现有题库中的题目是否需要更新，并找出可以新增的题目。
+  const prompt = `根据最新材料评估现有题库，判断哪些题目需要更新，哪些知识点需要新增题目。
 
-## 最新材料（前3000字）
-${text.substring(0, 3000)}
+## 最新材料（前1500字）
+${text.substring(0, 1500)}
 
-## 现有题库题目（共${limitedQuestions.length}题）
+## 现有题库（共${limitedQuestions.length}题）
 ${questionsDesc}
 
-## 任务要求
-1. **更新题目**：找出题干表述不准确、选项内容过时、或答案与材料不一致的题目，给出修正版本
-2. **新增题目**：找出材料中有但题库中未覆盖的重要知识点，生成新题目
-3. 只返回确实有变更的题目，如果现有题目完全正确，不要返回
+## 任务
+1. 更新：题干表述过时、选项错误、答案与材料不一致的题目
+2. 新增：材料中有但题库未覆盖的重要知识点
+3. 只返回确实有变更的题目
 
-## 输出格式
-请严格按照以下 JSON 格式返回，不要添加任何其他文字说明：
-
+## 输出格式（严格JSON，不要其他文字）
 {
   "updated": [
     {
       "original_id": 1,
       "type": "single",
       "content": "更新后的题干",
-      "options": ["A. 选项1", "B. 选项2", "C. 选项3", "D. 选项4"],
+      "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
       "answer": "A",
       "key_points": "解析",
       "blanks": [],
-      "update_reason": "题干表述与材料第3段不一致，已修正"
+      "update_reason": "原因"
     }
   ],
   "added": [
     {
       "type": "single",
-      "content": "新增题目题干",
-      "options": ["A. 选项1", "B. 选项2", "C. 选项3", "D. 选项4"],
+      "content": "新题干",
+      "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
       "answer": "A",
       "key_points": "解析",
       "blanks": []
@@ -459,16 +472,15 @@ ${questionsDesc}
   ]
 }
 
-## 注意事项
-1. updated 数组中的 original_id 必须是现有题目的ID
-2. 如果没有需要更新的题目，updated 为空数组
-3. 如果没有需要新增的题目，added 为空数组
-4. 选择题必须有4个选项
-5. 确保 JSON 格式正确，可以被 JSON.parse 解析`;
+注意事项：
+- updated 中的 original_id 必须是现有题目ID
+- 无需更新/新增时返回空数组
+- 选择题必须有4个选项
+- 确保JSON可解析`;
 
   try {
     console.log('[AI Update] 开始智能更新题库...');
-    console.log('[AI Update] 文档字符数:', text.length, '现有题目数:', limitedQuestions.length);
+    console.log('[AI Update] 文档字符数:', text.length, '现有题目数:', limitedQuestions.length, 'prompt估算字符数:', prompt.length);
     
     const response = await callAIWithFallback(prompt, systemPrompt, 2048);
     console.log('[AI Update] 原始响应前500字:', response.substring(0, 500));

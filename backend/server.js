@@ -1445,10 +1445,10 @@ const server = http.createServer((req, res) => {
             const existingQuestions = bankQuestions.map(q => ({
               id: q.id,
               type: q.type,
-              title: q.title,
+              title: q.content || '',
               options: q.options || [],
               answer: q.answer || '',
-              keyPoints: q.keyPoints || '',
+              keyPoints: q.key_points || '',
               blanks: q.blanks || []
             }));
             
