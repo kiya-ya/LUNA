@@ -11,8 +11,8 @@ function isAIAvailable() {
   return !!API_KEY;
 }
 
-// 调用 AI 大模型
-async function callAI(prompt, model = MODEL_PRIMARY, systemPrompt = null, maxTokens = 1024) {
+// 调用 AI 大模型（带重试机制）
+async function callAI(prompt, model = MODEL_PRIMARY, systemPrompt = null, maxTokens = 1024, retryCount = 3) {
   if (!API_KEY) {
     throw new Error('AI API Key 未配置');
   }
@@ -29,45 +29,71 @@ async function callAI(prompt, model = MODEL_PRIMARY, systemPrompt = null, maxTok
     max_tokens: maxTokens
   };
 
-  try {
-    const bodyStr = JSON.stringify(requestBody);
-    console.log(`[AI] 请求体大小: ${Buffer.byteLength(bodyStr, 'utf8')} bytes, prompt长度: ${prompt.length} 字符`);
-    
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60秒超时
-    
-    const res = await fetch(`${BASE_URL}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      },
-      body: bodyStr,
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
+  let lastError = null;
+  for (let attempt = 1; attempt <= retryCount; attempt++) {
+    try {
+      const bodyStr = JSON.stringify(requestBody);
+      console.log(`[AI] 第${attempt}/${retryCount}次尝试，请求体大小: ${Buffer.byteLength(bodyStr, 'utf8')} bytes, prompt长度: ${prompt.length} 字符`);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 90000); // 90秒超时
+      
+      const res = await fetch(`${BASE_URL}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_KEY}`
+        },
+        body: bodyStr,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`HTTP ${res.status}: ${errorText}`);
-    }
+      if (!res.ok) {
+        const errorText = await res.text();
+        // 根据 HTTP 状态码分类错误
+        if (res.status === 429) {
+          throw new Error('硅基流动API限流(429)：请求频率过高，请稍后再试');
+        } else if (res.status === 401) {
+          throw new Error('硅基流动API密钥无效(401)：请检查SILICONFLOW_API_KEY是否过期或配额已用完');
+        } else if (res.status === 503) {
+          throw new Error('硅基流动服务暂时不可用(503)：平台负载高，请稍后重试');
+        } else if (res.status >= 500) {
+          throw new Error(`硅基流动服务器错误(${res.status})：平台内部错误，请稍后重试`);
+        }
+        throw new Error(`HTTP ${res.status}: ${errorText}`);
+      }
 
-    const data = await res.json();
-    if (data.choices && data.choices[0] && data.choices[0].message) {
-      return data.choices[0].message.content;
+      const data = await res.json();
+      if (data.choices && data.choices[0] && data.choices[0].message) {
+        console.log(`[AI] ${model} 调用成功`);
+        return data.choices[0].message.content;
+      }
+      throw new Error('AI 返回格式错误');
+    } catch (err) {
+      lastError = err;
+      if (err.name === 'AbortError') {
+        console.error(`[AI] ${model} 第${attempt}次尝试超时(90秒)`);
+        lastError = new Error('硅基流动API响应超时(90秒)：平台处理慢，请稍后重试');
+      } else {
+        console.error(`[AI] ${model} 第${attempt}次尝试失败:`, err.message);
+      }
+      
+      // 如果是 401，直接抛出不重试（Key 问题不会通过重试解决）
+      if (err.message && err.message.includes('401')) {
+        throw err;
+      }
+      
+      // 不是最后一次尝试，等待后重试（指数退避）
+      if (attempt < retryCount) {
+        const delay = attempt * 2000; // 2秒、4秒
+        console.log(`[AI] 等待 ${delay}ms 后重试...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
-    throw new Error('AI 返回格式错误');
-  } catch (err) {
-    if (err.name === 'AbortError') {
-      console.error(`[AI] ${model} 调用失败: 请求超时(60秒)`);
-      throw new Error('请求超时(60秒)');
-    }
-    console.error(`[AI] ${model} 调用失败:`, err.message);
-    if (err.cause) {
-      console.error(`[AI] ${model} 失败原因:`, err.cause.message || err.cause);
-    }
-    throw err;
   }
+  
+  throw lastError || new Error('AI 调用失败，已重试耗尽');
 }
 
 // 回退调用

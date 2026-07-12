@@ -130,6 +130,13 @@ function parseMultipart(req, callback) {
 
 // 查找 Python 可执行文件
 function findPython(callback) {
+  // Linux/Docker 环境直接返回 python3
+  if (process.platform !== 'win32') {
+    callback(null, 'python3');
+    return;
+  }
+  
+  // 以下保持原有 Windows 逻辑不变
   const kimiPython = 'C:/Users/Administrator/AppData/Roaming/kimi-desktop/daimon-share/daimon/runtime/python/.venv/Scripts/python.exe';
   if (fs.existsSync(kimiPython)) {
     execFile(kimiPython, ['-c', 'import docx; import openpyxl; print("OK")'], { timeout: 5000, windowsHide: true }, (err) => {
@@ -147,6 +154,7 @@ function findPython(callback) {
 function fallbackFind(callback) {
   const candidates = [
     'python', 'python3', 'py',
+    '/usr/bin/python3', '/usr/local/bin/python3',
     'C:/Users/Administrator/AppData/Local/Programs/Python/Python312/python.exe',
     'C:/Users/Administrator/AppData/Local/Programs/Python/Python311/python.exe',
     'C:/Users/Administrator/AppData/Local/Programs/Python/Python310/python.exe',

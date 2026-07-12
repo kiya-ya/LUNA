@@ -6,6 +6,7 @@ WORKDIR /app
 
 # 安装 Python 3 和依赖（用于文档解析和智能生题）
 RUN apt-get update && apt-get install -y python3 python3-pip && \
+    ln -sf /usr/bin/python3 /usr/bin/python && \
     pip3 install python-docx openpyxl --break-system-packages && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 

@@ -3,14 +3,14 @@ name: exam-system
 services:
   exam:
     build: .
+    image: exam-system:v1.6.0
     ports:
       - "5000:5000"
     volumes:
-      # 持久化 SQLite 数据库（防止容器重启数据丢失）
       - ./data.db:/app/data.db
+      - ./backend/server.js:/app/backend/server.js   # ← 加这行
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      # AI 阅卷/生题 API Key（硅基流动）
-      # 方式1：从宿主机环境变量自动读取（推荐）
       - SILICONFLOW_API_KEY
+      - PYTHON_PATH=/usr/bin/python3
