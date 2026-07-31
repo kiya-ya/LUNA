@@ -139,6 +139,9 @@
               <button @click="toggleEditMode" class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-primary-light hover:text-primary font-bold transition-colors flex items-center gap-2">
                 <span>✏️</span> {{ editMode ? '退出修改' : '修改题目' }}
               </button>
+              <button @click="exportQuestionsToExcel(); showEditMenu = false" class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-primary-light hover:text-primary font-bold transition-colors flex items-center gap-2">
+                <span>📥</span> 导出题库
+              </button>
             </div>
           </div>
         </div>
@@ -209,7 +212,7 @@
                   <span class="px-2 py-1 rounded-lg text-xs font-bold whitespace-nowrap" :class="typeClass(q.type)">{{ typeLabel(q.type) }}</span>
                 </td>
                 <td class="py-3 px-3">
-                  <div class="max-w-xs truncate" :title="q.title">{{ q.title }}</div>
+                  <div class="max-w-xs truncate cursor-pointer hover:text-primary transition-colors" :title="q.title" @click="openQuestionPreview(q)">{{ q.title }}</div>
                 </td>
                 <td class="py-3 px-3">
                   <div class="max-w-xs truncate text-gray-600" :title="q.options?.join(' / ') || '-'">
@@ -900,6 +903,50 @@ D. 选项4" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:b
       </div>
     </div>
   </div>
+
+  <!-- 题目预览弹窗 -->
+  <div v-if="showQuestionPreviewModal" class="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" @click.self="showQuestionPreviewModal = false">
+    <div class="glass-modal relative z-10 p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-gray-900">👁️ 题目预览</h3>
+        <button @click="showQuestionPreviewModal = false" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500">✕</button>
+      </div>
+      <div v-if="currentPreviewQuestion" class="space-y-4">
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-1 rounded-lg text-xs font-bold" :class="typeClass(currentPreviewQuestion.type)">{{ typeLabel(currentPreviewQuestion.type) }}</span>
+          <span class="text-xs text-gray-500">ID: {{ currentPreviewQuestion.id }}</span>
+          <span class="text-xs px-2 py-0.5 rounded-lg" :class="currentPreviewQuestion.enabled !== false ? 'bg-success/10 text-success' : 'bg-gray-100 text-gray-500'">{{ currentPreviewQuestion.enabled !== false ? '已启用' : '已禁用' }}</span>
+        </div>
+        <div class="p-4 bg-gray-50 rounded-2xl">
+          <p class="text-sm font-bold text-gray-700 mb-2">题干</p>
+          <p class="text-sm text-gray-800 leading-relaxed">{{ currentPreviewQuestion.title }}</p>
+        </div>
+        <div v-if="currentPreviewQuestion.options && currentPreviewQuestion.options.length > 0" class="p-4 bg-gray-50 rounded-2xl">
+          <p class="text-sm font-bold text-gray-700 mb-2">选项</p>
+          <div class="space-y-2">
+            <div v-for="opt in currentPreviewQuestion.options" :key="opt" class="text-sm text-gray-700">{{ opt }}</div>
+          </div>
+        </div>
+        <div v-if="currentPreviewQuestion.type === 'fill' && currentPreviewQuestion.blanks && currentPreviewQuestion.blanks.length > 0" class="p-4 bg-gray-50 rounded-2xl">
+          <p class="text-sm font-bold text-gray-700 mb-2">填空答案</p>
+          <div class="space-y-1">
+            <div v-for="b in currentPreviewQuestion.blanks" :key="b.blank_no" class="text-sm text-gray-700">空{{ b.blank_no }}：{{ b.answer }}</div>
+          </div>
+        </div>
+        <div class="p-4 bg-primary/5 rounded-2xl">
+          <p class="text-sm font-bold text-gray-700 mb-2">答案</p>
+          <p class="text-sm text-success font-bold">{{ currentPreviewQuestion.type === 'fill' ? currentPreviewQuestion.blanks?.map(b => b.answer).join(' / ') : currentPreviewQuestion.answer || '-' }}</p>
+        </div>
+        <div v-if="currentPreviewQuestion.keyPoints" class="p-4 bg-success/5 rounded-2xl">
+          <p class="text-sm font-bold text-gray-700 mb-2">解析</p>
+          <p class="text-sm text-gray-700 leading-relaxed">{{ currentPreviewQuestion.keyPoints }}</p>
+        </div>
+      </div>
+      <div class="flex gap-3 mt-4">
+        <button @click="showQuestionPreviewModal = false" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">关闭</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -939,6 +986,10 @@ const recycleBinSettings = ref({ retention_days: 30 })
 // 答题明细弹窗
 const showDetailModal = ref(false)
 const detailResult = ref(null)
+
+// 题目预览
+const showQuestionPreviewModal = ref(false)
+const currentPreviewQuestion = ref(null)
 
 // 成绩批量删除
 const selectedResultIds = ref([])
@@ -2108,6 +2159,51 @@ async function exportToExcel() {
   } catch (err) {
     console.error('导出失败', err)
     showToast('导出失败，请重试', 'error')
+  }
+}
+
+// 打开题目预览
+function openQuestionPreview(q) {
+  currentPreviewQuestion.value = q
+  showQuestionPreviewModal.value = true
+}
+
+// 导出题库为 Excel
+async function exportQuestionsToExcel() {
+  if (questions.value.length === 0) {
+    showToast('题库中没有题目', 'warning')
+    return
+  }
+  try {
+    await loadXLSXScript()
+    const typeMap = { single: '单选题', multiple: '多选题', fill: '填空题', essay: '简答题' }
+    const data = questions.value.map((q, i) => {
+      let options = '-'
+      let answer = q.answer || '-'
+      if (q.type === 'single' || q.type === 'multiple') {
+        options = (q.options || []).join(' / ')
+      } else if (q.type === 'fill') {
+        answer = (q.blanks || []).map(b => b.answer || '').join(' / ')
+      }
+      return {
+        '序号': i + 1,
+        '题型': typeMap[q.type] || q.type,
+        '题干': q.title,
+        '选项': options,
+        '答案': answer,
+        '解析': q.keyPoints || '-',
+        '状态': q.enabled !== false ? '启用' : '禁用'
+      }
+    })
+    const ws = window.XLSX.utils.json_to_sheet(data)
+    const wb = window.XLSX.utils.book_new()
+    window.XLSX.utils.book_append_sheet(wb, ws, '题库')
+    const bankName = questionBanks.value.find(b => b.id === currentBankId.value)?.name || '题库'
+    window.XLSX.writeFile(wb, `${bankName}_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    showToast('题库导出成功', 'success')
+  } catch (err) {
+    console.error('导出题库失败', err)
+    showToast('导出题库失败', 'error')
   }
 }
 

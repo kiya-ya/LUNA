@@ -3,7 +3,7 @@ name: exam-system
 services:
   exam:
     build: .
-    image: exam-system:v1.6.0
+    image: exam-system:v1.6.1
     ports:
       - "5000:5000"
     volumes:
