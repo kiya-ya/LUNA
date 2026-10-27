@@ -86,18 +86,23 @@
             </Transition>
           </div>
 
-          <!-- 开始考试按钮 -->
-          <button 
-            type="submit" 
+          <!-- 开始学习按钮（先进学习首页，必修课完成后解锁考试） -->
+          <button
+            type="submit"
             class="w-full h-[56px] bg-gradient-to-r from-primary to-secondary text-white text-lg font-bold rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-3 group"
           >
-            <span class="text-xl group-hover:rotate-12 transition-transform duration-300">🚀</span>
-            <span>开始考试</span>
+            <span class="text-xl group-hover:rotate-12 transition-transform duration-300">📚</span>
+            <span>进入学习</span>
             <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
             </svg>
           </button>
         </form>
+
+        <!-- 隐藏入口：直接考试（不关联课包的旧流程） -->
+        <div class="mt-3 text-center">
+          <button type="button" @click="handleDirectExam" class="text-xs text-white/40 hover:text-white/70 font-medium transition-colors">直接考试</button>
+        </div>
 
         <!-- 查询成绩按钮 -->
         <div class="mt-6 pt-5 border-t border-white/20">
@@ -343,16 +348,32 @@ function formatTime(iso) {
 async function handleSubmit() {
   const name = form.value.name.trim()
   const phone = form.value.phone.trim()
-  
+
   if (!name || !phone) {
     showToast('请填写完整信息', 'warning')
     return
   }
-  
+
+  // 保存身份信息，进入学习首页（课程完成后在学习页解锁考试）
+  store.setUserInfo(name, phone)
+  localStorage.setItem('learn_user', JSON.stringify({ name, uid: phone }))
+  router.push('/learn')
+}
+
+// 隐藏入口：直接考试（保留原有考试流程，含资格检查）
+async function handleDirectExam() {
+  const name = form.value.name.trim()
+  const phone = form.value.phone.trim()
+
+  if (!name || !phone) {
+    showToast('请先填写昵称和UID', 'warning')
+    return
+  }
+
   // 初始化设备指纹
   store.initDeviceId()
   const deviceId = store.deviceId
-  
+
   // 管理员测试模式：跳过反作弊检查
   const isAdminTest = localStorage.getItem('exam_admin_test') === '1'
   if (!isAdminTest) {
@@ -376,15 +397,16 @@ async function handleSubmit() {
       return
     }
   }
-  
+
   store.setUserInfo(name, phone)
+  localStorage.setItem('learn_user', JSON.stringify({ name, uid: phone }))
   await store.fetchExamConfig()
-  
+
   if (store.loadError) {
     showToast(store.loadError, 'error')
     return
   }
-  
+
   router.push('/exam')
 }
 </script>

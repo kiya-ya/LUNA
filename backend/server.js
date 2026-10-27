@@ -6,7 +6,7 @@ const { exec, execFile } = require('child_process');
 const db = require('./db.js');
 const aiService = require('./ai_service.js');
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // CORS 响应头
 function setCorsHeaders(res) {
@@ -228,6 +228,214 @@ function parseBody(req, callback) {
       console.error('parseBody callback error:', cbErr);
     }
   });
+}
+
+// ============ 课程学习模块 ============
+
+const UPLOADS_DIR = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+const PASS_SCORE = 60; // 及格线
+
+// 课包考试闸门：返回 { gated, allowed, code, error, ... }
+// gated=false 表示该试卷未关联课包，走原有流程
+function checkPackageGate(uid, examConfigId) {
+  const pkg = db.getCoursePackageByExamConfig(examConfigId);
+  if (!pkg || pkg.enabled === false) return { gated: false };
+
+  const latest = db.getLatestResult(uid, pkg.exam_config_id);
+
+  // 已通过 → 禁止重复考
+  if (latest && latest.percentage >= PASS_SCORE) {
+    return {
+      gated: true, allowed: false, code: 'ALREADY_PASSED',
+      percentage: latest.percentage, total_score: latest.total_score, max_score: latest.max_score,
+      error: `你已通过该考试（${latest.percentage}分），无需重复参加`
+    };
+  }
+
+  // 晋级链：培训师课包需先通过姐妹团考试
+  if (pkg.key === 'trainer') {
+    const sister = db.loadCoursePackages().find(p => p.key === 'sister');
+    if (sister && sister.exam_config_id) {
+      const sisterResult = db.getLatestResult(uid, sister.exam_config_id);
+      if (!sisterResult || sisterResult.percentage < PASS_SCORE) {
+        return { gated: true, allowed: false, code: 'CHAIN_LOCKED', error: '需先通过姐妹团考试，才能参加培训师考试' };
+      }
+    }
+  }
+
+  // 挂科冷却期
+  if (latest && latest.percentage < PASS_SCORE) {
+    const cooldownMs = (pkg.cooldown_days || 0) * 24 * 60 * 60 * 1000;
+    const elapsed = Date.now() - new Date(latest.created_at).getTime();
+    if (cooldownMs > 0 && elapsed < cooldownMs) {
+      const remaining = Math.ceil((cooldownMs - elapsed) / 1000);
+      return {
+        gated: true, allowed: false, code: 'COOLDOWN',
+        remaining_seconds: remaining, percentage: latest.percentage,
+        error: `上次考试未及格，冷却期中，请 ${formatDuration(remaining)} 后再试`
+      };
+    }
+  }
+
+  // 必修课必须全部完成
+  const courses = db.loadCourses(pkg.id, true);
+  const progress = db.getProgressByUid(uid);
+  const doneSet = new Set(progress.filter(p => p.completed === 1).map(p => p.course_id));
+  const remainingCourses = courses.filter(c => !doneSet.has(c.id));
+  if (remainingCourses.length > 0) {
+    return {
+      gated: true, allowed: false, code: 'COURSES_INCOMPLETE',
+      remaining_courses: remainingCourses.length, total_courses: courses.length,
+      error: `请先完成全部必修课程（还差 ${remainingCourses.length} 门）`
+    };
+  }
+
+  return { gated: true, allowed: true };
+}
+
+function formatDuration(seconds) {
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (d > 0) return `${d} 天 ${h} 小时`;
+  if (h > 0) return `${h} 小时 ${m} 分钟`;
+  return `${m} 分钟`;
+}
+
+// 组装某 uid 在某课包下的学习状态（学习首页 / 管理端共用）
+function buildPackageState(pkg, uid) {
+  const courses = db.loadCourses(pkg.id, true);
+  const progressRows = uid ? db.getProgressByUid(uid) : [];
+  const progressMap = new Map(progressRows.map(p => [p.course_id, p]));
+
+  const courseList = courses.map(c => {
+    const p = progressMap.get(c.id);
+    return {
+      id: c.id,
+      package_id: c.package_id,
+      title: c.title,
+      type: c.type,
+      video_path: c.video_path,
+      duration_minutes: c.duration_minutes,
+      sort: c.sort,
+      watched_seconds: p ? p.watched_seconds : 0,
+      progress_percent: p ? p.progress_percent : 0,
+      completed: p ? p.completed === 1 : false,
+      completed_at: p ? p.completed_at : null
+    };
+  });
+
+  const completedCount = courseList.filter(c => c.completed).length;
+  const allCompleted = completedCount === courseList.length;
+
+  // 考试状态
+  let examStatus;
+  if (!pkg.exam_config_id) {
+    examStatus = { status: 'no_exam' };
+  } else {
+    const latest = uid ? db.getLatestResult(uid, pkg.exam_config_id) : null;
+    if (latest && latest.percentage >= PASS_SCORE) {
+      examStatus = { status: 'passed', percentage: latest.percentage, total_score: latest.total_score, max_score: latest.max_score, exam_name: latest.exam_name };
+    } else if (pkg.key === 'trainer') {
+      // 晋级链检查
+      const sister = db.loadCoursePackages().find(p => p.key === 'sister');
+      let chainLocked = false;
+      if (sister && sister.exam_config_id && uid) {
+        const sr = db.getLatestResult(uid, sister.exam_config_id);
+        chainLocked = !sr || sr.percentage < PASS_SCORE;
+      } else if (!uid) {
+        chainLocked = true;
+      }
+      if (chainLocked) {
+        examStatus = { status: 'locked', chain_locked: true, reason: '需先通过姐妹团考试' };
+      } else {
+        examStatus = buildLockStatus(pkg, latest, allCompleted, courseList.length, completedCount);
+      }
+    } else {
+      examStatus = buildLockStatus(pkg, latest, allCompleted, courseList.length, completedCount);
+    }
+  }
+
+  return {
+    id: pkg.id,
+    key: pkg.key,
+    name: pkg.name,
+    description: pkg.description,
+    cooldown_days: pkg.cooldown_days,
+    exam_config_id: pkg.exam_config_id,
+    sort: pkg.sort,
+    courses: courseList,
+    total_courses: courseList.length,
+    completed_courses: completedCount,
+    all_completed: allCompleted,
+    chain_locked: pkg.key === 'trainer' ? Boolean(examStatus.chain_locked) : false,
+    exam_status: examStatus
+  };
+}
+
+function buildLockStatus(pkg, latest, allCompleted, totalCourses, completedCount) {
+  if (latest && latest.percentage < PASS_SCORE) {
+    const cooldownMs = (pkg.cooldown_days || 0) * 24 * 60 * 60 * 1000;
+    const elapsed = Date.now() - new Date(latest.created_at).getTime();
+    if (cooldownMs > 0 && elapsed < cooldownMs) {
+      return {
+        status: 'cooldown',
+        remaining_seconds: Math.ceil((cooldownMs - elapsed) / 1000),
+        cooldown_days: pkg.cooldown_days,
+        last_percentage: latest.percentage
+      };
+    }
+  }
+  if (!allCompleted) {
+    return { status: 'locked', remaining_courses: totalCourses - completedCount, total_courses: totalCourses };
+  }
+  return { status: 'ready', exam_config_id: pkg.exam_config_id };
+}
+
+// 视频/上传文件静态服务（支持 Range，用于视频拖动）
+function serveUpload(req, res, pathname) {
+  const filename = path.basename(decodeURIComponent(pathname.replace(/^\/uploads\//, '')));
+  const filePath = path.join(UPLOADS_DIR, filename);
+  if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+    res.writeHead(404);
+    res.end(JSON.stringify({ success: false, error: 'File not found' }));
+    return;
+  }
+  const stat = fs.statSync(filePath);
+  const ext = path.extname(filePath).toLowerCase();
+  const mimeTypes = {
+    '.mp4': 'video/mp4', '.webm': 'video/webm', '.mov': 'video/quicktime',
+    '.m4v': 'video/mp4', '.mkv': 'video/x-matroska', '.avi': 'video/x-msvideo',
+    '.mp3': 'audio/mpeg', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif'
+  };
+  const mime = mimeTypes[ext] || 'application/octet-stream';
+  const range = req.headers.range;
+  if (range) {
+    const m = range.match(/bytes=(\d*)-(\d*)/);
+    let start = m && m[1] ? parseInt(m[1]) : 0;
+    let end = m && m[2] ? parseInt(m[2]) : stat.size - 1;
+    if (isNaN(start) || start < 0) start = 0;
+    if (isNaN(end) || end >= stat.size) end = stat.size - 1;
+    if (start > end) start = end;
+    res.writeHead(206, {
+      'Content-Range': `bytes ${start}-${end}/${stat.size}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': end - start + 1,
+      'Content-Type': mime
+    });
+    fs.createReadStream(filePath, { start, end }).pipe(res);
+  } else {
+    res.writeHead(200, {
+      'Content-Length': stat.size,
+      'Content-Type': mime,
+      'Accept-Ranges': 'bytes'
+    });
+    fs.createReadStream(filePath).pipe(res);
+  }
 }
 
 // 路由处理
@@ -698,14 +906,30 @@ const server = http.createServer((req, res) => {
     const examConfigs = db.loadExamConfigs();
     const publishedExam = examConfigs.find(c => c.status === 'published');
     const examId = publishedExam ? publishedExam.id : (query.exam_id || 1);
-    if (uid && examId && db.checkExamTaken(uid, examId)) {
-      res.writeHead(200);
-      res.end(JSON.stringify({
-        success: false,
-        code: 'EXAM_TAKEN',
-        error: '您已参加过该试卷的考试。同一试卷仅限答题1次，请等待管理员发布新试卷后再考。'
-      }));
-      return;
+    if (uid && examId) {
+      // 课包关联试卷走课程解锁闸门（含冷却重考规则），未关联的保持原有"同试卷仅1次"规则
+      const gate = checkPackageGate(uid, examId);
+      if (gate.gated) {
+        if (!gate.allowed) {
+          res.writeHead(200);
+          res.end(JSON.stringify({
+            success: false,
+            code: gate.code,
+            error: gate.error,
+            remaining_seconds: gate.remaining_seconds || 0,
+            remaining_courses: gate.remaining_courses || 0
+          }));
+          return;
+        }
+      } else if (db.checkExamTaken(uid, examId)) {
+        res.writeHead(200);
+        res.end(JSON.stringify({
+          success: false,
+          code: 'EXAM_TAKEN',
+          error: '您已参加过该试卷的考试。同一试卷仅限答题1次，请等待管理员发布新试卷后再考。'
+        }));
+        return;
+      }
     }
 
     // 3. IP 辅助检查（仅预警，不阻止进入）
@@ -758,6 +982,24 @@ const server = http.createServer((req, res) => {
       }
     }
 
+    // 课包考试闸门：关联课包的试卷需完成必修课、过冷却期、过晋级链
+    const gateUid = query.uid || '';
+    const gateAdminMode = query.admin_mode === '1' || query.admin_mode === 'true';
+    if (gateUid && !gateAdminMode) {
+      const gate = checkPackageGate(gateUid, config.id);
+      if (gate.gated && !gate.allowed) {
+        res.writeHead(403);
+        res.end(JSON.stringify({
+          success: false,
+          code: gate.code,
+          error: gate.error,
+          remaining_seconds: gate.remaining_seconds || 0,
+          remaining_courses: gate.remaining_courses || 0,
+          percentage: gate.percentage
+        }));
+        return;
+      }
+    }
     // 根据配置关联的题库加载题目
     const bankId = config.bank_id || 1;
     const data = db.loadQuestionsByBank(bankId);
@@ -1116,14 +1358,29 @@ const server = http.createServer((req, res) => {
       const percentage = maxScore > 0 ? (totalScore / maxScore * 100) : 0;
 
       // 检查该 UID 是否已参加过该试卷（同试卷不能重复考，新试卷可补考）
-      if (!isAdminTest && db.checkExamTaken(userUid, examConfig.id)) {
-        res.writeHead(403);
-        res.end(JSON.stringify({
-          success: false,
-          error: '您已参加过该试卷的考试，同一试卷不能重复提交。请等待管理员发布新试卷后再考。',
-          code: 'EXAM_TAKEN'
-        }));
-        return;
+      // 课包关联试卷走课程解锁闸门（挂科冷却后可重考），未关联的保持原规则
+      if (!isAdminTest) {
+        const gate = checkPackageGate(userUid, examConfig.id);
+        if (gate.gated) {
+          if (!gate.allowed) {
+            res.writeHead(403);
+            res.end(JSON.stringify({
+              success: false,
+              error: gate.error,
+              code: gate.code,
+              remaining_seconds: gate.remaining_seconds || 0
+            }));
+            return;
+          }
+        } else if (db.checkExamTaken(userUid, examConfig.id)) {
+          res.writeHead(403);
+          res.end(JSON.stringify({
+            success: false,
+            error: '您已参加过该试卷的考试，同一试卷不能重复提交。请等待管理员发布新试卷后再考。',
+            code: 'EXAM_TAKEN'
+          }));
+          return;
+        }
       }
 
       // 保存结果（新记录）
@@ -1629,6 +1886,361 @@ const server = http.createServer((req, res) => {
     let results = db.getResultsByUid(uid);
     res.writeHead(200);
     res.end(JSON.stringify({ success: true, data: results }));
+    return;
+  }
+
+  // ===== 课程学习模块 API =====
+
+  // 学习首页数据：两个课包 + 进度 + 考试状态 + 成绩记录
+  if (pathname === '/api/learn/home' && req.method === 'GET') {
+    const uid = query.uid || '';
+    const packages = db.loadCoursePackages(true).map(p => buildPackageState(p, uid));
+    const myResults = uid ? db.getResultsByUid(uid).map(r => ({
+      id: r.id,
+      exam_id: r.exam_id,
+      exam_name: r.exam_name,
+      total_score: r.total_score,
+      max_score: r.max_score,
+      percentage: r.percentage,
+      passed: r.percentage >= PASS_SCORE,
+      created_at: r.created_at
+    })) : [];
+    res.writeHead(200);
+    res.end(JSON.stringify({ success: true, data: { packages, results: myResults } }));
+    return;
+  }
+
+  // 图文课心跳：仅页面可见时前端发送，累计停留时长，达标自动完成
+  if (pathname === '/api/learn/heartbeat' && req.method === 'POST') {
+    parseBody(req, (err, body) => {
+      if (err) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }));
+        return;
+      }
+      const uid = body.uid || '';
+      const courseId = parseInt(body.course_id);
+      const seconds = Number(body.seconds) || 0;
+      if (!uid || !courseId || seconds <= 0 || seconds > 60) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: 'uid、course_id、seconds(0-60) 必填' }));
+        return;
+      }
+      const course = db.getCourseById(courseId);
+      if (!course || course.enabled === false) {
+        res.writeHead(404);
+        res.end(JSON.stringify({ success: false, error: 'Course not found' }));
+        return;
+      }
+      const requiredSeconds = (course.duration_minutes || 0) * 60;
+      const progress = db.addHeartbeat(uid, body.nickname || '', courseId, seconds, requiredSeconds);
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        success: true,
+        data: {
+          course_id: courseId,
+          watched_seconds: progress.watched_seconds,
+          progress_percent: progress.progress_percent,
+          completed: progress.completed === 1,
+          required_seconds: requiredSeconds
+        }
+      }));
+    });
+    return;
+  }
+
+  // 视频课进度上报：按真实播放时长累计，>=90% 自动完成
+  if (pathname === '/api/learn/video-progress' && req.method === 'POST') {
+    parseBody(req, (err, body) => {
+      if (err) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }));
+        return;
+      }
+      const uid = body.uid || '';
+      const courseId = parseInt(body.course_id);
+      if (!uid || !courseId) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: 'uid、course_id 必填' }));
+        return;
+      }
+      const course = db.getCourseById(courseId);
+      if (!course || course.enabled === false) {
+        res.writeHead(404);
+        res.end(JSON.stringify({ success: false, error: 'Course not found' }));
+        return;
+      }
+      const progress = db.saveVideoProgress(
+        uid, body.nickname || '', courseId,
+        Number(body.watched_seconds) || 0,
+        Number(body.progress_percent) || 0
+      );
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        success: true,
+        data: {
+          course_id: courseId,
+          watched_seconds: progress.watched_seconds,
+          progress_percent: progress.progress_percent,
+          completed: progress.completed === 1
+        }
+      }));
+    });
+    return;
+  }
+
+  // ===== 管理端：课程包 CRUD =====
+
+  if (pathname === '/api/admin/packages' && req.method === 'GET') {
+    const packages = db.loadCoursePackages().map(p => ({
+      ...p,
+      courses: db.loadCourses(p.id)
+    }));
+    res.writeHead(200);
+    res.end(JSON.stringify({ success: true, data: packages }));
+    return;
+  }
+
+  if (pathname === '/api/admin/packages' && req.method === 'POST') {
+    parseBody(req, (err, body) => {
+      if (err) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }));
+        return;
+      }
+      const pkg = {
+        key: body.key || null,
+        name: body.name || '未命名课包',
+        description: body.description || '',
+        cooldown_days: typeof body.cooldown_days === 'number' ? body.cooldown_days : 1,
+        exam_config_id: body.exam_config_id || null,
+        sort: body.sort || 0,
+        enabled: body.enabled !== false
+      };
+      const id = db.saveCoursePackage(pkg);
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, data: db.getCoursePackageById(id) }));
+    });
+    return;
+  }
+
+  const packageMatch = pathname.match(/^\/api\/admin\/packages\/(\d+)$/);
+  if (packageMatch && req.method === 'PUT') {
+    const pkgId = parseInt(packageMatch[1]);
+    parseBody(req, (err, body) => {
+      if (err) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }));
+        return;
+      }
+      const existing = db.getCoursePackageById(pkgId);
+      if (!existing) {
+        res.writeHead(404);
+        res.end(JSON.stringify({ success: false, error: 'Package not found' }));
+        return;
+      }
+      const updated = { ...existing, ...body, id: pkgId, key: existing.key };
+      db.saveCoursePackage(updated);
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, data: db.getCoursePackageById(pkgId) }));
+    });
+    return;
+  }
+
+  if (packageMatch && req.method === 'DELETE') {
+    const pkgId = parseInt(packageMatch[1]);
+    const existing = db.getCoursePackageById(pkgId);
+    if (!existing) {
+      res.writeHead(404);
+      res.end(JSON.stringify({ success: false, error: 'Package not found' }));
+      return;
+    }
+    db.deleteCoursePackage(pkgId); // 级联删除课程与进度
+    res.writeHead(200);
+    res.end(JSON.stringify({ success: true }));
+    return;
+  }
+
+  // ===== 管理端：课程 CRUD =====
+
+  if (pathname === '/api/admin/courses' && req.method === 'GET') {
+    const packageId = query.package_id ? parseInt(query.package_id) : null;
+    res.writeHead(200);
+    res.end(JSON.stringify({ success: true, data: db.loadCourses(packageId) }));
+    return;
+  }
+
+  if (pathname === '/api/admin/courses' && req.method === 'POST') {
+    parseBody(req, (err, body) => {
+      if (err) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }));
+        return;
+      }
+      const packageId = parseInt(body.package_id);
+      if (!packageId || !db.getCoursePackageById(packageId)) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: 'package_id 无效' }));
+        return;
+      }
+      const course = {
+        package_id: packageId,
+        title: body.title || '未命名课程',
+        type: body.type === 'article' ? 'article' : 'video',
+        video_path: body.video_path || '',
+        content: body.content || '',
+        duration_minutes: typeof body.duration_minutes === 'number' ? body.duration_minutes : 0,
+        sort: body.sort || 0,
+        enabled: body.enabled !== false
+      };
+      const id = db.saveCourse(course);
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, data: db.getCourseById(id) }));
+    });
+    return;
+  }
+
+  const courseMatch = pathname.match(/^\/api\/admin\/courses\/(\d+)$/);
+  if (courseMatch && req.method === 'PUT') {
+    const courseId = parseInt(courseMatch[1]);
+    parseBody(req, (err, body) => {
+      if (err) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }));
+        return;
+      }
+      const existing = db.getCourseById(courseId);
+      if (!existing) {
+        res.writeHead(404);
+        res.end(JSON.stringify({ success: false, error: 'Course not found' }));
+        return;
+      }
+      const updated = { ...existing, ...body, id: courseId, package_id: existing.package_id };
+      db.saveCourse(updated);
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, data: db.getCourseById(courseId) }));
+    });
+    return;
+  }
+
+  if (courseMatch && req.method === 'DELETE') {
+    const courseId = parseInt(courseMatch[1]);
+    if (!db.getCourseById(courseId)) {
+      res.writeHead(404);
+      res.end(JSON.stringify({ success: false, error: 'Course not found' }));
+      return;
+    }
+    db.deleteCourse(courseId);
+    res.writeHead(200);
+    res.end(JSON.stringify({ success: true }));
+    return;
+  }
+
+  // ===== 管理端：视频上传（原生 http，raw body 直传）=====
+  if (pathname === '/api/admin/upload-video' && req.method === 'POST') {
+    const MAX_SIZE = 500 * 1024 * 1024; // 500MB
+    const rawName = decodeURIComponent(req.headers['x-filename'] || 'video.mp4');
+    const ext = path.extname(rawName).toLowerCase();
+    const allowedExts = ['.mp4', '.webm', '.mov', '.m4v', '.mkv', '.avi'];
+    if (!allowedExts.includes(ext)) {
+      res.writeHead(400);
+      res.end(JSON.stringify({ success: false, error: '仅支持视频文件：' + allowedExts.join(' ') }));
+      req.resume();
+      return;
+    }
+    const contentLength = parseInt(req.headers['content-length'] || '0');
+    if (contentLength > MAX_SIZE) {
+      res.writeHead(413);
+      res.end(JSON.stringify({ success: false, error: '文件超过 500MB 限制' }));
+      req.resume();
+      return;
+    }
+    const safeName = Date.now() + '_' + path.basename(rawName).replace(/[^\w.\-]/g, '_');
+    const filePath = path.join(UPLOADS_DIR, safeName);
+    const ws = fs.createWriteStream(filePath);
+    let size = 0;
+    let rejected = false;
+    req.on('data', chunk => {
+      size += chunk.length;
+      if (size > MAX_SIZE && !rejected) {
+        rejected = true;
+        req.unpipe(ws);
+        req.destroy();
+        ws.destroy();
+        fs.unlink(filePath, () => {});
+        res.writeHead(413);
+        res.end(JSON.stringify({ success: false, error: '文件超过 500MB 限制' }));
+      }
+    });
+    req.pipe(ws);
+    ws.on('finish', () => {
+      if (rejected || res.writableEnded) return;
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, data: { path: '/uploads/' + safeName, size } }));
+    });
+    ws.on('error', (e) => {
+      if (res.writableEnded) return;
+      res.writeHead(500);
+      res.end(JSON.stringify({ success: false, error: '写入文件失败: ' + e.message }));
+    });
+    req.on('error', () => { ws.destroy(); fs.unlink(filePath, () => {}); });
+    return;
+  }
+
+  // ===== 管理端：学员学习进度 =====
+  if (pathname === '/api/admin/learn-progress' && req.method === 'GET') {
+    const filterUid = query.uid || '';
+    const filterPackageId = query.package_id ? parseInt(query.package_id) : null;
+    const packages = db.loadCoursePackages().filter(p => !filterPackageId || p.id === filterPackageId);
+    const allProgress = db.getAllProgress();
+
+    // 按 uid 聚合学员
+    const studentMap = new Map();
+    for (const row of allProgress) {
+      if (filterUid && row.uid !== filterUid) continue;
+      if (!studentMap.has(row.uid)) {
+        studentMap.set(row.uid, { uid: row.uid, nickname: row.nickname || '', packages: [] });
+      }
+    }
+    // 有成绩但无学习记录的 uid 也纳入（按 uid 查询时）
+    if (filterUid && !studentMap.has(filterUid)) {
+      studentMap.set(filterUid, { uid: filterUid, nickname: '', packages: [] });
+    }
+
+    for (const student of studentMap.values()) {
+      student.packages = packages.map(p => {
+        const state = buildPackageState(p, student.uid);
+        if (!student.nickname) {
+          const row = allProgress.find(r => r.uid === student.uid && r.nickname);
+          if (row) student.nickname = row.nickname;
+        }
+        return {
+          package_id: p.id,
+          package_key: p.key,
+          package_name: p.name,
+          total_courses: state.total_courses,
+          completed_courses: state.completed_courses,
+          all_completed: state.all_completed,
+          exam_status: state.exam_status,
+          courses: state.courses.map(c => ({
+            course_id: c.id,
+            title: c.title,
+            type: c.type,
+            progress_percent: c.progress_percent,
+            completed: c.completed
+          }))
+        };
+      });
+    }
+
+    res.writeHead(200);
+    res.end(JSON.stringify({ success: true, data: { students: [...studentMap.values()] } }));
+    return;
+  }
+
+  // 上传的视频文件（支持 Range 拖动播放）
+  if (pathname.startsWith('/uploads/')) {
+    serveUpload(req, res, pathname);
     return;
   }
 

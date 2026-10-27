@@ -46,7 +46,7 @@
       </div>
 
       <!-- 功能卡片 -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
         <div @click="currentTab = 'questions'" class="glass-card relative z-10 p-6 cursor-pointer hover:shadow-lg transition-all border-2" :class="currentTab === 'questions' ? 'border-primary' : 'border-transparent'">
           <div class="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center mb-4">
             <span class="text-2xl">📚</span>
@@ -85,6 +85,14 @@
           </div>
           <h3 class="text-lg font-bold text-gray-900 mb-1">智能生题</h3>
           <p class="text-sm text-gray-500">上传文档，AI生成题目</p>
+        </div>
+
+        <div @click="currentTab = 'learn'" class="glass-card relative z-10 p-6 cursor-pointer hover:shadow-lg transition-all border-2" :class="currentTab === 'learn' ? 'border-primary' : 'border-transparent'">
+          <div class="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center mb-4">
+            <span class="text-2xl">🎬</span>
+          </div>
+          <h3 class="text-lg font-bold text-gray-900 mb-1">课程管理</h3>
+          <p class="text-sm text-gray-500">课包、课程、学员进度</p>
         </div>
       </div>
 
@@ -745,6 +753,166 @@ D. 选项4" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:b
           </div>
         </div>
       </div>
+
+      <!-- 课程管理内容 -->
+      <div v-if="currentTab === 'learn'" class="space-y-6">
+        <!-- 课包列表 -->
+        <div class="glass-card relative z-10 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-gray-900">🎬 课程包管理</h2>
+            <button @click="loadPackages" class="text-sm px-3 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all">🔄 刷新</button>
+          </div>
+          <div class="space-y-4">
+            <div v-for="pkg in packages" :key="pkg.id" class="p-4 rounded-2xl border-2 transition-all" :class="learnSelectedPkgId === pkg.id ? 'border-primary bg-primary/5' : 'border-gray-100 bg-white/60'">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="text-xl">{{ pkg.key === 'sister' ? '👭' : pkg.key === 'trainer' ? '🎓' : '📦' }}</span>
+                  <span class="font-bold text-gray-900">{{ pkg.name }}</span>
+                  <span class="text-xs text-gray-400">({{ (pkg.courses || []).length }} 门课程)</span>
+                  <span class="text-xs px-2 py-0.5 rounded-full font-bold" :class="pkg.enabled ? 'bg-success/10 text-success' : 'bg-gray-100 text-gray-400'">{{ pkg.enabled ? '启用' : '停用' }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button @click="learnSelectedPkgId = pkg.id; resetCourseForm()" class="text-xs px-3 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all">管理课程</button>
+                  <button @click="deletePackage(pkg)" class="text-xs px-3 py-1.5 bg-danger/10 text-danger font-bold rounded-lg hover:bg-danger/20 transition-all">删除</button>
+                </div>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div>
+                  <label class="block text-xs font-bold text-gray-500 mb-1">课包名称</label>
+                  <input v-model="pkg.name" type="text" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-500 mb-1">挂科冷却天数</label>
+                  <input v-model.number="pkg.cooldown_days" type="number" min="0" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-500 mb-1">关联试卷配置</label>
+                  <select v-model="pkg.exam_config_id" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all bg-white">
+                    <option :value="null">（不关联，无需考试）</option>
+                    <option v-for="cfg in examConfigs" :key="cfg.id" :value="cfg.id">{{ cfg.name }} ({{ cfg.status }})</option>
+                  </select>
+                </div>
+                <div class="flex items-end gap-2">
+                  <label class="flex items-center gap-1.5 text-sm font-bold text-gray-600 pb-2">
+                    <input v-model="pkg.enabled" type="checkbox" class="w-4 h-4 accent-primary"> 启用
+                  </label>
+                  <button @click="savePackage(pkg)" class="flex-1 h-9 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-all">保存</button>
+                </div>
+              </div>
+              <div class="mt-2">
+                <input v-model="pkg.description" type="text" placeholder="课包描述" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all">
+              </div>
+            </div>
+            <div v-if="packages.length === 0" class="text-center text-gray-400 py-6 font-bold">暂无课包</div>
+          </div>
+        </div>
+
+        <!-- 课程 CRUD -->
+        <div v-if="learnSelectedPkg" class="glass-card relative z-10 p-6">
+          <h2 class="text-lg font-bold text-gray-900 mb-4">📚 「{{ learnSelectedPkg.name }}」课程列表</h2>
+
+          <!-- 课程表单 -->
+          <div class="p-4 rounded-2xl bg-gray-50 border-2 border-gray-100 mb-5">
+            <h3 class="text-sm font-bold text-gray-700 mb-3">{{ editingCourseId ? '✏️ 编辑课程' : '➕ 新增课程' }}</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+              <input v-model="courseForm.title" type="text" placeholder="课程标题" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all">
+              <select v-model="courseForm.type" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all bg-white">
+                <option value="video">🎬 视频课</option>
+                <option value="article">📖 图文课</option>
+              </select>
+              <input v-model.number="courseForm.duration_minutes" type="number" min="0" :placeholder="courseForm.type === 'article' ? '要求停留分钟数（必填）' : '视频时长（分钟，可选）'" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all">
+            </div>
+
+            <!-- 视频课：上传 -->
+            <div v-if="courseForm.type === 'video'" class="mb-3">
+              <div class="flex items-center gap-3">
+                <button @click="$refs.videoFileInput.click()" :disabled="videoUploading" class="px-4 py-2 bg-secondary/10 text-secondary font-bold rounded-xl text-sm hover:bg-secondary/20 transition-all disabled:opacity-50">
+                  {{ videoUploading ? '上传中 ' + videoUploadPercent + '%' : '⬆️ 上传视频' }}
+                </button>
+                <input ref="videoFileInput" type="file" accept="video/*,.mp4,.webm,.mov,.mkv,.m4v,.avi" class="hidden" @change="handleVideoUpload">
+                <span v-if="courseForm.video_path" class="text-xs text-success font-bold truncate">✅ {{ courseForm.video_path }}</span>
+                <span v-else class="text-xs text-gray-400">未上传视频（500MB 以内）</span>
+              </div>
+              <video v-if="courseForm.video_path" :src="courseForm.video_path" controls class="mt-2 w-full max-w-md rounded-xl bg-black max-h-48"></video>
+            </div>
+
+            <!-- 图文课：内容 -->
+            <div v-if="courseForm.type === 'article'" class="mb-3">
+              <textarea v-model="courseForm.content" rows="6" placeholder="图文内容（支持 HTML，如 <h2>标题</h2><p>正文</p>）" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all resize-y font-mono"></textarea>
+            </div>
+
+            <div class="flex gap-2">
+              <button v-if="editingCourseId" @click="resetCourseForm" class="px-5 h-10 bg-gray-100 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-200 transition-all">取消编辑</button>
+              <button @click="saveCourse" class="flex-1 h-10 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl text-sm hover:shadow-lg transition-all">
+                {{ editingCourseId ? '保存修改' : '添加课程' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- 课程列表 -->
+          <div v-if="(learnSelectedPkg.courses || []).length === 0" class="text-center text-gray-400 py-6 font-bold">暂无课程，请在上方添加</div>
+          <div v-else class="space-y-2">
+            <div v-for="(c, idx) in learnSelectedPkg.courses" :key="c.id" class="flex items-center gap-3 p-3 rounded-xl bg-white/70 border border-gray-100">
+              <span class="text-lg">{{ c.type === 'video' ? '🎬' : '📖' }}</span>
+              <div class="flex-1 min-w-0">
+                <p class="font-bold text-gray-800 text-sm truncate">{{ idx + 1 }}. {{ c.title }}</p>
+                <p class="text-xs text-gray-400">{{ c.type === 'video' ? '视频课' : '图文课' }}<span v-if="c.duration_minutes"> · {{ c.duration_minutes }} 分钟</span><span v-if="c.video_path"> · {{ c.video_path }}</span></p>
+              </div>
+              <span class="text-xs px-2 py-0.5 rounded-full font-bold" :class="c.enabled ? 'bg-success/10 text-success' : 'bg-gray-100 text-gray-400'">{{ c.enabled ? '启用' : '停用' }}</span>
+              <button @click="toggleCourseEnabled(c)" class="text-xs px-2.5 py-1.5 bg-gray-100 text-gray-600 font-bold rounded-lg hover:bg-gray-200 transition-all">{{ c.enabled ? '停用' : '启用' }}</button>
+              <button @click="editCourse(c)" class="text-xs px-2.5 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all">编辑</button>
+              <button @click="deleteCourse(c)" class="text-xs px-2.5 py-1.5 bg-danger/10 text-danger font-bold rounded-lg hover:bg-danger/20 transition-all">删除</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 学员进度 -->
+        <div class="glass-card relative z-10 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-gray-900">👥 学员学习进度</h2>
+            <button @click="loadLearnProgress" class="text-sm px-3 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all">🔄 刷新</button>
+          </div>
+          <div class="flex flex-wrap gap-3 mb-4">
+            <input v-model="progressFilterUid" type="text" placeholder="按 UID 筛选（可空）" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all w-52" @keyup.enter="loadLearnProgress">
+            <select v-model="progressFilterPkg" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all bg-white" @change="loadLearnProgress">
+              <option :value="null">全部课包</option>
+              <option v-for="pkg in packages" :key="pkg.id" :value="pkg.id">{{ pkg.name }}</option>
+            </select>
+            <button @click="loadLearnProgress" class="px-4 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-all">查询</button>
+          </div>
+          <div v-if="learnProgress.length === 0" class="text-center text-gray-400 py-6 font-bold">暂无学习记录</div>
+          <div v-else class="space-y-3">
+            <div v-for="stu in learnProgress" :key="stu.uid" class="p-4 rounded-2xl bg-white/70 border border-gray-100">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="font-bold text-gray-900">{{ stu.nickname || '（未填昵称）' }}</span>
+                <span class="text-xs text-gray-400">UID: {{ stu.uid }}</span>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div v-for="p in stu.packages" :key="p.package_id" class="p-3 rounded-xl bg-gray-50 border border-gray-100">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-sm font-bold text-gray-700">{{ p.package_name }}</span>
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-full" :class="examStatusBadge(p.exam_status).cls">{{ examStatusBadge(p.exam_status).text }}</span>
+                  </div>
+                  <div class="flex items-center gap-2 mb-1.5">
+                    <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full" :style="{ width: (p.total_courses ? p.completed_courses / p.total_courses * 100 : 0) + '%' }"></div>
+                    </div>
+                    <span class="text-xs text-gray-400 font-bold">{{ p.completed_courses }}/{{ p.total_courses }}</span>
+                  </div>
+                  <div class="space-y-0.5">
+                    <div v-for="c in p.courses" :key="c.course_id" class="flex items-center justify-between text-xs">
+                      <span class="text-gray-500 truncate">{{ c.title }}</span>
+                      <span class="font-bold shrink-0 ml-2" :class="c.completed ? 'text-success' : c.progress_percent > 0 ? 'text-primary' : 'text-gray-300'">
+                        {{ c.completed ? '✅' : c.progress_percent > 0 ? Math.floor(c.progress_percent) + '%' : '未开始' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
 
     <!-- 新增/编辑题目弹窗 -->
@@ -982,6 +1150,234 @@ const examForm = ref({ name: '', single: 10, multiple: 0, fill: 5, essay: 5, sco
 // 回收站
 const recycleBinItems = ref([])
 const recycleBinSettings = ref({ retention_days: 30 })
+
+// 课程管理
+const packages = ref([])
+const learnSelectedPkgId = ref(null)
+const learnSelectedPkg = computed(() => packages.value.find(p => p.id === learnSelectedPkgId.value) || null)
+const editingCourseId = ref(null)
+const courseForm = ref({ title: '', type: 'video', video_path: '', content: '', duration_minutes: 0 })
+const videoUploading = ref(false)
+const videoUploadPercent = ref(0)
+const learnProgress = ref([])
+const progressFilterUid = ref('')
+const progressFilterPkg = ref(null)
+
+async function loadPackages() {
+  try {
+    const res = await fetch('/api/admin/packages')
+    const data = await res.json()
+    if (data.success) {
+      packages.value = data.data
+      if (!learnSelectedPkgId.value && packages.value.length > 0) {
+        learnSelectedPkgId.value = packages.value[0].id
+      }
+    }
+  } catch (e) {
+    console.error('加载课包失败', e)
+  }
+}
+
+async function savePackage(pkg) {
+  try {
+    const res = await fetch(`/api/admin/packages/${pkg.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: pkg.name,
+        description: pkg.description,
+        cooldown_days: pkg.cooldown_days,
+        exam_config_id: pkg.exam_config_id || null,
+        enabled: pkg.enabled
+      })
+    })
+    const data = await res.json()
+    if (data.success) {
+      showToast('课包已保存', 'success')
+      loadPackages()
+    } else {
+      showToast(data.error || '保存失败', 'error')
+    }
+  } catch (e) {
+    showToast('保存失败', 'error')
+  }
+}
+
+async function deletePackage(pkg) {
+  if (!confirm(`确定删除课包「${pkg.name}」？其下所有课程和学员进度将一并删除！`)) return
+  try {
+    const res = await fetch(`/api/admin/packages/${pkg.id}`, { method: 'DELETE' })
+    const data = await res.json()
+    if (data.success) {
+      showToast('课包已删除', 'success')
+      if (learnSelectedPkgId.value === pkg.id) learnSelectedPkgId.value = null
+      loadPackages()
+    } else {
+      showToast(data.error || '删除失败', 'error')
+    }
+  } catch (e) {
+    showToast('删除失败', 'error')
+  }
+}
+
+function resetCourseForm() {
+  editingCourseId.value = null
+  courseForm.value = { title: '', type: 'video', video_path: '', content: '', duration_minutes: 0 }
+}
+
+function editCourse(c) {
+  editingCourseId.value = c.id
+  courseForm.value = {
+    title: c.title,
+    type: c.type,
+    video_path: c.video_path || '',
+    content: c.content || '',
+    duration_minutes: c.duration_minutes || 0
+  }
+}
+
+async function saveCourse() {
+  if (!courseForm.value.title.trim()) {
+    showToast('请填写课程标题', 'warning')
+    return
+  }
+  if (courseForm.value.type === 'video' && !courseForm.value.video_path) {
+    showToast('请先上传视频文件', 'warning')
+    return
+  }
+  if (courseForm.value.type === 'article' && !courseForm.value.duration_minutes) {
+    showToast('图文课请填写要求停留分钟数', 'warning')
+    return
+  }
+  const isEdit = !!editingCourseId.value
+  const url = isEdit ? `/api/admin/courses/${editingCourseId.value}` : '/api/admin/courses'
+  try {
+    const res = await fetch(url, {
+      method: isEdit ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...courseForm.value, package_id: learnSelectedPkgId.value })
+    })
+    const data = await res.json()
+    if (data.success) {
+      showToast(isEdit ? '课程已更新' : '课程已添加', 'success')
+      resetCourseForm()
+      loadPackages()
+    } else {
+      showToast(data.error || '保存失败', 'error')
+    }
+  } catch (e) {
+    showToast('保存失败', 'error')
+  }
+}
+
+async function toggleCourseEnabled(c) {
+  try {
+    const res = await fetch(`/api/admin/courses/${c.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: !c.enabled })
+    })
+    const data = await res.json()
+    if (data.success) {
+      loadPackages()
+    } else {
+      showToast(data.error || '操作失败', 'error')
+    }
+  } catch (e) {
+    showToast('操作失败', 'error')
+  }
+}
+
+async function deleteCourse(c) {
+  if (!confirm(`确定删除课程「${c.title}」？学员该课程进度将一并删除。`)) return
+  try {
+    const res = await fetch(`/api/admin/courses/${c.id}`, { method: 'DELETE' })
+    const data = await res.json()
+    if (data.success) {
+      showToast('课程已删除', 'success')
+      if (editingCourseId.value === c.id) resetCourseForm()
+      loadPackages()
+    } else {
+      showToast(data.error || '删除失败', 'error')
+    }
+  } catch (e) {
+    showToast('删除失败', 'error')
+  }
+}
+
+function handleVideoUpload(event) {
+  const file = event.target.files[0]
+  event.target.value = ''
+  if (!file) return
+  if (file.size > 500 * 1024 * 1024) {
+    showToast('文件超过 500MB 限制', 'error')
+    return
+  }
+  videoUploading.value = true
+  videoUploadPercent.value = 0
+  const xhr = new XMLHttpRequest()
+  xhr.open('POST', '/api/admin/upload-video')
+  xhr.setRequestHeader('Content-Type', 'application/octet-stream')
+  xhr.setRequestHeader('X-Filename', encodeURIComponent(file.name))
+  xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable) {
+      videoUploadPercent.value = Math.round(e.loaded / e.total * 100)
+    }
+  }
+  xhr.onload = () => {
+    videoUploading.value = false
+    try {
+      const data = JSON.parse(xhr.responseText)
+      if (data.success) {
+        courseForm.value.video_path = data.data.path
+        showToast('视频上传成功', 'success')
+      } else {
+        showToast(data.error || '上传失败', 'error')
+      }
+    } catch (e) {
+      showToast('上传失败', 'error')
+    }
+  }
+  xhr.onerror = () => {
+    videoUploading.value = false
+    showToast('上传失败，请检查网络', 'error')
+  }
+  xhr.send(file)
+}
+
+async function loadLearnProgress() {
+  try {
+    const params = []
+    if (progressFilterUid.value.trim()) params.push(`uid=${encodeURIComponent(progressFilterUid.value.trim())}`)
+    if (progressFilterPkg.value) params.push(`package_id=${progressFilterPkg.value}`)
+    const res = await fetch('/api/admin/learn-progress' + (params.length ? '?' + params.join('&') : ''))
+    const data = await res.json()
+    if (data.success) {
+      learnProgress.value = data.data.students || []
+    } else {
+      showToast(data.error || '查询失败', 'error')
+    }
+  } catch (e) {
+    showToast('查询失败', 'error')
+  }
+}
+
+function examStatusBadge(status) {
+  if (!status) return { text: '未开始', cls: 'bg-gray-100 text-gray-400' }
+  switch (status.status) {
+    case 'passed': return { text: `已通过 ${status.percentage}分`, cls: 'bg-success/10 text-success' }
+    case 'ready': return { text: '可考试', cls: 'bg-success/10 text-success' }
+    case 'cooldown': {
+      const h = Math.floor((status.remaining_seconds || 0) / 3600)
+      return { text: `冷却中(${h}h)`, cls: 'bg-danger/10 text-danger' }
+    }
+    case 'no_exam': return { text: '未配置考试', cls: 'bg-gray-100 text-gray-400' }
+    default:
+      return status.chain_locked
+        ? { text: '🔒 需先过姐妹团', cls: 'bg-gray-100 text-gray-500' }
+        : { text: `还差${status.remaining_courses || 0}门课`, cls: 'bg-primary/10 text-primary' }
+  }
+}
 
 // 答题明细弹窗
 const showDetailModal = ref(false)
@@ -2214,12 +2610,18 @@ onMounted(async () => {
   await loadResults()
   await loadRecycleBin()
   await loadRecycleBinSettings()
+  await loadPackages()
+  await loadLearnProgress()
 })
 
 // 切换到成绩统计标签时自动刷新数据
 watch(currentTab, (newTab) => {
   if (newTab === 'results') {
     loadResults()
+  }
+  if (newTab === 'learn') {
+    loadPackages()
+    loadLearnProgress()
   }
 })
 </script>

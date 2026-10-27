@@ -100,7 +100,53 @@ function initTables() {
   try { db.exec(`ALTER TABLE exam_results ADD COLUMN device_id TEXT`); } catch (e) { /* ignore */ }
   try { db.exec(`ALTER TABLE exam_results ADD COLUMN ip_address TEXT`); } catch (e) { /* ignore */ }
 
-  // 5. 回收站
+  // 5. 课程包
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS course_packages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key TEXT UNIQUE,
+      name TEXT NOT NULL DEFAULT '',
+      description TEXT DEFAULT '',
+      cooldown_days INTEGER DEFAULT 1,
+      exam_config_id INTEGER,
+      sort INTEGER DEFAULT 0,
+      enabled INTEGER DEFAULT 1
+    )
+  `);
+
+  // 6. 课程
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS courses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      package_id INTEGER NOT NULL,
+      title TEXT NOT NULL DEFAULT '',
+      type TEXT NOT NULL DEFAULT 'video',
+      video_path TEXT,
+      content TEXT,
+      duration_minutes INTEGER DEFAULT 0,
+      sort INTEGER DEFAULT 0,
+      enabled INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+
+  // 7. 课程学习进度
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS course_progress (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      uid TEXT NOT NULL,
+      nickname TEXT DEFAULT '',
+      course_id INTEGER NOT NULL,
+      watched_seconds REAL DEFAULT 0,
+      progress_percent REAL DEFAULT 0,
+      completed INTEGER DEFAULT 0,
+      completed_at TEXT,
+      updated_at TEXT,
+      UNIQUE(uid, course_id)
+    )
+  `);
+
+  // 8. 回收站
   db.exec(`
     CREATE TABLE IF NOT EXISTS recycle_bin (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -114,7 +160,18 @@ function initTables() {
   console.log('[DB] 表初始化完成');
 }
 
+// ============ 课包种子数据 ============
+function seedCoursePackages() {
+  const insert = db.prepare(`
+    INSERT OR IGNORE INTO course_packages (key, name, description, cooldown_days, sort, enabled)
+    VALUES (?, ?, ?, ?, ?, 1)
+  `);
+  insert.run('sister', '姐妹团课包', '新人必修课程，全部完成后解锁姐妹团考试', 1, 1);
+  insert.run('trainer', '培训师课包', '晋级培训师必修课程，需先通过姐妹团考试', 2, 2);
+}
+
 initTables();
+seedCoursePackages();
 
 // ============ 题库操作 ============
 
@@ -418,6 +475,250 @@ function getRecentResultsByIp(ipAddress, hours = 24) {
   return stmt.all(ipAddress, since);
 }
 
+// ============ 课程包操作 ============
+
+function loadCoursePackages(onlyEnabled = false) {
+  const stmt = onlyEnabled
+    ? db.prepare('SELECT * FROM course_packages WHERE enabled = 1 ORDER BY sort, id')
+    : db.prepare('SELECT * FROM course_packages ORDER BY sort, id');
+  return stmt.all().map(p => ({
+    id: p.id,
+    key: p.key,
+    name: p.name,
+    description: p.description || '',
+    cooldown_days: p.cooldown_days || 0,
+    exam_config_id: p.exam_config_id || null,
+    sort: p.sort || 0,
+    enabled: p.enabled !== 0
+  }));
+}
+
+function getCoursePackageById(id) {
+  const p = db.prepare('SELECT * FROM course_packages WHERE id = ?').get(id);
+  if (!p) return null;
+  return {
+    id: p.id,
+    key: p.key,
+    name: p.name,
+    description: p.description || '',
+    cooldown_days: p.cooldown_days || 0,
+    exam_config_id: p.exam_config_id || null,
+    sort: p.sort || 0,
+    enabled: p.enabled !== 0
+  };
+}
+
+function getCoursePackageByExamConfig(examConfigId) {
+  if (!examConfigId) return null;
+  const p = db.prepare('SELECT * FROM course_packages WHERE exam_config_id = ?').get(examConfigId);
+  return p ? getCoursePackageById(p.id) : null;
+}
+
+function saveCoursePackage(pkg) {
+  const stmt = db.prepare(`
+    INSERT INTO course_packages (id, key, name, description, cooldown_days, exam_config_id, sort, enabled)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      key = excluded.key,
+      name = excluded.name,
+      description = excluded.description,
+      cooldown_days = excluded.cooldown_days,
+      exam_config_id = excluded.exam_config_id,
+      sort = excluded.sort,
+      enabled = excluded.enabled
+  `);
+  const result = stmt.run(
+    pkg.id || null,
+    pkg.key || null,
+    pkg.name || '',
+    pkg.description || '',
+    pkg.cooldown_days ?? 1,
+    pkg.exam_config_id || null,
+    pkg.sort || 0,
+    pkg.enabled !== false ? 1 : 0
+  );
+  return pkg.id || result.lastInsertRowid;
+}
+
+function deleteCoursePackage(id) {
+  runInTransaction(() => {
+    const courseIds = db.prepare('SELECT id FROM courses WHERE package_id = ?').all(id).map(c => c.id);
+    for (const cid of courseIds) {
+      db.prepare('DELETE FROM course_progress WHERE course_id = ?').run(cid);
+    }
+    db.prepare('DELETE FROM courses WHERE package_id = ?').run(id);
+    db.prepare('DELETE FROM course_packages WHERE id = ?').run(id);
+  });
+}
+
+function nextPackageId() {
+  const row = db.prepare('SELECT MAX(id) as max_id FROM course_packages').get();
+  return (row.max_id || 0) + 1;
+}
+
+// ============ 课程操作 ============
+
+function loadCourses(packageId, onlyEnabled = false) {
+  let sql = 'SELECT * FROM courses';
+  const params = [];
+  if (packageId) {
+    sql += ' WHERE package_id = ?';
+    params.push(packageId);
+    if (onlyEnabled) sql += ' AND enabled = 1';
+  } else if (onlyEnabled) {
+    sql += ' WHERE enabled = 1';
+  }
+  sql += ' ORDER BY sort, id';
+  const stmt = db.prepare(sql);
+  return stmt.all(...params).map(c => ({
+    id: c.id,
+    package_id: c.package_id,
+    title: c.title,
+    type: c.type,
+    video_path: c.video_path || '',
+    content: c.content || '',
+    duration_minutes: c.duration_minutes || 0,
+    sort: c.sort || 0,
+    enabled: c.enabled !== 0,
+    created_at: c.created_at
+  }));
+}
+
+function getCourseById(id) {
+  const c = db.prepare('SELECT * FROM courses WHERE id = ?').get(id);
+  if (!c) return null;
+  return {
+    id: c.id,
+    package_id: c.package_id,
+    title: c.title,
+    type: c.type,
+    video_path: c.video_path || '',
+    content: c.content || '',
+    duration_minutes: c.duration_minutes || 0,
+    sort: c.sort || 0,
+    enabled: c.enabled !== 0,
+    created_at: c.created_at
+  };
+}
+
+function saveCourse(course) {
+  const stmt = db.prepare(`
+    INSERT INTO courses (id, package_id, title, type, video_path, content, duration_minutes, sort, enabled)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      package_id = excluded.package_id,
+      title = excluded.title,
+      type = excluded.type,
+      video_path = excluded.video_path,
+      content = excluded.content,
+      duration_minutes = excluded.duration_minutes,
+      sort = excluded.sort,
+      enabled = excluded.enabled
+  `);
+  const result = stmt.run(
+    course.id || null,
+    course.package_id,
+    course.title || '',
+    course.type || 'video',
+    course.video_path || '',
+    course.content || '',
+    course.duration_minutes || 0,
+    course.sort || 0,
+    course.enabled !== false ? 1 : 0
+  );
+  return course.id || result.lastInsertRowid;
+}
+
+function deleteCourse(id) {
+  runInTransaction(() => {
+    db.prepare('DELETE FROM course_progress WHERE course_id = ?').run(id);
+    db.prepare('DELETE FROM courses WHERE id = ?').run(id);
+  });
+}
+
+function nextCourseId() {
+  const row = db.prepare('SELECT MAX(id) as max_id FROM courses').get();
+  return (row.max_id || 0) + 1;
+}
+
+// ============ 课程进度操作 ============
+
+function getCourseProgress(uid, courseId) {
+  return db.prepare('SELECT * FROM course_progress WHERE uid = ? AND course_id = ?').get(uid, courseId) || null;
+}
+
+function getProgressByUid(uid) {
+  if (!uid) return [];
+  return db.prepare('SELECT * FROM course_progress WHERE uid = ?').all(uid);
+}
+
+function getAllProgress() {
+  return db.prepare('SELECT * FROM course_progress ORDER BY updated_at DESC').all();
+}
+
+// 累计图文课学习时长，达标自动完成，返回最新进度行
+function addHeartbeat(uid, nickname, courseId, seconds, requiredSeconds) {
+  const now = new Date().toISOString();
+  const existing = getCourseProgress(uid, courseId);
+  if (!existing) {
+    const watched = Math.max(0, seconds);
+    const completed = requiredSeconds > 0 && watched >= requiredSeconds ? 1 : 0;
+    const percent = requiredSeconds > 0 ? Math.min(100, Math.round(watched / requiredSeconds * 1000) / 10) : 0;
+    db.prepare(`
+      INSERT INTO course_progress (uid, nickname, course_id, watched_seconds, progress_percent, completed, completed_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(uid, nickname || '', courseId, watched, percent, completed, completed ? now : null, now);
+  } else {
+    const watched = existing.watched_seconds + Math.max(0, seconds);
+    const completed = existing.completed === 1 || (requiredSeconds > 0 && watched >= requiredSeconds) ? 1 : 0;
+    const percent = requiredSeconds > 0 ? Math.min(100, Math.round(watched / requiredSeconds * 1000) / 10) : 0;
+    db.prepare(`
+      UPDATE course_progress
+      SET watched_seconds = ?, progress_percent = ?, completed = ?,
+          completed_at = CASE WHEN ? = 1 AND completed_at IS NULL THEN ? ELSE completed_at END,
+          nickname = COALESCE(NULLIF(?, ''), nickname),
+          updated_at = ?
+      WHERE uid = ? AND course_id = ?
+    `).run(watched, percent, completed, completed, now, nickname || '', now, uid, courseId);
+  }
+  return getCourseProgress(uid, courseId);
+}
+
+// 视频课进度上报（取累计最大值），>=90% 自动完成
+function saveVideoProgress(uid, nickname, courseId, watchedSeconds, progressPercent) {
+  const now = new Date().toISOString();
+  const existing = getCourseProgress(uid, courseId);
+  const watched = Math.max(existing ? existing.watched_seconds : 0, watchedSeconds || 0);
+  const percent = Math.min(100, Math.max(existing ? existing.progress_percent : 0, progressPercent || 0));
+  const completed = (existing && existing.completed === 1) || percent >= 90 ? 1 : 0;
+  if (!existing) {
+    db.prepare(`
+      INSERT INTO course_progress (uid, nickname, course_id, watched_seconds, progress_percent, completed, completed_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(uid, nickname || '', courseId, watched, percent, completed, completed ? now : null, now);
+  } else {
+    db.prepare(`
+      UPDATE course_progress
+      SET watched_seconds = ?, progress_percent = ?, completed = ?,
+          completed_at = CASE WHEN ? = 1 AND completed_at IS NULL THEN ? ELSE completed_at END,
+          nickname = COALESCE(NULLIF(?, ''), nickname),
+          updated_at = ?
+      WHERE uid = ? AND course_id = ?
+    `).run(watched, percent, completed, completed, now, nickname || '', now, uid, courseId);
+  }
+  return getCourseProgress(uid, courseId);
+}
+
+// 获取某 uid 在某试卷上的最新一条考试结果
+function getLatestResult(uid, examId) {
+  if (!uid || !examId) return null;
+  return db.prepare(`
+    SELECT id, exam_id, exam_name, user_name, user_uid, total_score, max_score, percentage, created_at
+    FROM exam_results WHERE user_uid = ? AND exam_id = ?
+    ORDER BY created_at DESC, id DESC LIMIT 1
+  `).get(uid, examId) || null;
+}
+
 // ============ 回收站操作 ============
 
 function loadRecycleBin() {
@@ -657,6 +958,26 @@ module.exports = {
   checkDeviceUsed,
   checkExamTaken,
   getRecentResultsByIp,
+  // 课程包
+  loadCoursePackages,
+  getCoursePackageById,
+  getCoursePackageByExamConfig,
+  saveCoursePackage,
+  deleteCoursePackage,
+  nextPackageId,
+  // 课程
+  loadCourses,
+  getCourseById,
+  saveCourse,
+  deleteCourse,
+  nextCourseId,
+  // 课程进度
+  getCourseProgress,
+  getProgressByUid,
+  getAllProgress,
+  addHeartbeat,
+  saveVideoProgress,
+  getLatestResult,
   // 回收站
   loadRecycleBin,
   addToRecycleBin,

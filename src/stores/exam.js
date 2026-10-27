@@ -53,7 +53,12 @@ export const useExamStore = defineStore('exam', () => {
     loadError.value = ''
     initDeviceId()
     try {
-      const url = selectedExamId ? `/api/exam-config?exam_id=${selectedExamId}` : '/api/exam-config'
+      let url = selectedExamId ? `/api/exam-config?exam_id=${selectedExamId}` : '/api/exam-config'
+      // 课包考试闸门需要 uid；管理员测试模式跳过闸门
+      const params = []
+      if (userPhone.value) params.push(`uid=${encodeURIComponent(userPhone.value)}`)
+      if (localStorage.getItem('exam_admin_test') === '1') params.push('admin_mode=1')
+      if (params.length > 0) url += (url.includes('?') ? '&' : '?') + params.join('&')
       const res = await fetch(url)
       const data = await res.json()
       if (data.success) {
