@@ -1,0 +1,16 @@
+name: exam-system
+
+services:
+  exam:
+    build: .
+    image: exam-system:v1.6.1
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data.db:/app/data.db
+      - ./backend/server.js:/app/backend/server.js   # ← 加这行
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - SILICONFLOW_API_KEY
+      - PYTHON_PATH=/usr/bin/python3
