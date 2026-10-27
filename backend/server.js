@@ -827,13 +827,8 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ success: false, error: 'Config not found' }));
         return;
       }
-      // 如果启用该试卷，先停止所有其他试卷，再发布当前
+      // 多试卷可同时发布（姐妹团/培训师并行开考），不再互斥停止其他试卷
       if (body.status === 'published') {
-        for (const c of configs) {
-          if (c.id !== configId && c.status === 'published') {
-            c.status = 'stopped';
-          }
-        }
         configs[idx] = { ...configs[idx], ...body, id: configId, status: 'published' };
       } else if (body.status === 'stopped') {
         configs[idx] = { ...configs[idx], ...body, id: configId, status: 'stopped' };
@@ -902,10 +897,13 @@ const server = http.createServer((req, res) => {
       }
     }
 
-  // 2. 检查该UID是否已参加过当前发布的试卷（同试卷不能重复考，新试卷可补考）
+  // 2. 检查该UID是否已参加过目标试卷（多试卷并行发布，优先按请求 exam_id 定位）
     const examConfigs = db.loadExamConfigs();
-    const publishedExam = examConfigs.find(c => c.status === 'published');
-    const examId = publishedExam ? publishedExam.id : (query.exam_id || 1);
+    const reqExamId = query.exam_id ? parseInt(query.exam_id) : null;
+    const publishedExam = reqExamId
+      ? examConfigs.find(c => c.id === reqExamId)
+      : examConfigs.find(c => c.status === 'published');
+    const examId = publishedExam ? publishedExam.id : (reqExamId || 1);
     if (uid && examId) {
       // 课包关联试卷走课程解锁闸门（含冷却重考规则），未关联的保持原有"同试卷仅1次"规则
       const gate = checkPackageGate(uid, examId);
@@ -948,11 +946,11 @@ const server = http.createServer((req, res) => {
   if (pathname === '/api/exam-config' && req.method === 'GET') {
     const examId = query.exam_id ? parseInt(query.exam_id) : null;
     const configs = db.loadExamConfigs();
-    // 只找已发布的试卷
+    // 只找已发布的试卷；指定 exam_id 时必须命中该试卷，不串到其他试卷
     const publishedConfigs = configs.filter(c => c.status === 'published');
     let config;
     if (examId) {
-      config = publishedConfigs.find(c => c.id === examId) || publishedConfigs[0];
+      config = publishedConfigs.find(c => c.id === examId);
     } else {
       config = publishedConfigs[0];
     }
@@ -1106,12 +1104,7 @@ const server = http.createServer((req, res) => {
       res.end(JSON.stringify({ success: false, error: 'Config not found' }));
       return;
     }
-    // 互斥：将其他已发布的试卷停止
-    for (const c of configs) {
-      if (c.id !== configId && c.status === 'published') {
-        c.status = 'stopped';
-      }
-    }
+    // 多试卷可同时发布（姐妹团/培训师并行开考），不再互斥
     configs[idx].status = 'published';
     db.saveExamConfigs(configs);
     res.writeHead(200);
@@ -2265,12 +2258,7 @@ function checkScheduledExams() {
     if (c.status === 'draft' && c.publish_at) {
       const publishAt = new Date(c.publish_at);
       if (now >= publishAt) {
-        // 互斥：停止其他已发布
-        for (const other of configs) {
-          if (other.id !== c.id && other.status === 'published') {
-            other.status = 'stopped';
-          }
-        }
+        // 多试卷可同时发布（姐妹团/培训师并行开考），不再互斥
         c.status = 'published';
         c.publish_at = null; // 发布后清除定时
         changed = true;
