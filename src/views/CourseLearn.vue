@@ -1,4 +1,4 @@
-<template> <div class="min-h-screen bg-soft relative"> <!-- 顶部栏 --> <header class="relative z-10 sticky top-0"> <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3"> <button @click="goBack" class="text-accent font-bold text-sm bg-accent/10 px-3 py-1.5 rounded-lg hover:bg-accent/20 transition-all shrink-0"> 返回</button> <h1 class="text-sm sm:text-base font-bold text-accent truncate flex-1 text-center">{{ course ? course.title : '课程学习' }}</h1> <span v-if="completed" class="text-xs font-bold px-2.5 py-1 rounded-full bg-success text-white shrink-0"> 已完成</span> <span v-else class="text-xs font-bold px-2.5 py-1 rounded-full bg-accent/10 text-accent shrink-0">学习中</span> </div> </header> <main class="max-w-3xl mx-auto px-4 py-5 relative z-10 pb-12"> <div v-if="loading" class="glass-card p-10 text-center text-gray-500 font-bold"> <div class="text-4xl mb-3 animate-bounce"></div>加载中…
+<template> <div class="min-h-screen bg-soft relative"> <!-- 顶部栏 --> <header class="relative z-10 sticky top-0"> <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3"> <button @click="goBack" class="text-accent font-bold text-sm bg-accent/10 px-3 py-1.5 rounded-lg hover:bg-accent/20 transition-all shrink-0"> 返回</button> <h1 class="text-sm sm:text-base font-bold text-accent truncate flex-1 text-center">{{ course ? course.title : '课程学习' }}</h1> <span v-if="completed" class="text-xs font-bold px-2.5 py-1 rounded-full bg-success text-white shrink-0"> 已完成</span> <span v-else class="text-xs font-bold px-2.5 py-1 rounded-full bg-accent/10 text-accent shrink-0">学习中</span> </div> </header> <main class="max-w-3xl mx-auto px-4 py-5 relative z-10 pb-24"> <div v-if="loading" class="glass-card p-10 text-center text-gray-500 font-bold"> <div class="text-4xl mb-3 animate-bounce"></div>加载中…
       </div> <div v-else-if="!course" class="glass-card p-10 text-center"> <div class="text-4xl mb-3"></div> <p class="font-bold text-gray-500">课程不存在或已下线</p> <button @click="goBack" class="mt-4 px-6 h-11 bg-primary text-white font-bold rounded-2xl">返回课程列表</button> </div> <template v-else> <!-- ===== 视频课 ===== --> <div v-if="course.type === 'video'" class="glass-card p-4 sm:p-5 mb-4"> <div class="rounded-2xl overflow-hidden bg-black shadow-lg"> <video
               ref="videoRef"
               :src="course.video_path"
@@ -20,10 +20,11 @@
               :class="completed ? 'bg-gradient-to-r from-success to-emerald-400' : 'bg-gradient-to-r from-primary to-secondary'"
               :style="{ width: Math.min(100, progressPercent) + '%' }"></div> </div> <!-- 图文内容 --> <article class="article-content text-gray-800" v-html="course.content"></article> <p v-if="!completed" class="text-xs text-gray-400 mt-5 text-center"> 停留在本页面即可累计学习时长，切出页面暂停计时</p> </div> <!-- 完成提示 + 返回 --> <div v-if="completed" class="glass-card p-6 text-center"> <div class="text-5xl mb-3"></div> <p class="text-lg font-extrabold text-success mb-1">恭喜完成本课程！</p> <p class="text-sm text-gray-500 mb-5">返回课程列表继续学习，全部完成后解锁考试</p> <button @click="goBack" class="px-8 h-12 bg-gradient-to-r from-primary to-secondary text-white font-extrabold rounded-2xl shadow-lg shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all">
             返回课程列表
-          </button> </div> </template> </main> </div>
+          </button> </div> </template> </main> <BottomNav active="learn" :uid="uid" /> </div>
 </template> <script setup>
 import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import BottomNav from '../components/BottomNav.vue'
 
 const route = useRoute()
 const router = useRouter()

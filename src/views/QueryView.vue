@@ -9,7 +9,7 @@
       </div>
     </header>
 
-    <main class="max-w-3xl mx-auto px-4 py-5 relative z-10 pb-12">
+    <main class="max-w-3xl mx-auto px-4 py-5 relative z-10 pb-24">
       <!-- 查询输入 -->
       <div class="glass-card p-5 mb-4">
         <label class="block text-sm font-bold text-gray-700 mb-3">请输入你的点点UID</label>
@@ -52,6 +52,8 @@
         <button @click="queryResults = null; queryUid = ''" class="w-full h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all mt-5">重新查询</button>
       </div>
     </main>
+
+    <BottomNav active="query" :uid="queryUid" />
 
     <!-- 答题明细弹窗 -->
     <Transition name="fade-scale">
@@ -96,6 +98,7 @@
 <script setup>
 import { ref, inject } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import BottomNav from '../components/BottomNav.vue'
 
 const router = useRouter()
 const route = useRoute()
