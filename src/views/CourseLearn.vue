@@ -1,4 +1,4 @@
-<template> <div class="min-h-screen bg-animated relative"> <!-- 顶部栏 --> <header class="glass-nav relative z-10 sticky top-0"> <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3"> <button @click="goBack" class="text-white font-bold text-sm bg-white/15 px-3 py-1.5 rounded-lg hover:bg-white/25 transition-all shrink-0"> 返回</button> <h1 class="text-sm sm:text-base font-bold text-white truncate flex-1 text-center">{{ course ? course.title : '课程学习' }}</h1> <span v-if="completed" class="text-xs font-bold px-2.5 py-1 rounded-full bg-success text-white shrink-0"> 已完成</span> <span v-else class="text-xs font-bold px-2.5 py-1 rounded-full bg-white/20 text-white shrink-0">学习中</span> </div> </header> <main class="max-w-3xl mx-auto px-4 py-5 relative z-10 pb-12"> <div v-if="loading" class="glass-card p-10 text-center text-gray-500 font-bold"> <div class="text-4xl mb-3 animate-bounce"></div>加载中…
+<template> <div class="min-h-screen bg-soft relative"> <!-- 顶部栏 --> <header class="glass-nav relative z-10 sticky top-0"> <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3"> <button @click="goBack" class="text-accent font-bold text-sm bg-accent/10 px-3 py-1.5 rounded-lg hover:bg-accent/20 transition-all shrink-0"> 返回</button> <h1 class="text-sm sm:text-base font-bold text-accent truncate flex-1 text-center">{{ course ? course.title : '课程学习' }}</h1> <span v-if="completed" class="text-xs font-bold px-2.5 py-1 rounded-full bg-success text-white shrink-0"> 已完成</span> <span v-else class="text-xs font-bold px-2.5 py-1 rounded-full bg-accent/10 text-accent shrink-0">学习中</span> </div> </header> <main class="max-w-3xl mx-auto px-4 py-5 relative z-10 pb-12"> <div v-if="loading" class="glass-card p-10 text-center text-gray-500 font-bold"> <div class="text-4xl mb-3 animate-bounce"></div>加载中…
       </div> <div v-else-if="!course" class="glass-card p-10 text-center"> <div class="text-4xl mb-3"></div> <p class="font-bold text-gray-500">课程不存在或已下线</p> <button @click="goBack" class="mt-4 px-6 h-11 bg-primary text-white font-bold rounded-2xl">返回课程列表</button> </div> <template v-else> <!-- ===== 视频课 ===== --> <div v-if="course.type === 'video'" class="glass-card p-4 sm:p-5 mb-4"> <div class="rounded-2xl overflow-hidden bg-black shadow-lg"> <video
               ref="videoRef"
               :src="course.video_path"
@@ -243,7 +243,7 @@ onUnmounted(() => {
 })
 </script> <style scoped>
 .bg-animated {
-  background: linear-gradient(-45deg, #FF5E3A, #FF8C42, #FFB347, #FF6B6B, #FFA502);
+  background: linear-gradient(-45deg, #8E6BC8, #A88BD8, #C9A7EB, #F48A8A, #F5B301);
   background-size: 300% 300%;
   animation: gradient-flow 6s ease infinite;
 }
@@ -292,7 +292,7 @@ onUnmounted(() => {
   line-height: 1.8;
 }
 .article-content :deep(a) {
-  color: #FF5E3A;
+  color: #8E6BC8;
   text-decoration: underline;
 }
 </style>

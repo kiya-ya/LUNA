@@ -1,4 +1,4 @@
-<template> <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-animated"> <!-- 背景装饰元素 --> <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-orange-200/30 blur-3xl animate-pulse-slow"></div> <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-yellow-200/30 blur-3xl animate-pulse-slow" style="animation-delay: 2s;"></div> <div class="absolute top-[30%] right-[10%] w-32 h-32 rounded-full bg-orange-300/30 blur-2xl animate-float"></div> <div class="absolute bottom-[20%] left-[15%] w-24 h-24 rounded-full bg-yellow-300/30 blur-2xl animate-float" style="animation-delay: 3s;"></div> <!-- 主卡片 --> <div class="w-full max-w-[440px] relative z-10"> <!-- 卡片主体 --> <div class="glass-card rounded-[2rem] p-8 shadow-2xl"> <!-- Logo 区域 --> <div class="text-center mb-8"> <div class="relative w-24 h-24 mx-auto mb-5 group"> <img src="/logo.png" alt="点点开黑" class="w-full h-full object-contain rounded-2xl shadow-lg group-hover:scale-105 transition-transform duration-300"> <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-br from-secondary to-danger rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg border-2 border-white/50">考</div> </div> <h1 class="text-2xl font-extrabold text-white tracking-tight drop-shadow-sm">点点开黑考试</h1> <p class="text-sm text-white/70 mt-2 font-medium">姐姐团 · 在线考核系统</p> </div> <!-- 表单 --> <form @submit.prevent="handleSubmit" class="space-y-5"> <!-- 昵称输入 --> <div class="group"> <label class="block text-sm font-bold text-white/90 mb-2 ml-1 drop-shadow-sm">点点昵称</label> <div class="relative"> <input
+<template> <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-animated"> <!-- 背景装饰元素 --> <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-purple-200/30 blur-3xl animate-pulse-slow"></div> <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-amber-200/30 blur-3xl animate-pulse-slow" style="animation-delay: 2s;"></div> <div class="absolute top-[30%] right-[10%] w-32 h-32 rounded-full bg-purple-300/30 blur-2xl animate-float"></div> <div class="absolute bottom-[20%] left-[15%] w-24 h-24 rounded-full bg-amber-300/30 blur-2xl animate-float" style="animation-delay: 3s;"></div> <!-- 主卡片 --> <div class="w-full max-w-[440px] relative z-10"> <!-- 卡片主体 --> <div class="glass-card rounded-[2rem] p-8 shadow-2xl"> <!-- Logo 区域 --> <div class="text-center mb-8"> <div class="relative w-24 h-24 mx-auto mb-5 group"> <img src="/logo.png" alt="点点开黑" class="w-full h-full object-contain rounded-2xl shadow-lg group-hover:scale-105 transition-transform duration-300"> <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-br from-secondary to-danger rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg border-2 border-white/50">考</div> </div> <h1 class="text-2xl font-extrabold text-white tracking-tight drop-shadow-sm">点点开黑考试</h1> <p class="text-sm text-white/70 mt-2 font-medium">姐姐团 · 在线考核系统</p> </div> <!-- 表单 --> <form @submit.prevent="handleSubmit" class="space-y-5"> <!-- 昵称输入 --> <div class="group"> <label class="block text-sm font-bold text-white/90 mb-2 ml-1 drop-shadow-sm">点点昵称</label> <div class="relative"> <input
                 v-model="form.name"
                 type="text"
                 placeholder="请输入你的点点昵称"
@@ -13,15 +13,7 @@
               > </div> </div> <!-- 考试须知 --> <div class="bg-white/10 border border-white/20 rounded-2xl overflow-hidden backdrop-blur-sm"> <button type="button" @click="showNotice = !showNotice" class="w-full px-4 py-3.5 flex items-center justify-between text-sm font-medium text-white/90 hover:bg-white/10 transition-colors"> <span class="flex items-center gap-2"> <span class="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center"></span> <span>考试须知</span> </span> <svg :class="showNotice ? 'rotate-180' : ''" class="w-5 h-5 text-white/60 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path> </svg> </button> <Transition name="slide-down"> <div v-show="showNotice" class="px-4 pb-4 text-sm text-white/80 space-y-2.5"> <div class="flex items-start gap-2"> <p>共 <span class="font-bold text-white">{{ totalQuestions }}道</span> 题目，每人题目顺序不同</p> </div> <div class="flex items-start gap-2"> <p>考试时间由管理员设置，到时间自动截止</p> </div> <div class="flex items-start gap-2"> <p>离开页面 <span class="font-bold text-white">3次</span> 警告，<span class="font-bold text-white">5次</span> 强制交卷</p> </div> <div class="flex items-start gap-2"> <p>答题自动保存，断网可续考</p> </div> <div class="flex items-start gap-2"> <p>每人仅限答题 <span class="font-bold text-white">1次</span>（同一试卷），新试卷发布后可重新考试</p> </div> <div class="flex items-start gap-2"> <p>同一设备仅允许 <span class="font-bold text-white">1个</span> 账号登录</p> </div> </div> </Transition> </div> <!-- 开始学习按钮（先进学习首页，必修课完成后解锁考试） --> <button
             type="submit"
             class="w-full h-[56px] bg-gradient-to-r from-primary to-secondary text-white text-lg font-bold rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-3 group"
-          > <span class="text-xl group-hover:rotate-12 transition-transform duration-300"></span> <span>进入学习</span> <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"></path> </svg> </button> </form> <!-- 隐藏入口：直接考试（不关联课包的旧流程） --> <div class="mt-3 text-center"> <button type="button" @click="handleDirectExam" class="text-xs text-white/40 hover:text-white/70 font-medium transition-colors">直接考试</button> </div> <!-- 查询成绩按钮 --> <div class="mt-6 pt-5 border-t border-white/20"> <button @click="showQueryModal = true" class="w-full py-3 flex items-center justify-center gap-2 text-sm font-bold text-white hover:text-white bg-white/25 hover:bg-white/35 border border-white/30 rounded-2xl transition-all duration-300 group"> <span class="text-lg group-hover:scale-110 transition-transform"></span> <span>查询我的成绩</span> </button> </div> </div> <!-- 底部版权 --> <div class="mt-6 text-center"> <p class="text-xs text-white/60 font-medium">点点开黑 · 姐妹团欢迎你</p> <p class="text-xs text-white/40 mt-1">design by Lu deng</p> </div> </div> <!-- 查询成绩弹窗 --> <Transition name="fade-scale"> <div v-if="showQueryModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4" @click.self="closeQueryModal"> <div class="bg-white rounded-3xl p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto shadow-2xl"> <div class="flex items-center justify-between mb-5"> <div class="flex items-center gap-2"> <h3 class="text-lg font-bold text-gray-900">查询成绩</h3> </div> <button @click="closeQueryModal" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">×</button> </div> <!-- 查询输入 --> <div v-if="!queryResults" class="mb-4"> <label class="block text-sm font-bold text-gray-700 mb-3">请输入你的点点UID</label> <div class="flex gap-2"> <div class="relative flex-1"> <input
-                  v-model="queryUid"
-                  type="text"
-                  placeholder="例如：34315471"
-                  class="h-[52px] w-full px-4 text-base border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
-                  @keyup.enter="doQuery"
-                > </div> <button @click="doQuery" :disabled="queryLoading" class="h-[52px] px-6 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-2xl hover:shadow-lg hover:shadow-primary/20 transition-all disabled:opacity-50 flex items-center gap-2"> <svg v-if="queryLoading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"> <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle> <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path> </svg> <span>{{ queryLoading ? '查询中' : '查询' }}</span> </button> </div> </div> <!-- 查询结果列表 --> <div v-if="queryResults && queryResults.length > 0" class="space-y-3"> <p class="text-sm text-gray-500 mb-3 font-medium">共 {{ queryResults.length }} 条考试记录</p> <div v-for="r in queryResults" :key="r.id" class="p-4 rounded-2xl border-2 border-primary-light/50 cursor-pointer hover:bg-gradient-to-r hover:from-primary/5 hover:to-secondary/5 hover:border-primary/30 transition-all group" @click="showQueryDetail(r)"> <div class="flex items-center justify-between mb-2"> <span class="font-bold text-gray-900">{{ r.exam_name || '未知试卷' }}</span> <span class="text-xs px-3 py-1.5 rounded-full font-bold" :class="r.percentage >= 80 ? 'bg-success/10 text-success' : r.percentage >= 60 ? 'bg-primary/10 text-primary' : 'bg-danger/10 text-danger'">{{ r.total_score }} / {{ r.max_score }} 分</span> </div> <div class="flex items-center justify-between text-xs text-gray-500"> <span class="flex items-center gap-1"> <span>正确率</span> <span class="font-bold" :class="r.percentage >= 80 ? 'text-success' : r.percentage >= 60 ? 'text-primary' : 'text-danger'">{{ r.percentage }}%</span> </span> <span>{{ formatTime(r.created_at) }}</span> </div> </div> <button @click="queryResults = null; queryUid = ''" class="w-full h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all mt-3">重新查询</button> </div> <div v-else-if="queryResults && queryResults.length === 0" class="text-center text-gray-400 py-10"> <div class="text-5xl mb-3"></div> <p class="text-lg font-medium">未找到考试记录</p> <p class="text-sm mt-1">请检查UID是否正确</p> <button @click="queryResults = null; queryUid = ''" class="w-full h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all mt-5">重新查询</button> </div> </div> </div> </Transition> <!-- 答题明细弹窗 --> <Transition name="fade-scale"> <div v-if="queryDetailResult" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4" @click.self="queryDetailResult = null"> <div class="bg-white rounded-3xl p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl"> <div class="flex items-center justify-between mb-5"> <div class="flex items-center gap-2"> <h3 class="text-lg font-bold text-gray-900">答题明细</h3> </div> <button @click="queryDetailResult = null" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">×</button> </div> <div class="mb-5 p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl border border-primary/10"> <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm"> <span><span class="text-gray-500">试卷：</span><span class="font-bold text-gray-900">{{ queryDetailResult.exam_name || '未知试卷' }}</span></span> <span><span class="text-gray-500">总分：</span><span class="font-bold" :class="queryDetailResult.percentage >= 80 ? 'text-success' : queryDetailResult.percentage >= 60 ? 'text-primary' : 'text-danger'">{{ queryDetailResult.total_score }} / {{ queryDetailResult.max_score }}</span></span> <span><span class="text-gray-500">正确率：</span><span class="font-bold">{{ queryDetailResult.percentage }}%</span></span> <span><span class="text-gray-500">时间：</span><span class="font-bold">{{ formatTime(queryDetailResult.created_at) }}</span></span> </div> </div> <div v-if="queryDetailResult.details && queryDetailResult.details.length > 0" class="space-y-3"> <div v-for="(d, idx) in queryDetailResult.details" :key="idx" class="p-4 rounded-2xl border-2 transition-all" :class="d.is_correct ? 'border-success/30 bg-success/5' : 'border-danger/30 bg-danger/5'"> <div class="flex items-start justify-between mb-2"> <div class="flex-1"> <span class="text-xs font-bold text-gray-400 mr-2">{{ idx + 1 }}.</span> <span class="text-sm font-bold text-gray-800">{{ d.title || '题目 ' + d.q_id }}</span> </div> <span class="text-xs px-2.5 py-1 rounded-full font-bold ml-2 shrink-0" :class="d.is_correct ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'">
-                  {{ d.is_correct ? ' 正确' : ' 错误' }}
-                </span> </div> <div class="grid grid-cols-1 gap-2 text-sm pl-5"> <div> <span class="text-gray-500">你的答案：</span> <span class="font-bold break-all" :class="d.is_correct ? 'text-success' : 'text-danger'">{{ formatAnswerDisplay(d.user_answer) || '(未作答)' }}</span> </div> <div> <span class="text-gray-500">正确答案：</span> <span class="font-bold text-success break-all">{{ formatAnswerDisplay(d.correct_answer) || '-' }}</span> </div> <div v-if="d.key_points"> <span class="text-gray-500">解析：</span> <span class="text-gray-600 break-all whitespace-pre-wrap">{{ d.key_points }}</span> </div> <div v-if="d.feedback"> <span class="text-gray-500">反馈：</span> <span class="text-gray-600 break-all">{{ d.feedback }}</span> </div> </div> </div> </div> <div v-else class="text-center text-gray-400 py-8">暂无答题明细</div> </div> </div> </Transition> </div>
+          > <span class="text-xl group-hover:rotate-12 transition-transform duration-300"></span> <span>进入学习</span> <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"></path> </svg> </button> </form> <!-- 隐藏入口：直接考试（不关联课包的旧流程） --> <div class="mt-3 text-center"> <button type="button" @click="handleDirectExam" class="text-xs text-white/40 hover:text-white/70 font-medium transition-colors">直接考试</button> </div> <!-- 查询成绩按钮 --> <div class="mt-6 pt-5 border-t border-white/20"> <button @click="goQuery" class="w-full py-3 flex items-center justify-center gap-2 text-sm font-bold text-white hover:text-white bg-white/25 hover:bg-white/35 border border-white/30 rounded-2xl transition-all duration-300 group"> <span class="text-lg group-hover:scale-110 transition-transform"></span> <span>查询我的成绩</span> </button> </div> </div> <!-- 底部版权 --> <div class="mt-6 text-center"> <p class="text-xs text-white/60 font-medium">点点开黑 · 姐妹团欢迎你</p> <p class="text-xs text-white/40 mt-1">design by Lu deng</p> </div> </div>  </div>
 </template> <script setup>
 import { ref, inject, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
@@ -62,68 +54,8 @@ const totalQuestions = computed(() => {
   return (cfg.single || 0) + (cfg.multiple || 0) + (cfg.fill || 0) + (cfg.essay || 0)
 })
 
-// 查询成绩
-const showQueryModal = ref(false)
-const queryUid = ref('')
-const queryLoading = ref(false)
-const queryResults = ref(null)
-const queryDetailResult = ref(null)
-
-function closeQueryModal() {
-  showQueryModal.value = false
-  queryResults.value = null
-  queryUid.value = ''
-  queryDetailResult.value = null
-}
-
-async function doQuery() {
-  if (!queryUid.value.trim()) {
-    showToast('请输入UID', 'warning')
-    return
-  }
-  queryLoading.value = true
-  try {
-    const res = await fetch(`/api/results/by-uid?uid=${encodeURIComponent(queryUid.value.trim())}`)
-    const data = await res.json()
-    if (data.success) {
-      queryResults.value = data.data
-    } else {
-      showToast(data.error || '查询失败', 'error')
-    }
-  } catch (err) {
-    console.error('查询失败', err)
-    showToast('查询失败', 'error')
-  } finally {
-    queryLoading.value = false
-  }
-}
-
-async function showQueryDetail(result) {
-  try {
-    const res = await fetch(`/api/results/${result.id}`)
-    const data = await res.json()
-    if (data.success) {
-      queryDetailResult.value = data.data
-    } else {
-      queryDetailResult.value = result
-    }
-  } catch (err) {
-    console.error('获取详情失败', err)
-    queryDetailResult.value = result
-  }
-}
-
-function formatAnswerDisplay(ans) {
-  if (typeof ans === 'object' && ans !== null) {
-    return Object.entries(ans).map(([k, v]) => `空${k}:${v}`).join(' ')
-  }
-  return String(ans)
-}
-
-function formatTime(iso) {
-  if (!iso) return ''
-  const d = new Date(iso)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+function goQuery() {
+  router.push('/query')
 }
 
 async function handleSubmit() {
@@ -224,7 +156,7 @@ async function handleDirectExam() {
 
 /* 动态渐变背景 */
 .bg-animated {
-  background: linear-gradient(-45deg, #FF5E3A, #FF8C42, #FFB347, #FF6B6B, #FFA502);
+  background: linear-gradient(-45deg, #8E6BC8, #A88BD8, #C9A7EB, #F48A8A, #F5B301);
   background-size: 300% 300%;
   animation: gradient-flow 6s ease infinite;
 }

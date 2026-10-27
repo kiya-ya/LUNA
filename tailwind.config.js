@@ -7,18 +7,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        // 点点开黑品牌色
-        primary: '#FFB800',        // 品牌黄（主色）
-        'primary-dark': '#E6A000',  // 深黄（hover）
-        'primary-light': '#FFF5D6', // 浅黄（背景）
-        secondary: '#FF6B8A',       // 品牌粉（辅助色）
-        'secondary-light': '#FFE4EB',// 浅粉
-        accent: '#8B5A2B',          // 品牌棕（LOGO轮廓色）
+        // 点点开黑品牌色（紫金体系，与培训师系统统一）
+        primary: '#8E6BC8',        // 品牌紫（主色）
+        'primary-dark': '#7451A8',  // 深紫（hover）
+        'primary-light': '#EFE7FA', // 浅紫（背景）
+        secondary: '#F5B301',       // 品牌金（辅助色）
+        'secondary-light': '#FFF3D1',// 浅金
+        accent: '#5B2A06',          // 品牌棕（标题/描边）
         'accent-light': '#D4A574',    // 浅棕
         success: '#52C41A',
         warning: '#FAAD14',
         danger: '#F5222D',
-        bg: '#FFFBF0',              // 暖色背景（米黄）
+        bg: '#F7F3FC',              // 淡紫白背景
         surface: '#FFFFFF',         // 卡片表面
       },
       fontFamily: {

@@ -1,4 +1,4 @@
-<template> <div class="min-h-screen bg-animated relative overflow-x-hidden"> <!-- 背景装饰 --> <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-orange-200/30 blur-3xl animate-pulse-slow"></div> <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-yellow-200/30 blur-3xl animate-pulse-slow" style="animation-delay: 2s;"></div> <!-- 顶部栏 --> <header class="glass-nav relative z-10"> <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between"> <div class="flex items-center gap-2"> <img src="/logo.png" alt="点点开黑" class="w-9 h-9 object-contain rounded-xl shadow"> <div> <h1 class="text-base font-bold text-white leading-tight">新人培训中心</h1> <p class="text-xs text-white/60">听课解锁考试 · 60分及格</p> </div> </div> <div class="flex items-center gap-3"> <div class="text-right"> <p class="text-sm font-bold text-white">{{ userName }}</p> <p class="text-xs text-white/60">UID: {{ uid }}</p> </div> <button @click="logout" class="text-xs text-white/70 hover:text-white bg-white/15 px-3 py-1.5 rounded-lg font-bold">切换账号</button> </div> </div> </header> <main class="max-w-3xl mx-auto px-4 py-5 relative z-10 pb-10"> <!-- 加载中 --> <div v-if="loading" class="glass-card p-10 text-center text-gray-500 font-bold"> <div class="text-4xl mb-3 animate-bounce"></div>
+<template> <div class="min-h-screen bg-soft relative overflow-x-hidden"> <!-- 背景装饰 --> <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-purple-200/30 blur-3xl animate-pulse-slow"></div> <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-amber-200/30 blur-3xl animate-pulse-slow" style="animation-delay: 2s;"></div> <!-- 顶部栏 --> <header class="glass-nav relative z-10"> <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between"> <div class="flex items-center gap-2"> <img src="/logo.png" alt="点点开黑" class="w-9 h-9 object-contain rounded-xl shadow"> <div> <h1 class="text-base font-bold text-accent leading-tight">新人培训中心</h1> <p class="text-xs text-accent/60">听课解锁考试 · 60分及格</p> </div> </div> <div class="flex items-center gap-3"> <div class="text-right"> <p class="text-sm font-bold text-accent">{{ userName }}</p> <p class="text-xs text-accent/60">UID: {{ uid }}</p> </div> <button @click="goQuery" class="text-xs text-accent/70 hover:text-accent bg-accent/10 px-3 py-1.5 rounded-lg font-bold">成绩查询</button> <button @click="logout" class="text-xs text-accent/70 hover:text-accent bg-accent/10 px-3 py-1.5 rounded-lg font-bold">切换账号</button> </div> </div> </header> <main class="max-w-3xl mx-auto px-4 py-5 relative z-10 pb-10"> <!-- 加载中 --> <div v-if="loading" class="glass-card p-10 text-center text-gray-500 font-bold"> <div class="text-4xl mb-3 animate-bounce"></div>
         课程加载中…
       </div> <template v-else> <!-- 双课包大卡 --> <div class="grid grid-cols-2 gap-3 sm:gap-4 mb-5"> <div
             v-for="pkg in packages" :key="pkg.id"
@@ -41,6 +41,10 @@ import { useRouter } from 'vue-router'
 import { useExamStore } from '../stores/exam.js'
 
 const router = useRouter()
+
+function goQuery() {
+  router.push({ path: '/query', query: { uid: uid.value } })
+}
 const store = useExamStore()
 const showToast = inject('showToast')
 
@@ -169,7 +173,7 @@ onUnmounted(() => {
   animation: pulse-slow 8s ease-in-out infinite;
 }
 .bg-animated {
-  background: linear-gradient(-45deg, #FF5E3A, #FF8C42, #FFB347, #FF6B6B, #FFA502);
+  background: linear-gradient(-45deg, #8E6BC8, #A88BD8, #C9A7EB, #F48A8A, #F5B301);
   background-size: 300% 300%;
   animation: gradient-flow 6s ease infinite;
 }
