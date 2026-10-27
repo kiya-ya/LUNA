@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-soft relative">
     <!-- 顶部栏 -->
-    <header class="glass-nav relative z-10 sticky top-0">
+    <header class="relative z-10 sticky top-0">
       <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
         <button @click="goBack" class="text-accent font-bold text-sm bg-accent/10 px-3 py-1.5 rounded-lg hover:bg-accent/20 transition-all shrink-0">返回</button>
         <h1 class="text-sm sm:text-base font-bold text-accent truncate flex-1 text-center">成绩查询</h1>
