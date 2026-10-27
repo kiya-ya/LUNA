@@ -1,34 +1,14 @@
-<template>
-  <Teleport to="body">
-    <div class="fixed top-6 left-1/2 -translate-x-1/2 z-[999] flex flex-col items-center gap-2 pointer-events-none">
-      <TransitionGroup name="toast">
-        <div
+<template> <Teleport to="body"> <div class="fixed top-6 left-1/2 -translate-x-1/2 z-[999] flex flex-col items-center gap-2 pointer-events-none"> <TransitionGroup name="toast"> <div
           v-for="item in toasts"
           :key="item.id"
           class="pointer-events-auto flex items-center gap-2 px-5 py-3 rounded-2xl shadow-lg text-sm font-bold backdrop-blur-sm border transition-all"
           :class="toastClass(item.type)"
-        >
-          <span class="text-lg">{{ iconMap[item.type] }}</span>
-          <span>{{ item.message }}</span>
-          <button @click="remove(item.id)" class="ml-1 opacity-50 hover:opacity-100 transition-opacity">✕</button>
-        </div>
-      </TransitionGroup>
-    </div>
-  </Teleport>
-</template>
-
-<script setup>
+        > <span>{{ item.message }}</span> <button @click="remove(item.id)" class="ml-1 opacity-50 hover:opacity-100 transition-opacity">×</button> </div> </TransitionGroup> </div> </Teleport>
+</template> <script setup>
 import { ref, computed } from 'vue'
 
 const toasts = ref([])
 let id = 0
-
-const iconMap = {
-  success: '✅',
-  error: '❌',
-  warning: '⚠️',
-  info: '💡'
-}
 
 function toastClass(type) {
   switch (type) {
@@ -54,9 +34,7 @@ function remove(id) {
 }
 
 defineExpose({ show, remove })
-</script>
-
-<style scoped>
+</script> <style scoped>
 .toast-enter-active,
 .toast-leave-active {
   transition: all 0.3s ease;

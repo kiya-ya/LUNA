@@ -1,1123 +1,78 @@
-<template>
-  <div class="min-h-screen bg-animated relative">
-    <!-- 顶部导航栏 -->
-    <header class="glass-nav relative z-10">
-      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-            <span class="text-xl">🎯</span>
-          </div>
-          <h1 class="text-lg font-bold text-white">点点开黑 · 考试管理后台</h1>
-        </div>
-        <div class="flex items-center gap-4">
-          <button @click="startAdminTest" class="text-sm px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white font-bold rounded-lg transition-all flex items-center gap-1">
-            <span>🧪</span> 测试考试
-          </button>
-          <span class="text-sm text-white/70">管理员</span>
-          <button @click="goHome" class="text-sm text-white hover:text-white/80 font-bold">退出</button>
-        </div>
-      </div>
-    </header>
-
-    <!-- 主体内容 -->
-    <main class="max-w-7xl mx-auto px-4 py-6">
-      <!-- 统计卡片 -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div class="glass-card relative z-10 p-5">
-          <div class="text-sm text-gray-500 mb-1">📚 题库题目</div>
-          <div class="text-2xl font-bold text-gray-900">{{ stats.total }}</div>
-        </div>
-        <div class="glass-card relative z-10 p-5">
-          <div class="text-sm text-gray-500 mb-1">📝 单选题</div>
-          <div class="text-2xl font-bold text-primary">{{ stats.single }}</div>
-        </div>
-        <div class="glass-card relative z-10 p-5">
-          <div class="text-sm text-gray-500 mb-1">👥 累计考生</div>
-          <div class="text-2xl font-bold text-success">{{ allResults.length }}</div>
-        </div>
-        <div class="glass-card relative z-10 p-5">
-          <div class="text-sm text-gray-500 mb-1">🗑️ 回收站</div>
-          <div class="text-2xl font-bold text-gray-600">{{ recycleBinItems.length }}</div>
-        </div>
-        <div class="glass-card relative z-10 p-5">
-          <div class="text-sm text-gray-500 mb-1">🤖 智能生题</div>
-          <div class="text-2xl font-bold text-secondary">{{ aiGenCount }}</div>
-        </div>
-      </div>
-
-      <!-- 功能卡片 -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
-        <div @click="currentTab = 'questions'" class="glass-card relative z-10 p-6 cursor-pointer hover:shadow-lg transition-all border-2" :class="currentTab === 'questions' ? 'border-primary' : 'border-transparent'">
-          <div class="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center mb-4">
-            <span class="text-2xl">📚</span>
-          </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-1">题库管理</h3>
-          <p class="text-sm text-gray-500">查看、编辑题库</p>
-        </div>
-
-        <div @click="currentTab = 'exams'" class="glass-card relative z-10 p-6 cursor-pointer hover:shadow-lg transition-all border-2" :class="currentTab === 'exams' ? 'border-primary' : 'border-transparent'">
-          <div class="w-12 h-12 bg-success/20 rounded-2xl flex items-center justify-center mb-4">
-            <span class="text-2xl">📝</span>
-          </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-1">考试配置</h3>
-          <p class="text-sm text-gray-500">创建试卷、历史试卷</p>
-        </div>
-
-        <div @click="currentTab = 'results'" class="glass-card relative z-10 p-6 cursor-pointer hover:shadow-lg transition-all border-2" :class="currentTab === 'results' ? 'border-primary' : 'border-transparent'">
-          <div class="w-12 h-12 bg-secondary/20 rounded-2xl flex items-center justify-center mb-4">
-            <span class="text-2xl">📊</span>
-          </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-1">成绩统计</h3>
-          <p class="text-sm text-gray-500">查看成绩、导出Excel</p>
-        </div>
-
-        <div @click="currentTab = 'recycle'" class="glass-card relative z-10 p-6 cursor-pointer hover:shadow-lg transition-all border-2" :class="currentTab === 'recycle' ? 'border-primary' : 'border-transparent'">
-          <div class="w-12 h-12 bg-gray-200/50 rounded-2xl flex items-center justify-center mb-4">
-            <span class="text-2xl">🗑️</span>
-          </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-1">回收站</h3>
-          <p class="text-sm text-gray-500">{{ recycleBinItems.length }} 个已删除项目</p>
-        </div>
-
-        <div @click="currentTab = 'ai-gen'" class="glass-card relative z-10 p-6 cursor-pointer hover:shadow-lg transition-all border-2" :class="currentTab === 'ai-gen' ? 'border-primary' : 'border-transparent'">
-          <div class="w-12 h-12 bg-secondary/20 rounded-2xl flex items-center justify-center mb-4">
-            <span class="text-2xl">🤖</span>
-          </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-1">智能生题</h3>
-          <p class="text-sm text-gray-500">上传文档，AI生成题目</p>
-        </div>
-
-        <div @click="currentTab = 'learn'" class="glass-card relative z-10 p-6 cursor-pointer hover:shadow-lg transition-all border-2" :class="currentTab === 'learn' ? 'border-primary' : 'border-transparent'">
-          <div class="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center mb-4">
-            <span class="text-2xl">🎬</span>
-          </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-1">课程管理</h3>
-          <p class="text-sm text-gray-500">课包、课程、学员进度</p>
-        </div>
-      </div>
-
-      <!-- 题库管理内容 -->
-      <div v-if="currentTab === 'questions'" class="glass-card relative z-10 p-6">
-        <!-- 题库切换 + 编辑 -->
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-3">
-            <h2 class="text-lg font-bold text-gray-900">📚 题库管理</h2>
-            <!-- 题库切换 -->
-            <div class="relative">
-              <button @click="showBankMenu = !showBankMenu" class="flex items-center gap-2 px-3 py-2 bg-primary/10 text-primary font-bold text-sm rounded-xl hover:bg-primary/20 transition-all">
-                <span>{{ questionBanks.find(b => b.id === currentBankId)?.name || '默认题库' }}</span>
-                <svg :class="showBankMenu ? 'rotate-180' : ''" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-              </button>
-              <div v-show="showBankMenu" class="absolute left-0 mt-2 w-56 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
-                <div class="max-h-60 overflow-y-auto">
-                  <div v-for="bank in questionBanks" :key="bank.id" class="flex items-center justify-between px-4 py-2 hover:bg-primary-light cursor-pointer group" @click="switchBank(bank.id)">
-                    <span class="text-sm font-bold truncate" :class="bank.id === currentBankId ? 'text-primary' : 'text-gray-700'">
-                      {{ bank.id === currentBankId ? '✅ ' : '　　' }}{{ bank.name }}
-                    </span>
-                    <div class="flex items-center gap-1">
-                      <span @click.stop="openEditBank(bank)" class="text-xs text-gray-400 hover:text-primary ml-1 opacity-0 group-hover:opacity-100 transition-opacity">⚙️</span>
-                      <span v-if="bank.id !== currentBankId" @click.stop="deleteBank(bank.id)" class="text-xs text-gray-400 hover:text-danger ml-1 opacity-0 group-hover:opacity-100 transition-opacity">🗑️</span>
-                    </div>
-                  </div>
-                </div>
-                <div class="border-t border-gray-100 px-4 py-2">
-                  <button @click="showNewBankModal = true; showBankMenu = false" class="text-sm font-bold text-primary hover:text-primary-dark flex items-center gap-1">
-                    <span>➕</span> 新建题库
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="relative">
-            <button @click="showEditMenu = !showEditMenu" class="px-4 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-colors flex items-center gap-2">
-              <span>⚙️</span> 编辑题库
-              <svg :class="showEditMenu ? 'rotate-180' : ''" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            </button>
-            <div v-show="showEditMenu" class="absolute right-0 mt-2 w-40 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
-              <button @click="openAddQuestion" class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-primary-light hover:text-primary font-bold transition-colors flex items-center gap-2">
-                <span>➕</span> 新增题目
-              </button>
-              <button @click="showImportModal = true; showEditMenu = false" class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-primary-light hover:text-primary font-bold transition-colors flex items-center gap-2">
-                <span>📥</span> 批量导入
-              </button>
-              <button @click="toggleEditMode" class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-primary-light hover:text-primary font-bold transition-colors flex items-center gap-2">
-                <span>✏️</span> {{ editMode ? '退出修改' : '修改题目' }}
-              </button>
-              <button @click="exportQuestionsToExcel(); showEditMenu = false" class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-primary-light hover:text-primary font-bold transition-colors flex items-center gap-2">
-                <span>📥</span> 导出题库
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 新建题库弹窗 -->
-        <div v-if="showNewBankModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">新建题库</h3>
-            <input v-model="newBankName" type="text" placeholder="请输入题库名称" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all mb-4">
-            <div class="flex gap-3">
-              <button @click="showNewBankModal = false" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">取消</button>
-              <button @click="createBank" class="flex-1 h-12 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark transition-all">新建</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 编辑题库弹窗 -->
-        <div v-if="showEditBankModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">编辑题库</h3>
-            <input v-model="editBankName" type="text" placeholder="请输入题库名称" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all mb-4">
-            <div class="flex gap-3">
-              <button @click="showEditBankModal = false" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">取消</button>
-              <button @click="saveEditBank" class="flex-1 h-12 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark transition-all">保存</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 批量导入弹窗 -->
-        <div v-if="showImportModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
-            <h3 class="text-lg font-bold text-gray-900 mb-2">📥 批量导入题目</h3>
-            <p class="text-sm text-gray-500 mb-4">支持 Word(.docx) 或 Excel(.xlsx) 文件</p>
-            <div class="border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center mb-4 hover:border-primary transition-all cursor-pointer" @click="$refs.importFile.click()">
-              <div class="text-3xl mb-2">📄</div>
-              <p class="text-sm text-gray-600 font-bold">点击选择文件</p>
-              <p class="text-xs text-gray-400 mt-1">{{ importFileName || '支持 .docx / .xlsx' }}</p>
-            </div>
-            <input ref="importFile" type="file" accept=".docx,.xlsx" class="hidden" @change="handleImportFile">
-            <div class="flex gap-3">
-              <button @click="showImportModal = false; importFileName = ''" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">取消</button>
-              <button @click="submitImport" :disabled="!importFileName || importing" class="flex-1 h-12 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark transition-all disabled:opacity-50">
+<template> <div class="min-h-screen bg-animated relative"> <!-- 顶部导航栏 --> <header class="glass-nav relative z-10"> <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between"> <div class="flex items-center gap-3"> <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"> <span class="text-xl"></span> </div> <h1 class="text-lg font-bold text-white">点点开黑 · 考试管理后台</h1> </div> <div class="flex items-center gap-4"> <button @click="startAdminTest" class="text-sm px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white font-bold rounded-lg transition-all flex items-center gap-1"> <span></span> 测试考试
+          </button> <span class="text-sm text-white/70">管理员</span> <button @click="goHome" class="text-sm text-white hover:text-white/80 font-bold">退出</button> </div> </div> </header> <!-- 主体内容 --> <main class="max-w-7xl mx-auto px-4 py-6"> <!-- 统计卡片 --> <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"> <div class="glass-card relative z-10 p-5"> <div class="text-sm text-gray-500 mb-1"> 题库题目</div> <div class="text-2xl font-bold text-gray-900">{{ stats.total }}</div> </div> <div class="glass-card relative z-10 p-5"> <div class="text-sm text-gray-500 mb-1"> 单选题</div> <div class="text-2xl font-bold text-primary">{{ stats.single }}</div> </div> <div class="glass-card relative z-10 p-5"> <div class="text-sm text-gray-500 mb-1"> 累计考生</div> <div class="text-2xl font-bold text-success">{{ allResults.length }}</div> </div> <div class="glass-card relative z-10 p-5"> <div class="text-sm text-gray-500 mb-1"> 回收站</div> <div class="text-2xl font-bold text-gray-600">{{ recycleBinItems.length }}</div> </div> <div class="glass-card relative z-10 p-5"> <div class="text-sm text-gray-500 mb-1"> 智能生题</div> <div class="text-2xl font-bold text-secondary">{{ aiGenCount }}</div> </div> </div> <!-- 功能卡片 --> <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6"> <div @click="currentTab = 'questions'" class="glass-card relative z-10 p-6 cursor-pointer hover:shadow-lg transition-all border-2" :class="currentTab === 'questions' ? 'border-primary' : 'border-transparent'"> <div class="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center mb-4"> <span class="text-2xl"></span> </div> <h3 class="text-lg font-bold text-gray-900 mb-1">题库管理</h3> <p class="text-sm text-gray-500">查看、编辑题库</p> </div> <div @click="currentTab = 'exams'" class="glass-card relative z-10 p-6 cursor-pointer hover:shadow-lg transition-all border-2" :class="currentTab === 'exams' ? 'border-primary' : 'border-transparent'"> <div class="w-12 h-12 bg-success/20 rounded-2xl flex items-center justify-center mb-4"> <span class="text-2xl"></span> </div> <h3 class="text-lg font-bold text-gray-900 mb-1">考试配置</h3> <p class="text-sm text-gray-500">创建试卷、历史试卷</p> </div> <div @click="currentTab = 'results'" class="glass-card relative z-10 p-6 cursor-pointer hover:shadow-lg transition-all border-2" :class="currentTab === 'results' ? 'border-primary' : 'border-transparent'"> <div class="w-12 h-12 bg-secondary/20 rounded-2xl flex items-center justify-center mb-4"> <span class="text-2xl"></span> </div> <h3 class="text-lg font-bold text-gray-900 mb-1">成绩统计</h3> <p class="text-sm text-gray-500">查看成绩、导出Excel</p> </div> <div @click="currentTab = 'recycle'" class="glass-card relative z-10 p-6 cursor-pointer hover:shadow-lg transition-all border-2" :class="currentTab === 'recycle' ? 'border-primary' : 'border-transparent'"> <div class="w-12 h-12 bg-gray-200/50 rounded-2xl flex items-center justify-center mb-4"> <span class="text-2xl"></span> </div> <h3 class="text-lg font-bold text-gray-900 mb-1">回收站</h3> <p class="text-sm text-gray-500">{{ recycleBinItems.length }} 个已删除项目</p> </div> <div @click="currentTab = 'ai-gen'" class="glass-card relative z-10 p-6 cursor-pointer hover:shadow-lg transition-all border-2" :class="currentTab === 'ai-gen' ? 'border-primary' : 'border-transparent'"> <div class="w-12 h-12 bg-secondary/20 rounded-2xl flex items-center justify-center mb-4"> <span class="text-2xl"></span> </div> <h3 class="text-lg font-bold text-gray-900 mb-1">智能生题</h3> <p class="text-sm text-gray-500">上传文档，AI生成题目</p> </div> <div @click="currentTab = 'learn'" class="glass-card relative z-10 p-6 cursor-pointer hover:shadow-lg transition-all border-2" :class="currentTab === 'learn' ? 'border-primary' : 'border-transparent'"> <div class="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center mb-4"> <span class="text-2xl"></span> </div> <h3 class="text-lg font-bold text-gray-900 mb-1">课程管理</h3> <p class="text-sm text-gray-500">课包、课程、学员进度</p> </div> </div> <!-- 题库管理内容 --> <div v-if="currentTab === 'questions'" class="glass-card relative z-10 p-6"> <!-- 题库切换 + 编辑 --> <div class="flex items-center justify-between mb-4"> <div class="flex items-center gap-3"> <h2 class="text-lg font-bold text-gray-900"> 题库管理</h2> <!-- 题库切换 --> <div class="relative"> <button @click="showBankMenu = !showBankMenu" class="flex items-center gap-2 px-3 py-2 bg-primary/10 text-primary font-bold text-sm rounded-xl hover:bg-primary/20 transition-all"> <span>{{ questionBanks.find(b => b.id === currentBankId)?.name || '默认题库' }}</span> <svg :class="showBankMenu ? 'rotate-180' : ''" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path> </svg> </button> <div v-show="showBankMenu" class="absolute left-0 mt-2 w-56 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden"> <div class="max-h-60 overflow-y-auto"> <div v-for="bank in questionBanks" :key="bank.id" class="flex items-center justify-between px-4 py-2 hover:bg-primary-light cursor-pointer group" @click="switchBank(bank.id)"> <span class="text-sm font-bold truncate" :class="bank.id === currentBankId ? 'text-primary' : 'text-gray-700'">
+                      {{ bank.id === currentBankId ? ' ' : '　　' }}{{ bank.name }}
+                    </span> <div class="flex items-center gap-1"> <span @click.stop="openEditBank(bank)" class="text-xs text-gray-400 hover:text-primary ml-1 opacity-0 group-hover:opacity-100 transition-opacity"></span> <span v-if="bank.id !== currentBankId" @click.stop="deleteBank(bank.id)" class="text-xs text-gray-400 hover:text-danger ml-1 opacity-0 group-hover:opacity-100 transition-opacity"></span> </div> </div> </div> <div class="border-t border-gray-100 px-4 py-2"> <button @click="showNewBankModal = true; showBankMenu = false" class="text-sm font-bold text-primary hover:text-primary-dark flex items-center gap-1"> <span></span> 新建题库
+                  </button> </div> </div> </div> </div> <div class="relative"> <button @click="showEditMenu = !showEditMenu" class="px-4 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-colors flex items-center gap-2"> <span></span> 编辑题库
+              <svg :class="showEditMenu ? 'rotate-180' : ''" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path> </svg> </button> <div v-show="showEditMenu" class="absolute right-0 mt-2 w-40 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden"> <button @click="openAddQuestion" class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-primary-light hover:text-primary font-bold transition-colors flex items-center gap-2"> <span></span> 新增题目
+              </button> <button @click="showImportModal = true; showEditMenu = false" class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-primary-light hover:text-primary font-bold transition-colors flex items-center gap-2"> <span></span> 批量导入
+              </button> <button @click="toggleEditMode" class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-primary-light hover:text-primary font-bold transition-colors flex items-center gap-2"> <span></span> {{ editMode ? '退出修改' : '修改题目' }}
+              </button> <button @click="exportQuestionsToExcel(); showEditMenu = false" class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-primary-light hover:text-primary font-bold transition-colors flex items-center gap-2"> <span></span> 导出题库
+              </button> </div> </div> </div> <!-- 新建题库弹窗 --> <div v-if="showNewBankModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"> <div class="bg-white rounded-2xl p-6 w-full max-w-sm"> <h3 class="text-lg font-bold text-gray-900 mb-4">新建题库</h3> <input v-model="newBankName" type="text" placeholder="请输入题库名称" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all mb-4"> <div class="flex gap-3"> <button @click="showNewBankModal = false" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">取消</button> <button @click="createBank" class="flex-1 h-12 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark transition-all">新建</button> </div> </div> </div> <!-- 编辑题库弹窗 --> <div v-if="showEditBankModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"> <div class="bg-white rounded-2xl p-6 w-full max-w-sm"> <h3 class="text-lg font-bold text-gray-900 mb-4">编辑题库</h3> <input v-model="editBankName" type="text" placeholder="请输入题库名称" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all mb-4"> <div class="flex gap-3"> <button @click="showEditBankModal = false" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">取消</button> <button @click="saveEditBank" class="flex-1 h-12 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark transition-all">保存</button> </div> </div> </div> <!-- 批量导入弹窗 --> <div v-if="showImportModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"> <div class="bg-white rounded-2xl p-6 w-full max-w-sm"> <h3 class="text-lg font-bold text-gray-900 mb-2"> 批量导入题目</h3> <p class="text-sm text-gray-500 mb-4">支持 Word(.docx) 或 Excel(.xlsx) 文件</p> <div class="border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center mb-4 hover:border-primary transition-all cursor-pointer" @click="$refs.importFile.click()"> <div class="text-3xl mb-2"></div> <p class="text-sm text-gray-600 font-bold">点击选择文件</p> <p class="text-xs text-gray-400 mt-1">{{ importFileName || '支持 .docx / .xlsx' }}</p> </div> <input ref="importFile" type="file" accept=".docx,.xlsx" class="hidden" @change="handleImportFile"> <div class="flex gap-3"> <button @click="showImportModal = false; importFileName = ''" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">取消</button> <button @click="submitImport" :disabled="!importFileName || importing" class="flex-1 h-12 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark transition-all disabled:opacity-50">
                 {{ importing ? '导入中...' : '开始导入' }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 题目列表 -->
-        <div class="overflow-x-auto" style="min-width: 100%;">
-          <table class="w-full text-sm whitespace-nowrap">
-            <thead>
-              <tr class="border-b-2 border-primary-light">
-                <th class="text-left py-3 px-3 font-bold text-gray-500 w-12">#</th>
-                <th class="text-left py-3 px-3 font-bold text-gray-500 w-16">题型</th>
-                <th class="text-left py-3 px-3 font-bold text-gray-500" style="min-width: 200px;">题干</th>
-                <th class="text-left py-3 px-3 font-bold text-gray-500" style="min-width: 150px;">选项</th>
-                <th class="text-left py-3 px-3 font-bold text-gray-500" style="min-width: 100px;">答案</th>
-                <th class="text-left py-3 px-3 font-bold text-gray-500" style="min-width: 200px;">答案解析</th>
-                <th class="text-left py-3 px-3 font-bold text-gray-500 w-24">题目启用</th>
-                <th v-if="editMode" class="text-left py-3 px-3 font-bold text-gray-500 w-24">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="q in paginatedQuestions" :key="q.id" class="border-b border-gray-100 hover:bg-primary-light/20 transition-colors" :class="q.enabled === false ? 'opacity-50 bg-gray-50' : ''">
-                <td class="py-3 px-3">{{ q.id }}</td>
-                <td class="py-3 px-3">
-                  <span class="px-2 py-1 rounded-lg text-xs font-bold whitespace-nowrap" :class="typeClass(q.type)">{{ typeLabel(q.type) }}</span>
-                </td>
-                <td class="py-3 px-3">
-                  <div class="max-w-xs truncate cursor-pointer hover:text-primary transition-colors" :title="q.title" @click="openQuestionPreview(q)">{{ q.title }}</div>
-                </td>
-                <td class="py-3 px-3">
-                  <div class="max-w-xs truncate text-gray-600" :title="q.options?.join(' / ') || '-'">
+              </button> </div> </div> </div> <!-- 题目列表 --> <div class="overflow-x-auto" style="min-width: 100%;"> <table class="w-full text-sm whitespace-nowrap"> <thead> <tr class="border-b-2 border-primary-light"> <th class="text-left py-3 px-3 font-bold text-gray-500 w-12">#</th> <th class="text-left py-3 px-3 font-bold text-gray-500 w-16">题型</th> <th class="text-left py-3 px-3 font-bold text-gray-500" style="min-width: 200px;">题干</th> <th class="text-left py-3 px-3 font-bold text-gray-500" style="min-width: 150px;">选项</th> <th class="text-left py-3 px-3 font-bold text-gray-500" style="min-width: 100px;">答案</th> <th class="text-left py-3 px-3 font-bold text-gray-500" style="min-width: 200px;">答案解析</th> <th class="text-left py-3 px-3 font-bold text-gray-500 w-24">题目启用</th> <th v-if="editMode" class="text-left py-3 px-3 font-bold text-gray-500 w-24">操作</th> </tr> </thead> <tbody> <tr v-for="q in paginatedQuestions" :key="q.id" class="border-b border-gray-100 hover:bg-primary-light/20 transition-colors" :class="q.enabled === false ? 'opacity-50 bg-gray-50' : ''"> <td class="py-3 px-3">{{ q.id }}</td> <td class="py-3 px-3"> <span class="px-2 py-1 rounded-lg text-xs font-bold whitespace-nowrap" :class="typeClass(q.type)">{{ typeLabel(q.type) }}</span> </td> <td class="py-3 px-3"> <div class="max-w-xs truncate cursor-pointer hover:text-primary transition-colors" :title="q.title" @click="openQuestionPreview(q)">{{ q.title }}</div> </td> <td class="py-3 px-3"> <div class="max-w-xs truncate text-gray-600" :title="q.options?.join(' / ') || '-'">
                     {{ q.options?.join(' / ') || '-' }}
-                  </div>
-                </td>
-                <td class="py-3 px-3 text-gray-600">
-                  <div class="max-w-xs truncate" :title="q.type === 'single' || q.type === 'multiple' ? q.answer : q.type === 'fill' ? q.blanks.map(b => b.answer).join(' / ') : '-'">
+                  </div> </td> <td class="py-3 px-3 text-gray-600"> <div class="max-w-xs truncate" :title="q.type === 'single' || q.type === 'multiple' ? q.answer : q.type === 'fill' ? q.blanks.map(b => b.answer).join(' / ') : '-'">
                     {{ q.type === 'single' || q.type === 'multiple' ? q.answer : q.type === 'fill' ? q.blanks.map(b => b.answer).join(' / ') : '-' }}
-                  </div>
-                </td>
-                <td class="py-3 px-3 text-gray-600">
-                  <div class="max-w-xs truncate" :title="q.keyPoints || '-'">{{ q.keyPoints || '-' }}</div>
-                </td>
-                <td class="py-3 px-3">
-                  <button @click="toggleQuestionEnabled(q)" class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 shrink-0" :class="q.enabled !== false ? 'bg-success' : 'bg-gray-300'">
-                    <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200" :class="q.enabled !== false ? 'translate-x-6' : 'translate-x-1'"></span>
-                  </button>
-                  <span class="ml-2 text-xs whitespace-nowrap" :class="q.enabled !== false ? 'text-success' : 'text-gray-400'">{{ q.enabled !== false ? '已启用' : '已禁用' }}</span>
-                </td>
-                <td v-if="editMode" class="py-3 px-3 whitespace-nowrap">
-                  <button @click="openEditQuestion(q)" class="text-primary hover:text-primary-dark text-sm font-bold mr-3">✏️</button>
-                  <button @click="deleteQuestion(q.id)" class="text-danger hover:text-danger/80 text-sm font-bold">🗑️</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- 分页控件 -->
-        <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-          <div class="text-sm text-gray-500">
+                  </div> </td> <td class="py-3 px-3 text-gray-600"> <div class="max-w-xs truncate" :title="q.keyPoints || '-'">{{ q.keyPoints || '-' }}</div> </td> <td class="py-3 px-3"> <button @click="toggleQuestionEnabled(q)" class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 shrink-0" :class="q.enabled !== false ? 'bg-success' : 'bg-gray-300'"> <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200" :class="q.enabled !== false ? 'translate-x-6' : 'translate-x-1'"></span> </button> <span class="ml-2 text-xs whitespace-nowrap" :class="q.enabled !== false ? 'text-success' : 'text-gray-400'">{{ q.enabled !== false ? '已启用' : '已禁用' }}</span> </td> <td v-if="editMode" class="py-3 px-3 whitespace-nowrap"> <button @click="openEditQuestion(q)" class="text-primary hover:text-primary-dark text-sm font-bold mr-3"></button> <button @click="deleteQuestion(q.id)" class="text-danger hover:text-danger/80 text-sm font-bold"></button> </td> </tr> </tbody> </table> </div> <!-- 分页控件 --> <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-100"> <div class="text-sm text-gray-500">
             共 {{ questions.length }} 题，第 {{ currentPage }}/{{ totalPages }} 页
-          </div>
-          <div class="flex items-center gap-2">
-            <button @click="goPage(1)" :disabled="currentPage === 1" class="px-3 py-2 text-sm font-bold rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all">⏮</button>
-            <button @click="goPage(currentPage - 1)" :disabled="currentPage === 1" class="px-3 py-2 text-sm font-bold rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all">◀</button>
-            <div class="flex gap-1">
-              <button v-for="p in pageNumbers" :key="p" @click="goPage(p)" class="w-9 h-9 text-sm font-bold rounded-xl transition-all" :class="p === currentPage ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'">{{ p }}</button>
-            </div>
-            <button @click="goPage(currentPage + 1)" :disabled="currentPage === totalPages" class="px-3 py-2 text-sm font-bold rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all">▶</button>
-            <button @click="goPage(totalPages)" :disabled="currentPage === totalPages" class="px-3 py-2 text-sm font-bold rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all">⏭</button>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="text-sm text-gray-500">每页</span>
-            <select v-model="pageSize" @change="currentPage = 1" class="px-2 py-1 border-2 border-gray-200 rounded-lg text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white">
-              <option :value="20">20</option>
-              <option :value="60">60</option>
-              <option :value="100">100</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- 考试配置内容 -->
-      <div v-if="currentTab === 'exams'" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- 左侧：编辑配置 -->
-        <div class="glass-card relative z-10 p-6">
-          <h2 class="text-lg font-bold text-gray-900 mb-6">📝 {{ editingConfig ? '编辑试卷' : '创建新试卷' }}</h2>
-          <div class="space-y-5">
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-2">试卷名称</label>
-              <input v-model="examForm.name" type="text" placeholder="例如：姐妹团姐姐考试6月" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
-            </div>
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-2">题库来源</label>
-              <select v-model="examForm.bank_id" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white">
-                <option v-for="bank in questionBanks" :key="bank.id" :value="bank.id">{{ bank.name }}</option>
-              </select>
-            </div>
-            <!-- 题型数量 -->
-            <div class="grid grid-cols-4 gap-3">
-              <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">单选题数</label>
-                <input v-model.number="examForm.single" type="number" min="0" max="100" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">多选题数</label>
-                <input v-model.number="examForm.multiple" type="number" min="0" max="100" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">填空题数</label>
-                <input v-model.number="examForm.fill" type="number" min="0" max="100" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">简答题数</label>
-                <input v-model.number="examForm.essay" type="number" min="0" max="100" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
-              </div>
-            </div>
-            <!-- 分值设置 -->
-            <div class="grid grid-cols-4 gap-3">
-              <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">单选分值</label>
-                <input v-model.number="examForm.score_single" type="number" min="0" max="100" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">多选分值</label>
-                <input v-model.number="examForm.score_multiple" type="number" min="0" max="100" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">填空分值</label>
-                <input v-model.number="examForm.score_fill" type="number" min="0" max="100" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">简答分值</label>
-                <input v-model.number="examForm.score_essay" type="number" min="0" max="100" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <input type="checkbox" id="shuffle" checked disabled class="w-4 h-4 text-primary rounded">
-              <label for="shuffle" class="text-sm text-gray-700">🔀 题目乱序（默认开启）</label>
-            </div>
-
-            <!-- 定时发布/截止 -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 rounded-2xl bg-gray-50/50 border border-gray-100">
-              <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">⏰ 定时发布时间</label>
-                <input v-model="examForm.publish_at" type="datetime-local" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-sm">
-                <p class="text-xs text-gray-400 mt-1">留空则不定时发布</p>
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">⏰ 定时截止时间</label>
-                <input v-model="examForm.stop_at" type="datetime-local" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-sm">
-                <p class="text-xs text-gray-400 mt-1">留空则不定时截止</p>
-              </div>
-            </div>
-
-            <div class="flex gap-3">
-              <button v-if="editingConfig" @click="cancelEdit" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">取消</button>
-              <button @click="saveExamConfig" class="flex-1 py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2">
-                <span>💾</span>
-                <span>{{ editingConfig ? '保存修改' : '创建试卷' }}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 右侧：历史试卷 -->
-        <div class="glass-card relative z-10 p-6">
-          <h2 class="text-lg font-bold text-gray-900 mb-4">📚 历史试卷</h2>
-          <div class="space-y-3">
-            <div v-for="cfg in examConfigs" :key="cfg.id" class="p-4 rounded-2xl border hover:shadow-md transition-all" :class="cfg.status === 'published' ? 'bg-success/5 border-success' : cfg.status === 'draft' ? 'bg-warning/5 border-warning' : 'bg-gray-50 border-gray-200'">
-              <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center gap-2">
-                  <h3 class="font-bold text-gray-900">{{ cfg.name }}</h3>
-                  <span class="text-xs px-2 py-0.5 rounded-lg font-bold" :class="statusClass(cfg.status)">{{ statusLabel(cfg.status) }}</span>
-                </div>
-                <div class="flex gap-2">
-                  <button v-if="cfg.status === 'draft'" @click="previewExam(cfg)" class="text-xs px-2 py-1 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors">👁️ 预览</button>
-                  <button v-if="cfg.status === 'draft'" @click="publishExam(cfg.id)" class="text-xs px-2 py-1 bg-success text-white rounded-lg hover:bg-success/90 transition-colors">🚀 发布</button>
-                  <button v-if="cfg.status === 'published'" @click="stopExam(cfg.id)" class="text-xs px-2 py-1 bg-danger text-white rounded-lg hover:bg-danger/80 transition-colors">⏹ 停止</button>
-                  <button v-if="cfg.status === 'stopped'" @click="publishExam(cfg.id)" class="text-xs px-2 py-1 bg-success text-white rounded-lg hover:bg-success/90 transition-colors">🔄 恢复</button>
-                  <button @click="editConfig(cfg)" class="text-xs px-2 py-1 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors">✏️ 编辑</button>
-                  <button @click="deleteConfig(cfg.id)" class="text-xs px-2 py-1 bg-danger text-white rounded-lg hover:bg-danger/80 transition-colors">🗑️ 删除</button>
-                </div>
-              </div>
-              <p class="text-sm text-gray-600">
+          </div> <div class="flex items-center gap-2"> <button @click="goPage(1)" :disabled="currentPage === 1" class="px-3 py-2 text-sm font-bold rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all"></button> <button @click="goPage(currentPage - 1)" :disabled="currentPage === 1" class="px-3 py-2 text-sm font-bold rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all"></button> <div class="flex gap-1"> <button v-for="p in pageNumbers" :key="p" @click="goPage(p)" class="w-9 h-9 text-sm font-bold rounded-xl transition-all" :class="p === currentPage ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'">{{ p }}</button> </div> <button @click="goPage(currentPage + 1)" :disabled="currentPage === totalPages" class="px-3 py-2 text-sm font-bold rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all"></button> <button @click="goPage(totalPages)" :disabled="currentPage === totalPages" class="px-3 py-2 text-sm font-bold rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all"></button> </div> <div class="flex items-center gap-2"> <span class="text-sm text-gray-500">每页</span> <select v-model="pageSize" @change="currentPage = 1" class="px-2 py-1 border-2 border-gray-200 rounded-lg text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white"> <option :value="20">20</option> <option :value="60">60</option> <option :value="100">100</option> </select> </div> </div> </div> <!-- 考试配置内容 --> <div v-if="currentTab === 'exams'" class="grid grid-cols-1 lg:grid-cols-2 gap-6"> <!-- 左侧：编辑配置 --> <div class="glass-card relative z-10 p-6"> <h2 class="text-lg font-bold text-gray-900 mb-6"> {{ editingConfig ? '编辑试卷' : '创建新试卷' }}</h2> <div class="space-y-5"> <div> <label class="block text-sm font-bold text-gray-700 mb-2">试卷名称</label> <input v-model="examForm.name" type="text" placeholder="例如：姐妹团姐姐考试6月" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"> </div> <div> <label class="block text-sm font-bold text-gray-700 mb-2">题库来源</label> <select v-model="examForm.bank_id" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"> <option v-for="bank in questionBanks" :key="bank.id" :value="bank.id">{{ bank.name }}</option> </select> </div> <!-- 题型数量 --> <div class="grid grid-cols-4 gap-3"> <div> <label class="block text-sm font-bold text-gray-700 mb-2">单选题数</label> <input v-model.number="examForm.single" type="number" min="0" max="100" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"> </div> <div> <label class="block text-sm font-bold text-gray-700 mb-2">多选题数</label> <input v-model.number="examForm.multiple" type="number" min="0" max="100" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"> </div> <div> <label class="block text-sm font-bold text-gray-700 mb-2">填空题数</label> <input v-model.number="examForm.fill" type="number" min="0" max="100" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"> </div> <div> <label class="block text-sm font-bold text-gray-700 mb-2">简答题数</label> <input v-model.number="examForm.essay" type="number" min="0" max="100" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"> </div> </div> <!-- 分值设置 --> <div class="grid grid-cols-4 gap-3"> <div> <label class="block text-sm font-bold text-gray-700 mb-2">单选分值</label> <input v-model.number="examForm.score_single" type="number" min="0" max="100" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"> </div> <div> <label class="block text-sm font-bold text-gray-700 mb-2">多选分值</label> <input v-model.number="examForm.score_multiple" type="number" min="0" max="100" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"> </div> <div> <label class="block text-sm font-bold text-gray-700 mb-2">填空分值</label> <input v-model.number="examForm.score_fill" type="number" min="0" max="100" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"> </div> <div> <label class="block text-sm font-bold text-gray-700 mb-2">简答分值</label> <input v-model.number="examForm.score_essay" type="number" min="0" max="100" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"> </div> </div> <div class="flex items-center gap-2"> <input type="checkbox" id="shuffle" checked disabled class="w-4 h-4 text-primary rounded"> <label for="shuffle" class="text-sm text-gray-700"> 题目乱序（默认开启）</label> </div> <!-- 定时发布/截止 --> <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 rounded-2xl bg-gray-50/50 border border-gray-100"> <div> <label class="block text-sm font-bold text-gray-700 mb-2"> 定时发布时间</label> <input v-model="examForm.publish_at" type="datetime-local" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-sm"> <p class="text-xs text-gray-400 mt-1">留空则不定时发布</p> </div> <div> <label class="block text-sm font-bold text-gray-700 mb-2"> 定时截止时间</label> <input v-model="examForm.stop_at" type="datetime-local" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-sm"> <p class="text-xs text-gray-400 mt-1">留空则不定时截止</p> </div> </div> <div class="flex gap-3"> <button v-if="editingConfig" @click="cancelEdit" class="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">取消</button> <button @click="saveExamConfig" class="flex-1 py-3 bg-primary hover:bg-primary-dark text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2"> <span></span> <span>{{ editingConfig ? '保存修改' : '创建试卷' }}</span> </button> </div> </div> </div> <!-- 右侧：历史试卷 --> <div class="glass-card relative z-10 p-6"> <h2 class="text-lg font-bold text-gray-900 mb-4"> 历史试卷</h2> <div class="space-y-3"> <div v-for="cfg in examConfigs" :key="cfg.id" class="p-4 rounded-2xl border hover:shadow-md transition-all" :class="cfg.status === 'published' ? 'bg-success/5 border-success' : cfg.status === 'draft' ? 'bg-warning/5 border-warning' : 'bg-gray-50 border-gray-200'"> <div class="flex items-center justify-between mb-2"> <div class="flex items-center gap-2"> <h3 class="font-bold text-gray-900">{{ cfg.name }}</h3> <span class="text-xs px-2 py-0.5 rounded-lg font-bold" :class="statusClass(cfg.status)">{{ statusLabel(cfg.status) }}</span> </div> <div class="flex gap-2"> <button v-if="cfg.status === 'draft'" @click="previewExam(cfg)" class="text-xs px-2 py-1 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"> 预览</button> <button v-if="cfg.status === 'draft'" @click="publishExam(cfg.id)" class="text-xs px-2 py-1 bg-success text-white rounded-lg hover:bg-success/90 transition-colors"> 发布</button> <button v-if="cfg.status === 'published'" @click="stopExam(cfg.id)" class="text-xs px-2 py-1 bg-danger text-white rounded-lg hover:bg-danger/80 transition-colors"> 停止</button> <button v-if="cfg.status === 'stopped'" @click="publishExam(cfg.id)" class="text-xs px-2 py-1 bg-success text-white rounded-lg hover:bg-success/90 transition-colors"> 恢复</button> <button @click="editConfig(cfg)" class="text-xs px-2 py-1 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"> 编辑</button> <button @click="deleteConfig(cfg.id)" class="text-xs px-2 py-1 bg-danger text-white rounded-lg hover:bg-danger/80 transition-colors"> 删除</button> </div> </div> <p class="text-sm text-gray-600">
                 {{ cfg.single || 0 }}单选({{ cfg.score_single || 5 }}分) + {{ cfg.multiple || 0 }}多选({{ cfg.score_multiple || 5 }}分) + {{ cfg.fill || 0 }}填空({{ cfg.score_fill || 5 }}分) + {{ cfg.essay || 0 }}简答({{ cfg.score_essay || 5 }}分) = {{ ((cfg.single || 0) + (cfg.multiple || 0) + (cfg.fill || 0) + (cfg.essay || 0)) }}题，满分{{ ((cfg.single || 0) * (cfg.score_single || 5) + (cfg.multiple || 0) * (cfg.score_multiple || 5) + (cfg.fill || 0) * (cfg.score_fill || 5) + (cfg.essay || 0) * (cfg.score_essay || 5)) }}分
-              </p>
-              <p class="text-xs text-gray-400 mt-1">{{ formatTime(cfg.created_at) }}</p>
-              <div v-if="cfg.publish_at || cfg.stop_at" class="text-xs mt-1">
-                <span v-if="cfg.publish_at" class="text-blue-500">🕐 发布: {{ formatTime(cfg.publish_at) }}</span>
-                <span v-if="cfg.stop_at" class="text-orange-500 ml-2">🕐 截止: {{ formatTime(cfg.stop_at) }}</span>
-              </div>
-              <p class="text-xs text-primary mt-2 font-bold">📚 题库：{{ questionBanks.find(b => b.id === cfg.bank_id)?.name || '默认题库' }}</p>
-            </div>
-            <div v-if="examConfigs.length === 0" class="text-center text-gray-400 py-8">
+              </p> <p class="text-xs text-gray-400 mt-1">{{ formatTime(cfg.created_at) }}</p> <div v-if="cfg.publish_at || cfg.stop_at" class="text-xs mt-1"> <span v-if="cfg.publish_at" class="text-blue-500"> 发布: {{ formatTime(cfg.publish_at) }}</span> <span v-if="cfg.stop_at" class="text-orange-500 ml-2"> 截止: {{ formatTime(cfg.stop_at) }}</span> </div> <p class="text-xs text-primary mt-2 font-bold"> 题库：{{ questionBanks.find(b => b.id === cfg.bank_id)?.name || '默认题库' }}</p> </div> <div v-if="examConfigs.length === 0" class="text-center text-gray-400 py-8">
               暂无历史试卷
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 成绩统计内容 -->
-      <div v-if="currentTab === 'results'" class="glass-card relative z-10 p-6">
-        <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
-          <h2 class="text-lg font-bold text-gray-900">📊 成绩统计</h2>
-          <div class="flex items-center gap-3">
-            <!-- 批量删除按钮 -->
-            <button 
+            </div> </div> </div> </div> <!-- 成绩统计内容 --> <div v-if="currentTab === 'results'" class="glass-card relative z-10 p-6"> <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4"> <h2 class="text-lg font-bold text-gray-900"> 成绩统计</h2> <div class="flex items-center gap-3"> <!-- 批量删除按钮 --> <button
               v-if="selectedResultIds.length > 0"
-              @click="batchDeleteResults" 
+              @click="batchDeleteResults"
               class="px-4 py-2 bg-danger text-white text-sm font-bold rounded-xl hover:bg-danger/80 transition-colors flex items-center gap-1"
-            >
-              <span>🗑️</span> 批量删除({{ selectedResultIds.length }})
-            </button>
-            <!-- 试卷下拉框 -->
-            <select v-model="selectedExamId" @change="loadResults" class="px-4 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white">
-              <option value="">全部试卷</option>
-              <option v-for="cfg in examConfigs" :key="cfg.id" :value="cfg.id">{{ cfg.name }}</option>
-            </select>
-            <button @click="exportToExcel" class="px-4 py-2 bg-success text-white text-sm font-bold rounded-xl hover:bg-success/90 transition-colors flex items-center gap-1">
-              <span>📥</span> 导出Excel
-            </button>
-          </div>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b-2 border-primary-light">
-                <th class="text-left py-3 px-2 font-bold text-gray-500 w-10">
-                  <input 
-                    type="checkbox" 
-                    :checked="isAllResultsSelected" 
+            > <span></span> 批量删除({{ selectedResultIds.length }})
+            </button> <!-- 试卷下拉框 --> <select v-model="selectedExamId" @change="loadResults" class="px-4 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"> <option value="">全部试卷</option> <option v-for="cfg in examConfigs" :key="cfg.id" :value="cfg.id">{{ cfg.name }}</option> </select> <button @click="exportToExcel" class="px-4 py-2 bg-success text-white text-sm font-bold rounded-xl hover:bg-success/90 transition-colors flex items-center gap-1"> <span></span> 导出Excel
+            </button> </div> </div> <div class="overflow-x-auto"> <table class="w-full text-sm"> <thead> <tr class="border-b-2 border-primary-light"> <th class="text-left py-3 px-2 font-bold text-gray-500 w-10"> <input
+                    type="checkbox"
+                    :checked="isAllResultsSelected"
                     @change="toggleSelectAllResults"
                     class="w-4 h-4 text-primary rounded"
-                  >
-                </th>
-                <th class="text-left py-3 px-4 font-bold text-gray-500">排名</th>
-                <th class="text-left py-3 px-4 font-bold text-gray-500">点点昵称</th>
-                <th class="text-left py-3 px-4 font-bold text-gray-500">点点UID</th>
-                <th class="text-left py-3 px-4 font-bold text-gray-500">总分</th>
-                <th class="text-left py-3 px-4 font-bold text-gray-500">正确率</th>
-                <th class="text-left py-3 px-4 font-bold text-gray-500">时间</th>
-                <th class="text-left py-3 px-4 font-bold text-gray-500">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(s, i) in filteredResults" :key="s.id" class="border-b border-gray-100 hover:bg-primary-light/20 transition-colors">
-                <td class="py-3 px-2">
-                  <input 
-                    type="checkbox" 
-                    :checked="selectedResultIds.includes(s.id)" 
+                  > </th> <th class="text-left py-3 px-4 font-bold text-gray-500">排名</th> <th class="text-left py-3 px-4 font-bold text-gray-500">点点昵称</th> <th class="text-left py-3 px-4 font-bold text-gray-500">点点UID</th> <th class="text-left py-3 px-4 font-bold text-gray-500">总分</th> <th class="text-left py-3 px-4 font-bold text-gray-500">正确率</th> <th class="text-left py-3 px-4 font-bold text-gray-500">时间</th> <th class="text-left py-3 px-4 font-bold text-gray-500">操作</th> </tr> </thead> <tbody> <tr v-for="(s, i) in filteredResults" :key="s.id" class="border-b border-gray-100 hover:bg-primary-light/20 transition-colors"> <td class="py-3 px-2"> <input
+                    type="checkbox"
+                    :checked="selectedResultIds.includes(s.id)"
                     @change="toggleResultSelect(s.id)"
                     class="w-4 h-4 text-primary rounded"
-                  >
-                </td>
-                <td class="py-3 px-4 font-bold">{{ i + 1 }}</td>
-                <td class="py-3 px-4">{{ s.user_name }}</td>
-                <td class="py-3 px-4">{{ s.user_uid }}</td>
-                <td class="py-3 px-4 font-bold" :class="s.percentage >= 80 ? 'text-success' : s.percentage >= 60 ? 'text-primary' : 'text-danger'">{{ s.total_score }}</td>
-                <td class="py-3 px-4">{{ s.percentage }}%</td>
-                <td class="py-3 px-4">{{ formatTime(s.created_at) }}</td>
-                <td class="py-3 px-4">
-                  <button @click="showResultDetail(s)" class="text-xs px-2 py-1 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors mr-2">📋 明细</button>
-                  <button @click="deleteResult(s.id)" class="text-xs px-2 py-1 bg-danger text-white rounded-lg hover:bg-danger/80 transition-colors">🗑️ 删除</button>
-                </td>
-              </tr>
-              <tr v-if="filteredResults.length === 0">
-                <td colspan="8" class="py-8 text-center text-gray-400">暂无考试记录</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- 回收站内容 -->
-      <div v-if="currentTab === 'recycle'" class="glass-card relative z-10 p-6">
-        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-          <div>
-            <h2 class="text-lg font-bold text-gray-900">🗑️ 回收站</h2>
-            <p class="text-sm text-gray-500 mt-1">共 {{ recycleBinItems.length }} 个项目，暂存 {{ recycleBinSettings.retention_days }} 天后自动删除</p>
-          </div>
-          <div class="flex items-center gap-3">
-            <div class="flex items-center gap-2">
-              <label class="text-sm text-gray-600">保留天数：</label>
-              <input v-model.number="recycleBinSettings.retention_days" type="number" min="1" max="365" class="w-16 px-2 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 text-center">
-              <button @click="saveRecycleSettings" class="px-3 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-colors">保存</button>
-            </div>
-            <button v-if="recycleBinItems.length > 0" @click="clearRecycleBin" class="px-4 py-2 bg-danger text-white text-sm font-bold rounded-xl hover:bg-danger/80 transition-colors">清空回收站</button>
-          </div>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b-2 border-primary-light">
-                <th class="text-left py-3 px-4 font-bold text-gray-500">类型</th>
-                <th class="text-left py-3 px-4 font-bold text-gray-500">名称</th>
-                <th class="text-left py-3 px-4 font-bold text-gray-500">删除时间</th>
-                <th class="text-left py-3 px-4 font-bold text-gray-500">过期时间</th>
-                <th class="text-left py-3 px-4 font-bold text-gray-500">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in recycleBinItems" :key="item.id" class="border-b border-gray-100 hover:bg-primary-light/20 transition-colors">
-                <td class="py-3 px-4">
-                  <span class="px-2 py-1 rounded-lg text-xs font-bold" :class="item.type === 'exam_config' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'">
-                    {{ item.type === 'exam_config' ? '📝 试卷' : '📊 成绩' }}
-                  </span>
-                </td>
-                <td class="py-3 px-4 font-bold">{{ item.type === 'exam_config' ? item.data.name : (item.data.exam_name || examConfigs.find(c => c.id === item.data.exam_id)?.name || '未知试卷') + ' - ' + item.data.user_name }}</td>
-                <td class="py-3 px-4 text-gray-600">{{ formatTime(item.deleted_at) }}</td>
-                <td class="py-3 px-4 text-gray-600">
-                  <span :class="isNearExpire(item.expire_at) ? 'text-danger font-bold' : ''">{{ formatTime(item.expire_at) }}</span>
-                  <span v-if="isNearExpire(item.expire_at)" class="text-xs text-danger ml-1">即将过期</span>
-                </td>
-                <td class="py-3 px-4">
-                  <button @click="restoreRecycleItem(item.id)" class="text-xs px-2 py-1 bg-success text-white rounded-lg hover:bg-success/90 transition-colors mr-2">↩️ 恢复</button>
-                  <button @click="permanentlyDeleteRecycleItem(item.id)" class="text-xs px-2 py-1 bg-danger text-white rounded-lg hover:bg-danger/80 transition-colors">🗑️ 彻底删除</button>
-                </td>
-              </tr>
-              <tr v-if="recycleBinItems.length === 0">
-                <td colspan="5" class="py-8 text-center text-gray-400">回收站为空</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- 智能生题内容 -->
-      <div v-if="currentTab === 'ai-gen'" class="glass-card relative z-10 p-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-6">🤖 智能生题</h2>
-        
-        <!-- 上传区 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div class="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-primary transition-all cursor-pointer" @click="$refs.aiFileInput.click()">
-            <div class="text-3xl mb-2">📄</div>
-            <p class="text-sm text-gray-600 font-bold">点击上传 Word (.docx) 或 PDF (.pdf)</p>
-            <p class="text-xs text-gray-400 mt-1">{{ aiGenFileName || '支持 .docx / .pdf' }}</p>
-          </div>
-          <input ref="aiFileInput" type="file" accept=".docx,.pdf" class="hidden" @change="handleAiGenFile">
-          
-          <!-- 生成参数 -->
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-2">目标题库</label>
-              <select v-model="aiGenBankId" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white">
-                <option v-for="bank in questionBanks" :key="bank.id" :value="bank.id">{{ bank.name }}</option>
-                <option :value="-1">➕ 新建题库</option>
-              </select>
-            </div>
-            <div class="grid grid-cols-4 gap-3">
-              <div><label class="block text-sm font-bold text-gray-700 mb-1">单选</label><input v-model.number="aiGenSingle" type="number" min="0" max="10" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
-              <div><label class="block text-sm font-bold text-gray-700 mb-1">多选</label><input v-model.number="aiGenMultiple" type="number" min="0" max="10" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
-              <div><label class="block text-sm font-bold text-gray-700 mb-1">填空</label><input v-model.number="aiGenFill" type="number" min="0" max="10" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
-              <div><label class="block text-sm font-bold text-gray-700 mb-1">简答</label><input v-model.number="aiGenEssay" type="number" min="0" max="10" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div>
-            </div>
-            <p class="text-xs text-gray-400">💡 每类题型最多 10 题，防止 AI 调用超出限制</p>
-            <div class="grid grid-cols-2 gap-3">
-              <button @click="submitAiGen" :disabled="!aiGenFileName || aiGenLoading || aiGenUpdateLoading" class="h-12 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-2xl hover:shadow-lg transition-all disabled:opacity-50">
-                {{ aiGenLoading ? '生成中...' : '🤖 开始生成题目' }}
-              </button>
-              <button @click="submitAiGenUpdate" :disabled="!aiGenFileName || aiGenLoading || aiGenUpdateLoading" class="h-12 bg-gradient-to-r from-success to-primary text-white font-bold rounded-2xl hover:shadow-lg transition-all disabled:opacity-50">
-                {{ aiGenUpdateLoading ? '分析中...' : '🔄 更新题库' }}
-              </button>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 题库变体生成 -->
-        <div class="border-t-2 border-gray-100 pt-6 mb-6">
-          <h3 class="text-md font-bold text-gray-800 mb-2">🔄 题库变体生成</h3>
-          <p class="text-sm text-gray-500 mb-4">选择现有题目，AI将基于原题生成相似但选项/答案不同的变体题，用于扩充题库</p>
-          
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="md:col-span-2">
-              <label class="block text-sm font-bold text-gray-700 mb-2">选择原题</label>
-              <select v-model="aiGenVariantSourceId" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white text-sm">
-                <option value="">请选择一道题目</option>
-                <option v-for="q in questions" :key="q.id" :value="q.id">【{{ typeLabel(q.type) }}】{{ q.title.length > 40 ? q.title.substring(0, 40) + '...' : q.title }}</option>
-              </select>
-            </div>
-            <div class="flex items-end gap-2">
-              <div class="flex-1">
-                <label class="block text-sm font-bold text-gray-700 mb-2">变体数量</label>
-                <input v-model.number="aiGenVariantCount" type="number" min="1" max="5" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm text-center">
-              </div>
-              <button @click="submitAiGenVariants" :disabled="!aiGenVariantSourceId || aiGenVariantLoading" class="h-11 px-4 bg-gradient-to-r from-secondary to-primary text-white font-bold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 text-sm whitespace-nowrap">
-                {{ aiGenVariantLoading ? '...' : '🔄 生成' }}
-              </button>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 智能更新结果展示 -->
-        <div v-if="aiGenUpdateResult && (aiGenUpdateResult.updated.length > 0 || aiGenUpdateResult.added.length > 0)" class="space-y-4 mb-8">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-bold text-gray-900">
-              📋 智能更新建议（更新 {{ aiGenUpdateResult.updated.length }} 题 / 新增 {{ aiGenUpdateResult.added.length }} 题）
-            </h3>
-            <div class="flex items-center gap-2">
-              <button @click="importAllUpdateSuggestions" class="text-sm px-4 py-1.5 bg-success text-white font-bold rounded-lg hover:bg-success/90 transition-all">
+                  > </td> <td class="py-3 px-4 font-bold">{{ i + 1 }}</td> <td class="py-3 px-4">{{ s.user_name }}</td> <td class="py-3 px-4">{{ s.user_uid }}</td> <td class="py-3 px-4 font-bold" :class="s.percentage >= 80 ? 'text-success' : s.percentage >= 60 ? 'text-primary' : 'text-danger'">{{ s.total_score }}</td> <td class="py-3 px-4">{{ s.percentage }}%</td> <td class="py-3 px-4">{{ formatTime(s.created_at) }}</td> <td class="py-3 px-4"> <button @click="showResultDetail(s)" class="text-xs px-2 py-1 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors mr-2"> 明细</button> <button @click="deleteResult(s.id)" class="text-xs px-2 py-1 bg-danger text-white rounded-lg hover:bg-danger/80 transition-colors"> 删除</button> </td> </tr> <tr v-if="filteredResults.length === 0"> <td colspan="8" class="py-8 text-center text-gray-400">暂无考试记录</td> </tr> </tbody> </table> </div> </div> <!-- 回收站内容 --> <div v-if="currentTab === 'recycle'" class="glass-card relative z-10 p-6"> <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4"> <div> <h2 class="text-lg font-bold text-gray-900"> 回收站</h2> <p class="text-sm text-gray-500 mt-1">共 {{ recycleBinItems.length }} 个项目，暂存 {{ recycleBinSettings.retention_days }} 天后自动删除</p> </div> <div class="flex items-center gap-3"> <div class="flex items-center gap-2"> <label class="text-sm text-gray-600">保留天数：</label> <input v-model.number="recycleBinSettings.retention_days" type="number" min="1" max="365" class="w-16 px-2 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 text-center"> <button @click="saveRecycleSettings" class="px-3 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-colors">保存</button> </div> <button v-if="recycleBinItems.length > 0" @click="clearRecycleBin" class="px-4 py-2 bg-danger text-white text-sm font-bold rounded-xl hover:bg-danger/80 transition-colors">清空回收站</button> </div> </div> <div class="overflow-x-auto"> <table class="w-full text-sm"> <thead> <tr class="border-b-2 border-primary-light"> <th class="text-left py-3 px-4 font-bold text-gray-500">类型</th> <th class="text-left py-3 px-4 font-bold text-gray-500">名称</th> <th class="text-left py-3 px-4 font-bold text-gray-500">删除时间</th> <th class="text-left py-3 px-4 font-bold text-gray-500">过期时间</th> <th class="text-left py-3 px-4 font-bold text-gray-500">操作</th> </tr> </thead> <tbody> <tr v-for="item in recycleBinItems" :key="item.id" class="border-b border-gray-100 hover:bg-primary-light/20 transition-colors"> <td class="py-3 px-4"> <span class="px-2 py-1 rounded-lg text-xs font-bold" :class="item.type === 'exam_config' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'">
+                    {{ item.type === 'exam_config' ? ' 试卷' : ' 成绩' }}
+                  </span> </td> <td class="py-3 px-4 font-bold">{{ item.type === 'exam_config' ? item.data.name : (item.data.exam_name || examConfigs.find(c => c.id === item.data.exam_id)?.name || '未知试卷') + ' - ' + item.data.user_name }}</td> <td class="py-3 px-4 text-gray-600">{{ formatTime(item.deleted_at) }}</td> <td class="py-3 px-4 text-gray-600"> <span :class="isNearExpire(item.expire_at) ? 'text-danger font-bold' : ''">{{ formatTime(item.expire_at) }}</span> <span v-if="isNearExpire(item.expire_at)" class="text-xs text-danger ml-1">即将过期</span> </td> <td class="py-3 px-4"> <button @click="restoreRecycleItem(item.id)" class="text-xs px-2 py-1 bg-success text-white rounded-lg hover:bg-success/90 transition-colors mr-2"> 恢复</button> <button @click="permanentlyDeleteRecycleItem(item.id)" class="text-xs px-2 py-1 bg-danger text-white rounded-lg hover:bg-danger/80 transition-colors"> 彻底删除</button> </td> </tr> <tr v-if="recycleBinItems.length === 0"> <td colspan="5" class="py-8 text-center text-gray-400">回收站为空</td> </tr> </tbody> </table> </div> </div> <!-- 智能生题内容 --> <div v-if="currentTab === 'ai-gen'" class="glass-card relative z-10 p-6"> <h2 class="text-lg font-bold text-gray-900 mb-6"> 智能生题</h2> <!-- 上传区 --> <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"> <div class="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-primary transition-all cursor-pointer" @click="$refs.aiFileInput.click()"> <div class="text-3xl mb-2"></div> <p class="text-sm text-gray-600 font-bold">点击上传 Word (.docx) 或 PDF (.pdf)</p> <p class="text-xs text-gray-400 mt-1">{{ aiGenFileName || '支持 .docx / .pdf' }}</p> </div> <input ref="aiFileInput" type="file" accept=".docx,.pdf" class="hidden" @change="handleAiGenFile"> <!-- 生成参数 --> <div class="space-y-4"> <div> <label class="block text-sm font-bold text-gray-700 mb-2">目标题库</label> <select v-model="aiGenBankId" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"> <option v-for="bank in questionBanks" :key="bank.id" :value="bank.id">{{ bank.name }}</option> <option :value="-1"> 新建题库</option> </select> </div> <div class="grid grid-cols-4 gap-3"> <div><label class="block text-sm font-bold text-gray-700 mb-1">单选</label><input v-model.number="aiGenSingle" type="number" min="0" max="10" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div> <div><label class="block text-sm font-bold text-gray-700 mb-1">多选</label><input v-model.number="aiGenMultiple" type="number" min="0" max="10" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div> <div><label class="block text-sm font-bold text-gray-700 mb-1">填空</label><input v-model.number="aiGenFill" type="number" min="0" max="10" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div> <div><label class="block text-sm font-bold text-gray-700 mb-1">简答</label><input v-model.number="aiGenEssay" type="number" min="0" max="10" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm"></div> </div> <p class="text-xs text-gray-400"> 每类题型最多 10 题，防止 AI 调用超出限制</p> <div class="grid grid-cols-2 gap-3"> <button @click="submitAiGen" :disabled="!aiGenFileName || aiGenLoading || aiGenUpdateLoading" class="h-12 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-2xl hover:shadow-lg transition-all disabled:opacity-50">
+                {{ aiGenLoading ? '生成中...' : ' 开始生成题目' }}
+              </button> <button @click="submitAiGenUpdate" :disabled="!aiGenFileName || aiGenLoading || aiGenUpdateLoading" class="h-12 bg-gradient-to-r from-success to-primary text-white font-bold rounded-2xl hover:shadow-lg transition-all disabled:opacity-50">
+                {{ aiGenUpdateLoading ? '分析中...' : ' 更新题库' }}
+              </button> </div> </div> </div> <!-- 题库变体生成 --> <div class="border-t-2 border-gray-100 pt-6 mb-6"> <h3 class="text-md font-bold text-gray-800 mb-2"> 题库变体生成</h3> <p class="text-sm text-gray-500 mb-4">选择现有题目，AI将基于原题生成相似但选项/答案不同的变体题，用于扩充题库</p> <div class="grid grid-cols-1 md:grid-cols-3 gap-4"> <div class="md:col-span-2"> <label class="block text-sm font-bold text-gray-700 mb-2">选择原题</label> <select v-model="aiGenVariantSourceId" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white text-sm"> <option value="">请选择一道题目</option> <option v-for="q in questions" :key="q.id" :value="q.id">【{{ typeLabel(q.type) }}】{{ q.title.length > 40 ? q.title.substring(0, 40) + '...' : q.title }}</option> </select> </div> <div class="flex items-end gap-2"> <div class="flex-1"> <label class="block text-sm font-bold text-gray-700 mb-2">变体数量</label> <input v-model.number="aiGenVariantCount" type="number" min="1" max="5" class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm text-center"> </div> <button @click="submitAiGenVariants" :disabled="!aiGenVariantSourceId || aiGenVariantLoading" class="h-11 px-4 bg-gradient-to-r from-secondary to-primary text-white font-bold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 text-sm whitespace-nowrap">
+                {{ aiGenVariantLoading ? '...' : ' 生成' }}
+              </button> </div> </div> </div> <!-- 智能更新结果展示 --> <div v-if="aiGenUpdateResult && (aiGenUpdateResult.updated.length > 0 || aiGenUpdateResult.added.length > 0)" class="space-y-4 mb-8"> <div class="flex items-center justify-between mb-4"> <h3 class="text-lg font-bold text-gray-900">
+               智能更新建议（更新 {{ aiGenUpdateResult.updated.length }} 题 / 新增 {{ aiGenUpdateResult.added.length }} 题）
+            </h3> <div class="flex items-center gap-2"> <button @click="importAllUpdateSuggestions" class="text-sm px-4 py-1.5 bg-success text-white font-bold rounded-lg hover:bg-success/90 transition-all">
                 导入全部建议
-              </button>
-              <button @click="aiGenUpdateResult = null" class="text-sm px-3 py-1.5 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200 transition-all">
+              </button> <button @click="aiGenUpdateResult = null" class="text-sm px-3 py-1.5 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200 transition-all">
                 清除
-              </button>
-            </div>
-          </div>
-          
-          <!-- 需要更新的题目 -->
-          <div v-if="aiGenUpdateResult.updated.length > 0" class="space-y-3">
-            <h4 class="text-sm font-bold text-orange-600">📝 建议更新（{{ aiGenUpdateResult.updated.length }} 题）</h4>
-            <div v-for="(q, idx) in aiGenUpdateResult.updated" :key="'u'+idx" class="p-4 rounded-2xl border-2 border-orange-200 bg-orange-50">
-              <div class="flex items-center gap-2 mb-2">
-                <span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-orange-100 text-orange-700">更新</span>
-                <span class="text-xs text-gray-400">原题ID: {{ q.original_id }}</span>
-                <span class="text-xs text-orange-500">{{ q.update_reason }}</span>
-              </div>
-              <p class="text-sm font-bold text-gray-900 mb-2">{{ q.content }}</p>
-              <div v-if="q.options && q.options.length > 0" class="space-y-1 mb-2">
-                <p v-for="opt in q.options" :key="opt" class="text-xs text-gray-600">{{ opt }}</p>
-              </div>
-              <div class="text-xs text-gray-500">
-                <span class="font-bold">答案：</span>{{ q.answer || q.key_points || '-' }}
-              </div>
-            </div>
-          </div>
-          
-          <!-- 新增的题目 -->
-          <div v-if="aiGenUpdateResult.added.length > 0" class="space-y-3">
-            <h4 class="text-sm font-bold text-green-600">➕ 建议新增（{{ aiGenUpdateResult.added.length }} 题）</h4>
-            <div v-for="(q, idx) in aiGenUpdateResult.added" :key="'a'+idx" class="p-4 rounded-2xl border-2 border-green-200 bg-green-50">
-              <div class="flex items-center gap-2 mb-2">
-                <span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-green-100 text-green-700">新增</span>
-                <span class="text-xs text-gray-400">#{{ idx + 1 }}</span>
-              </div>
-              <p class="text-sm font-bold text-gray-900 mb-2">{{ q.content }}</p>
-              <div v-if="q.options && q.options.length > 0" class="space-y-1 mb-2">
-                <p v-for="opt in q.options" :key="opt" class="text-xs text-gray-600">{{ opt }}</p>
-              </div>
-              <div class="text-xs text-gray-500">
-                <span class="font-bold">答案：</span>{{ q.answer || q.key_points || '-' }}
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 解析结果展示 -->
-        <div v-if="aiGenQuestions.length > 0 || aiGenTextPreview" class="space-y-4">
-          <!-- 原文预览 -->
-          <div v-if="aiGenTextPreview" class="p-4 rounded-2xl bg-gray-50 border border-gray-200 mb-4">
-            <div class="flex items-center justify-between mb-2">
-              <h4 class="text-sm font-bold text-gray-700">📄 文档解析预览（前500字）</h4>
-              <span class="text-xs text-gray-400">{{ aiGenTextPreview.length }} 字符</span>
-            </div>
-            <p class="text-xs text-gray-600 line-clamp-5 whitespace-pre-wrap">{{ aiGenTextPreview }}</p>
-          </div>
-          
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-bold text-gray-900">生成结果（共 {{ aiGenQuestions.length }} 题）</h3>
-            <div class="flex items-center gap-2">
-              <button @click="aiGenSelectAll" class="text-sm px-3 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all">全选</button>
-              <button @click="aiGenDeselectAll" class="text-sm px-3 py-1.5 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200 transition-all">取消全选</button>
-              <button @click="importSelectedQuestions" :disabled="aiGenSelectedIds.length === 0" class="text-sm px-4 py-1.5 bg-success text-white font-bold rounded-lg hover:bg-success/90 transition-all disabled:opacity-50">
+              </button> </div> </div> <!-- 需要更新的题目 --> <div v-if="aiGenUpdateResult.updated.length > 0" class="space-y-3"> <h4 class="text-sm font-bold text-orange-600"> 建议更新（{{ aiGenUpdateResult.updated.length }} 题）</h4> <div v-for="(q, idx) in aiGenUpdateResult.updated" :key="'u'+idx" class="p-4 rounded-2xl border-2 border-orange-200 bg-orange-50"> <div class="flex items-center gap-2 mb-2"> <span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-orange-100 text-orange-700">更新</span> <span class="text-xs text-gray-400">原题ID: {{ q.original_id }}</span> <span class="text-xs text-orange-500">{{ q.update_reason }}</span> </div> <p class="text-sm font-bold text-gray-900 mb-2">{{ q.content }}</p> <div v-if="q.options && q.options.length > 0" class="space-y-1 mb-2"> <p v-for="opt in q.options" :key="opt" class="text-xs text-gray-600">{{ opt }}</p> </div> <div class="text-xs text-gray-500"> <span class="font-bold">答案：</span>{{ q.answer || q.key_points || '-' }}
+              </div> </div> </div> <!-- 新增的题目 --> <div v-if="aiGenUpdateResult.added.length > 0" class="space-y-3"> <h4 class="text-sm font-bold text-green-600"> 建议新增（{{ aiGenUpdateResult.added.length }} 题）</h4> <div v-for="(q, idx) in aiGenUpdateResult.added" :key="'a'+idx" class="p-4 rounded-2xl border-2 border-green-200 bg-green-50"> <div class="flex items-center gap-2 mb-2"> <span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-green-100 text-green-700">新增</span> <span class="text-xs text-gray-400">#{{ idx + 1 }}</span> </div> <p class="text-sm font-bold text-gray-900 mb-2">{{ q.content }}</p> <div v-if="q.options && q.options.length > 0" class="space-y-1 mb-2"> <p v-for="opt in q.options" :key="opt" class="text-xs text-gray-600">{{ opt }}</p> </div> <div class="text-xs text-gray-500"> <span class="font-bold">答案：</span>{{ q.answer || q.key_points || '-' }}
+              </div> </div> </div> </div> <!-- 解析结果展示 --> <div v-if="aiGenQuestions.length > 0 || aiGenTextPreview" class="space-y-4"> <!-- 原文预览 --> <div v-if="aiGenTextPreview" class="p-4 rounded-2xl bg-gray-50 border border-gray-200 mb-4"> <div class="flex items-center justify-between mb-2"> <h4 class="text-sm font-bold text-gray-700"> 文档解析预览（前500字）</h4> <span class="text-xs text-gray-400">{{ aiGenTextPreview.length }} 字符</span> </div> <p class="text-xs text-gray-600 line-clamp-5 whitespace-pre-wrap">{{ aiGenTextPreview }}</p> </div> <div class="flex items-center justify-between mb-4"> <h3 class="text-lg font-bold text-gray-900">生成结果（共 {{ aiGenQuestions.length }} 题）</h3> <div class="flex items-center gap-2"> <button @click="aiGenSelectAll" class="text-sm px-3 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all">全选</button> <button @click="aiGenDeselectAll" class="text-sm px-3 py-1.5 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200 transition-all">取消全选</button> <button @click="importSelectedQuestions" :disabled="aiGenSelectedIds.length === 0" class="text-sm px-4 py-1.5 bg-success text-white font-bold rounded-lg hover:bg-success/90 transition-all disabled:opacity-50">
                 导入 {{ aiGenSelectedIds.length }} 题到题库
-              </button>
-            </div>
-          </div>
-          
-          <div v-if="aiGenQuestions.length === 0" class="text-center p-8 text-gray-500 bg-gray-50 rounded-2xl border border-gray-200">
-            <p class="text-2xl mb-2">🤷</p>
-            <p class="font-bold mb-1">未能从文档中提取到有效题目</p>
-            <p class="text-sm text-gray-400">请检查文档是否包含纯文字内容（非扫描件/图片），或尝试修改题型参数</p>
-          </div>
-          
-          <div v-for="(q, idx) in aiGenQuestions" :key="idx" class="p-4 rounded-2xl border-2 transition-all" :class="aiGenSelectedIds.includes(idx) ? 'border-primary bg-primary/5' : 'border-gray-200 bg-white'">
-            <div class="flex items-start gap-3">
-              <input type="checkbox" :checked="aiGenSelectedIds.includes(idx)" class="mt-1 w-4 h-4 text-primary rounded" @click.stop="toggleAiGenSelect(idx)">
-              <div class="flex-1">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="flex items-center gap-2">
-                    <span class="px-2 py-0.5 rounded-lg text-xs font-bold" :class="typeClass(q.type)">{{ typeLabel(q.type) }}</span>
-                    <span class="text-xs text-gray-400">#{{ idx + 1 }}</span>
-                  </div>
-                  <button @click.stop="openAiGenEdit(idx)" class="text-xs px-2 py-1 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all">✏️ 编辑</button>
-                </div>
-                <p class="text-sm font-bold text-gray-900 mb-2">{{ q.content }}</p>
-                <div v-if="q.options && q.options.length > 0" class="space-y-1 mb-2">
-                  <p v-for="opt in q.options" :key="opt" class="text-sm text-gray-600">{{ opt }}</p>
-                </div>
-                <div class="text-xs text-gray-500">
-                  <span class="font-bold">答案：</span>{{ q.answer || q.key_points || '-' }}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 智能生题编辑弹窗 -->
-        <div v-if="showAiGenEditModal" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
-          <div class="bg-white rounded-3xl p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">✏️ 编辑题目 #{{ editingAiGenIdx + 1 }}</h3>
-            <div class="space-y-4">
-              <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">题型</label>
-                <select v-model="aiGenEditForm.type" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white">
-                  <option value="single">单选题</option>
-                  <option value="multiple">多选题</option>
-                  <option value="fill">填空题</option>
-                  <option value="essay">简答题</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">题干</label>
-                <textarea v-model="aiGenEditForm.content" rows="3" placeholder="请输入题目内容" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea>
-              </div>
-
-              <!-- 单选/多选选项 -->
-              <div v-if="aiGenEditForm.type === 'single' || aiGenEditForm.type === 'multiple'">
-                <label class="block text-sm font-bold text-gray-700 mb-2">选项（每行一个）</label>
-                <textarea v-model="aiGenEditForm.optionsText" rows="4" placeholder="A. 选项1
+              </button> </div> </div> <div v-if="aiGenQuestions.length === 0" class="text-center p-8 text-gray-500 bg-gray-50 rounded-2xl border border-gray-200"> <p class="text-2xl mb-2"></p> <p class="font-bold mb-1">未能从文档中提取到有效题目</p> <p class="text-sm text-gray-400">请检查文档是否包含纯文字内容（非扫描件/图片），或尝试修改题型参数</p> </div> <div v-for="(q, idx) in aiGenQuestions" :key="idx" class="p-4 rounded-2xl border-2 transition-all" :class="aiGenSelectedIds.includes(idx) ? 'border-primary bg-primary/5' : 'border-gray-200 bg-white'"> <div class="flex items-start gap-3"> <input type="checkbox" :checked="aiGenSelectedIds.includes(idx)" class="mt-1 w-4 h-4 text-primary rounded" @click.stop="toggleAiGenSelect(idx)"> <div class="flex-1"> <div class="flex items-center justify-between mb-2"> <div class="flex items-center gap-2"> <span class="px-2 py-0.5 rounded-lg text-xs font-bold" :class="typeClass(q.type)">{{ typeLabel(q.type) }}</span> <span class="text-xs text-gray-400">#{{ idx + 1 }}</span> </div> <button @click.stop="openAiGenEdit(idx)" class="text-xs px-2 py-1 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all"> 编辑</button> </div> <p class="text-sm font-bold text-gray-900 mb-2">{{ q.content }}</p> <div v-if="q.options && q.options.length > 0" class="space-y-1 mb-2"> <p v-for="opt in q.options" :key="opt" class="text-sm text-gray-600">{{ opt }}</p> </div> <div class="text-xs text-gray-500"> <span class="font-bold">答案：</span>{{ q.answer || q.key_points || '-' }}
+                </div> </div> </div> </div> </div> <!-- 智能生题编辑弹窗 --> <div v-if="showAiGenEditModal" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4"> <div class="bg-white rounded-3xl p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto"> <h3 class="text-lg font-bold text-gray-900 mb-4"> 编辑题目 #{{ editingAiGenIdx + 1 }}</h3> <div class="space-y-4"> <div> <label class="block text-sm font-bold text-gray-700 mb-2">题型</label> <select v-model="aiGenEditForm.type" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"> <option value="single">单选题</option> <option value="multiple">多选题</option> <option value="fill">填空题</option> <option value="essay">简答题</option> </select> </div> <div> <label class="block text-sm font-bold text-gray-700 mb-2">题干</label> <textarea v-model="aiGenEditForm.content" rows="3" placeholder="请输入题目内容" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea> </div> <!-- 单选/多选选项 --> <div v-if="aiGenEditForm.type === 'single' || aiGenEditForm.type === 'multiple'"> <label class="block text-sm font-bold text-gray-700 mb-2">选项（每行一个）</label> <textarea v-model="aiGenEditForm.optionsText" rows="4" placeholder="A. 选项1
 B. 选项2
 C. 选项3
-D. 选项4" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea>
-                <div>
-                  <label class="block text-sm font-bold text-gray-700 mb-2">正确答案</label>
-                  <input v-model="aiGenEditForm.answer" type="text" placeholder="例如：A 或 A,B" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
-                </div>
-              </div>
-
-              <!-- 填空题答案 -->
-              <div v-if="aiGenEditForm.type === 'fill'">
-                <label class="block text-sm font-bold text-gray-700 mb-2">填空答案（每行一个，用|分隔多个可选答案）</label>
-                <textarea v-model="aiGenEditForm.blanksText" rows="3" placeholder="空1答案:18|十八
-空2答案:98" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea>
-              </div>
-
-              <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">答案解析 / 评分关键词</label>
-                <textarea v-model="aiGenEditForm.key_points" rows="3" placeholder="请输入答案解析或评分关键词" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea>
-              </div>
-            </div>
-            <div class="flex gap-3 mt-6">
-              <button @click="closeAiGenEdit" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">取消</button>
-              <button @click="saveAiGenEdit" class="flex-1 h-12 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark transition-all">保存修改</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 新建题库弹窗（用于智能生题） -->
-        <div v-if="showAiGenNewBank" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">新建题库</h3>
-            <input v-model="aiGenNewBankName" type="text" placeholder="请输入新题库名称" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all mb-4">
-            <div class="flex gap-3">
-              <button @click="showAiGenNewBank = false" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">取消</button>
-              <button @click="createAiGenBank" class="flex-1 h-12 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark transition-all">创建</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 课程管理内容 -->
-      <div v-if="currentTab === 'learn'" class="space-y-6">
-        <!-- 课包列表 -->
-        <div class="glass-card relative z-10 p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-bold text-gray-900">🎬 课程包管理</h2>
-            <button @click="loadPackages" class="text-sm px-3 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all">🔄 刷新</button>
-          </div>
-          <div class="space-y-4">
-            <div v-for="pkg in packages" :key="pkg.id" class="p-4 rounded-2xl border-2 transition-all" :class="learnSelectedPkgId === pkg.id ? 'border-primary bg-primary/5' : 'border-gray-100 bg-white/60'">
-              <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2">
-                  <span class="text-xl">{{ pkg.key === 'sister' ? '👭' : pkg.key === 'trainer' ? '🎓' : '📦' }}</span>
-                  <span class="font-bold text-gray-900">{{ pkg.name }}</span>
-                  <span class="text-xs text-gray-400">({{ (pkg.courses || []).length }} 门课程)</span>
-                  <span class="text-xs px-2 py-0.5 rounded-full font-bold" :class="pkg.enabled ? 'bg-success/10 text-success' : 'bg-gray-100 text-gray-400'">{{ pkg.enabled ? '启用' : '停用' }}</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <button @click="learnSelectedPkgId = pkg.id; resetCourseForm()" class="text-xs px-3 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all">管理课程</button>
-                  <button @click="deletePackage(pkg)" class="text-xs px-3 py-1.5 bg-danger/10 text-danger font-bold rounded-lg hover:bg-danger/20 transition-all">删除</button>
-                </div>
-              </div>
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <div>
-                  <label class="block text-xs font-bold text-gray-500 mb-1">课包名称</label>
-                  <input v-model="pkg.name" type="text" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all">
-                </div>
-                <div>
-                  <label class="block text-xs font-bold text-gray-500 mb-1">挂科冷却天数</label>
-                  <input v-model.number="pkg.cooldown_days" type="number" min="0" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all">
-                </div>
-                <div>
-                  <label class="block text-xs font-bold text-gray-500 mb-1">关联试卷配置</label>
-                  <select v-model="pkg.exam_config_id" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all bg-white">
-                    <option :value="null">（不关联，无需考试）</option>
-                    <option v-for="cfg in examConfigs" :key="cfg.id" :value="cfg.id">{{ cfg.name }} ({{ cfg.status }})</option>
-                  </select>
-                </div>
-                <div class="flex items-end gap-2">
-                  <label class="flex items-center gap-1.5 text-sm font-bold text-gray-600 pb-2">
-                    <input v-model="pkg.enabled" type="checkbox" class="w-4 h-4 accent-primary"> 启用
-                  </label>
-                  <button @click="savePackage(pkg)" class="flex-1 h-9 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-all">保存</button>
-                </div>
-              </div>
-              <div class="mt-2">
-                <input v-model="pkg.description" type="text" placeholder="课包描述" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all">
-              </div>
-            </div>
-            <div v-if="packages.length === 0" class="text-center text-gray-400 py-6 font-bold">暂无课包</div>
-          </div>
-        </div>
-
-        <!-- 课程 CRUD -->
-        <div v-if="learnSelectedPkg" class="glass-card relative z-10 p-6">
-          <h2 class="text-lg font-bold text-gray-900 mb-4">📚 「{{ learnSelectedPkg.name }}」课程列表</h2>
-
-          <!-- 课程表单 -->
-          <div class="p-4 rounded-2xl bg-gray-50 border-2 border-gray-100 mb-5">
-            <h3 class="text-sm font-bold text-gray-700 mb-3">{{ editingCourseId ? '✏️ 编辑课程' : '➕ 新增课程' }}</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-              <input v-model="courseForm.title" type="text" placeholder="课程标题" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all">
-              <select v-model="courseForm.type" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all bg-white">
-                <option value="video">🎬 视频课</option>
-                <option value="article">📖 图文课</option>
-              </select>
-              <input v-model.number="courseForm.duration_minutes" type="number" min="0" :placeholder="courseForm.type === 'article' ? '要求停留分钟数（必填）' : '视频时长（分钟，可选）'" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all">
-            </div>
-
-            <!-- 视频课：上传 -->
-            <div v-if="courseForm.type === 'video'" class="mb-3">
-              <div class="flex items-center gap-3">
-                <button @click="$refs.videoFileInput.click()" :disabled="videoUploading" class="px-4 py-2 bg-secondary/10 text-secondary font-bold rounded-xl text-sm hover:bg-secondary/20 transition-all disabled:opacity-50">
-                  {{ videoUploading ? '上传中 ' + videoUploadPercent + '%' : '⬆️ 上传视频' }}
-                </button>
-                <input ref="videoFileInput" type="file" accept="video/*,.mp4,.webm,.mov,.mkv,.m4v,.avi" class="hidden" @change="handleVideoUpload">
-                <span v-if="courseForm.video_path" class="text-xs text-success font-bold truncate">✅ {{ courseForm.video_path }}</span>
-                <span v-else class="text-xs text-gray-400">未上传视频（500MB 以内）</span>
-              </div>
-              <video v-if="courseForm.video_path" :src="courseForm.video_path" controls class="mt-2 w-full max-w-md rounded-xl bg-black max-h-48"></video>
-            </div>
-
-            <!-- 图文课：内容 -->
-            <div v-if="courseForm.type === 'article'" class="mb-3">
-              <textarea v-model="courseForm.content" rows="6" placeholder="图文内容（支持 HTML，如 <h2>标题</h2><p>正文</p>）" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all resize-y font-mono"></textarea>
-            </div>
-
-            <div class="flex gap-2">
-              <button v-if="editingCourseId" @click="resetCourseForm" class="px-5 h-10 bg-gray-100 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-200 transition-all">取消编辑</button>
-              <button @click="saveCourse" class="flex-1 h-10 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl text-sm hover:shadow-lg transition-all">
+D. 选项4" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea> <div> <label class="block text-sm font-bold text-gray-700 mb-2">正确答案</label> <input v-model="aiGenEditForm.answer" type="text" placeholder="例如：A 或 A,B" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"> </div> </div> <!-- 填空题答案 --> <div v-if="aiGenEditForm.type === 'fill'"> <label class="block text-sm font-bold text-gray-700 mb-2">填空答案（每行一个，用|分隔多个可选答案）</label> <textarea v-model="aiGenEditForm.blanksText" rows="3" placeholder="空1答案:18|十八
+空2答案:98" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea> </div> <div> <label class="block text-sm font-bold text-gray-700 mb-2">答案解析 / 评分关键词</label> <textarea v-model="aiGenEditForm.key_points" rows="3" placeholder="请输入答案解析或评分关键词" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea> </div> </div> <div class="flex gap-3 mt-6"> <button @click="closeAiGenEdit" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">取消</button> <button @click="saveAiGenEdit" class="flex-1 h-12 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark transition-all">保存修改</button> </div> </div> </div> <!-- 新建题库弹窗（用于智能生题） --> <div v-if="showAiGenNewBank" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"> <div class="bg-white rounded-2xl p-6 w-full max-w-sm"> <h3 class="text-lg font-bold text-gray-900 mb-4">新建题库</h3> <input v-model="aiGenNewBankName" type="text" placeholder="请输入新题库名称" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all mb-4"> <div class="flex gap-3"> <button @click="showAiGenNewBank = false" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">取消</button> <button @click="createAiGenBank" class="flex-1 h-12 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark transition-all">创建</button> </div> </div> </div> </div> <!-- 课程管理内容 --> <div v-if="currentTab === 'learn'" class="space-y-6"> <!-- 课包列表 --> <div class="glass-card relative z-10 p-6"> <div class="flex items-center justify-between mb-4"> <h2 class="text-lg font-bold text-gray-900"> 课程包管理</h2> <button @click="loadPackages" class="text-sm px-3 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all"> 刷新</button> </div> <div class="space-y-4"> <div v-for="pkg in packages" :key="pkg.id" class="p-4 rounded-2xl border-2 transition-all" :class="learnSelectedPkgId === pkg.id ? 'border-primary bg-primary/5' : 'border-gray-100 bg-white/60'"> <div class="flex items-center justify-between mb-3"> <div class="flex items-center gap-2"> <span class="text-xl">{{ pkg.key === 'sister' ? '' : pkg.key === 'trainer' ? '' : '' }}</span> <span class="font-bold text-gray-900">{{ pkg.name }}</span> <span class="text-xs text-gray-400">({{ (pkg.courses || []).length }} 门课程)</span> <span class="text-xs px-2 py-0.5 rounded-full font-bold" :class="pkg.enabled ? 'bg-success/10 text-success' : 'bg-gray-100 text-gray-400'">{{ pkg.enabled ? '启用' : '停用' }}</span> </div> <div class="flex items-center gap-2"> <button @click="learnSelectedPkgId = pkg.id; resetCourseForm()" class="text-xs px-3 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all">管理课程</button> <button @click="deletePackage(pkg)" class="text-xs px-3 py-1.5 bg-danger/10 text-danger font-bold rounded-lg hover:bg-danger/20 transition-all">删除</button> </div> </div> <div class="grid grid-cols-1 md:grid-cols-4 gap-3"> <div> <label class="block text-xs font-bold text-gray-500 mb-1">课包名称</label> <input v-model="pkg.name" type="text" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all"> </div> <div> <label class="block text-xs font-bold text-gray-500 mb-1">挂科冷却天数</label> <input v-model.number="pkg.cooldown_days" type="number" min="0" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all"> </div> <div> <label class="block text-xs font-bold text-gray-500 mb-1">关联试卷配置</label> <select v-model="pkg.exam_config_id" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all bg-white"> <option :value="null">（不关联，无需考试）</option> <option v-for="cfg in examConfigs" :key="cfg.id" :value="cfg.id">{{ cfg.name }} ({{ cfg.status }})</option> </select> </div> <div class="flex items-end gap-2"> <label class="flex items-center gap-1.5 text-sm font-bold text-gray-600 pb-2"> <input v-model="pkg.enabled" type="checkbox" class="w-4 h-4 accent-primary"> 启用
+                  </label> <button @click="savePackage(pkg)" class="flex-1 h-9 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-all">保存</button> </div> </div> <div class="mt-2"> <input v-model="pkg.description" type="text" placeholder="课包描述" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all"> </div> </div> <div v-if="packages.length === 0" class="text-center text-gray-400 py-6 font-bold">暂无课包</div> </div> </div> <!-- 课程 CRUD --> <div v-if="learnSelectedPkg" class="glass-card relative z-10 p-6"> <h2 class="text-lg font-bold text-gray-900 mb-4"> 「{{ learnSelectedPkg.name }}」课程列表</h2> <!-- 课程表单 --> <div class="p-4 rounded-2xl bg-gray-50 border-2 border-gray-100 mb-5"> <h3 class="text-sm font-bold text-gray-700 mb-3">{{ editingCourseId ? ' 编辑课程' : ' 新增课程' }}</h3> <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3"> <input v-model="courseForm.title" type="text" placeholder="课程标题" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all"> <select v-model="courseForm.type" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all bg-white"> <option value="video"> 视频课</option> <option value="article"> 图文课</option> </select> <input v-model.number="courseForm.duration_minutes" type="number" min="0" :placeholder="courseForm.type === 'article' ? '要求停留分钟数（必填）' : '视频时长（分钟，可选）'" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all"> </div> <!-- 视频课：上传 --> <div v-if="courseForm.type === 'video'" class="mb-3"> <div class="flex items-center gap-3"> <button @click="$refs.videoFileInput.click()" :disabled="videoUploading" class="px-4 py-2 bg-secondary/10 text-secondary font-bold rounded-xl text-sm hover:bg-secondary/20 transition-all disabled:opacity-50">
+                  {{ videoUploading ? '上传中 ' + videoUploadPercent + '%' : ' 上传视频' }}
+                </button> <input ref="videoFileInput" type="file" accept="video/*,.mp4,.webm,.mov,.mkv,.m4v,.avi" class="hidden" @change="handleVideoUpload"> <span v-if="courseForm.video_path" class="text-xs text-success font-bold truncate"> {{ courseForm.video_path }}</span> <span v-else class="text-xs text-gray-400">未上传视频（500MB 以内）</span> </div> <video v-if="courseForm.video_path" :src="courseForm.video_path" controls class="mt-2 w-full max-w-md rounded-xl bg-black max-h-48"></video> </div> <!-- 图文课：内容 --> <div v-if="courseForm.type === 'article'" class="mb-3"> <textarea v-model="courseForm.content" rows="6" placeholder="图文内容（支持 HTML，如 <h2>标题</h2><p>正文</p>）" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all resize-y font-mono"></textarea> </div> <div class="flex gap-2"> <button v-if="editingCourseId" @click="resetCourseForm" class="px-5 h-10 bg-gray-100 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-200 transition-all">取消编辑</button> <button @click="saveCourse" class="flex-1 h-10 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl text-sm hover:shadow-lg transition-all">
                 {{ editingCourseId ? '保存修改' : '添加课程' }}
-              </button>
-            </div>
-          </div>
-
-          <!-- 课程列表 -->
-          <div v-if="(learnSelectedPkg.courses || []).length === 0" class="text-center text-gray-400 py-6 font-bold">暂无课程，请在上方添加</div>
-          <div v-else class="space-y-2">
-            <div v-for="(c, idx) in learnSelectedPkg.courses" :key="c.id" class="flex items-center gap-3 p-3 rounded-xl bg-white/70 border border-gray-100">
-              <span class="text-lg">{{ c.type === 'video' ? '🎬' : '📖' }}</span>
-              <div class="flex-1 min-w-0">
-                <p class="font-bold text-gray-800 text-sm truncate">{{ idx + 1 }}. {{ c.title }}</p>
-                <p class="text-xs text-gray-400">{{ c.type === 'video' ? '视频课' : '图文课' }}<span v-if="c.duration_minutes"> · {{ c.duration_minutes }} 分钟</span><span v-if="c.video_path"> · {{ c.video_path }}</span></p>
-              </div>
-              <span class="text-xs px-2 py-0.5 rounded-full font-bold" :class="c.enabled ? 'bg-success/10 text-success' : 'bg-gray-100 text-gray-400'">{{ c.enabled ? '启用' : '停用' }}</span>
-              <button @click="toggleCourseEnabled(c)" class="text-xs px-2.5 py-1.5 bg-gray-100 text-gray-600 font-bold rounded-lg hover:bg-gray-200 transition-all">{{ c.enabled ? '停用' : '启用' }}</button>
-              <button @click="editCourse(c)" class="text-xs px-2.5 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all">编辑</button>
-              <button @click="deleteCourse(c)" class="text-xs px-2.5 py-1.5 bg-danger/10 text-danger font-bold rounded-lg hover:bg-danger/20 transition-all">删除</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 学员进度 -->
-        <div class="glass-card relative z-10 p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-bold text-gray-900">👥 学员学习进度</h2>
-            <button @click="loadLearnProgress" class="text-sm px-3 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all">🔄 刷新</button>
-          </div>
-          <div class="flex flex-wrap gap-3 mb-4">
-            <input v-model="progressFilterUid" type="text" placeholder="按 UID 筛选（可空）" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all w-52" @keyup.enter="loadLearnProgress">
-            <select v-model="progressFilterPkg" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all bg-white" @change="loadLearnProgress">
-              <option :value="null">全部课包</option>
-              <option v-for="pkg in packages" :key="pkg.id" :value="pkg.id">{{ pkg.name }}</option>
-            </select>
-            <button @click="loadLearnProgress" class="px-4 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-all">查询</button>
-          </div>
-          <div v-if="learnProgress.length === 0" class="text-center text-gray-400 py-6 font-bold">暂无学习记录</div>
-          <div v-else class="space-y-3">
-            <div v-for="stu in learnProgress" :key="stu.uid" class="p-4 rounded-2xl bg-white/70 border border-gray-100">
-              <div class="flex items-center gap-2 mb-2">
-                <span class="font-bold text-gray-900">{{ stu.nickname || '（未填昵称）' }}</span>
-                <span class="text-xs text-gray-400">UID: {{ stu.uid }}</span>
-              </div>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div v-for="p in stu.packages" :key="p.package_id" class="p-3 rounded-xl bg-gray-50 border border-gray-100">
-                  <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-sm font-bold text-gray-700">{{ p.package_name }}</span>
-                    <span class="text-xs font-bold px-2 py-0.5 rounded-full" :class="examStatusBadge(p.exam_status).cls">{{ examStatusBadge(p.exam_status).text }}</span>
-                  </div>
-                  <div class="flex items-center gap-2 mb-1.5">
-                    <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                      <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full" :style="{ width: (p.total_courses ? p.completed_courses / p.total_courses * 100 : 0) + '%' }"></div>
-                    </div>
-                    <span class="text-xs text-gray-400 font-bold">{{ p.completed_courses }}/{{ p.total_courses }}</span>
-                  </div>
-                  <div class="space-y-0.5">
-                    <div v-for="c in p.courses" :key="c.course_id" class="flex items-center justify-between text-xs">
-                      <span class="text-gray-500 truncate">{{ c.title }}</span>
-                      <span class="font-bold shrink-0 ml-2" :class="c.completed ? 'text-success' : c.progress_percent > 0 ? 'text-primary' : 'text-gray-300'">
-                        {{ c.completed ? '✅' : c.progress_percent > 0 ? Math.floor(c.progress_percent) + '%' : '未开始' }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
-
-    <!-- 新增/编辑题目弹窗 -->
-    <div v-if="showQuestionModal" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
-      <div class="bg-white rounded-3xl p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto">
-        <h3 class="text-lg font-bold text-gray-900 mb-4">{{ editingQuestion ? '✏️ 修改题目' : '➕ 新增题目' }}</h3>
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-bold text-gray-700 mb-2">题型</label>
-            <select v-model="questionForm.type" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white">
-              <option value="single">单选题</option>
-              <option value="multiple">多选题</option>
-              <option value="fill">填空题</option>
-              <option value="essay">简答题</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-bold text-gray-700 mb-2">题干</label>
-            <textarea v-model="questionForm.content" rows="3" placeholder="请输入题目内容" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea>
-          </div>
-
-          <!-- 单选/多选选项 -->
-          <div v-if="questionForm.type === 'single' || questionForm.type === 'multiple'">
-            <label class="block text-sm font-bold text-gray-700 mb-2">选项（每行一个）</label>
-            <textarea v-model="questionForm.optionsText" rows="4" placeholder="A. 选项1
+              </button> </div> </div> <!-- 课程列表 --> <div v-if="(learnSelectedPkg.courses || []).length === 0" class="text-center text-gray-400 py-6 font-bold">暂无课程，请在上方添加</div> <div v-else class="space-y-2"> <div v-for="(c, idx) in learnSelectedPkg.courses" :key="c.id" class="flex items-center gap-3 p-3 rounded-xl bg-white/70 border border-gray-100"> <span class="text-lg">{{ c.type === 'video' ? '' : '' }}</span> <div class="flex-1 min-w-0"> <p class="font-bold text-gray-800 text-sm truncate">{{ idx + 1 }}. {{ c.title }}</p> <p class="text-xs text-gray-400">{{ c.type === 'video' ? '视频课' : '图文课' }}<span v-if="c.duration_minutes"> · {{ c.duration_minutes }} 分钟</span><span v-if="c.video_path"> · {{ c.video_path }}</span></p> </div> <span class="text-xs px-2 py-0.5 rounded-full font-bold" :class="c.enabled ? 'bg-success/10 text-success' : 'bg-gray-100 text-gray-400'">{{ c.enabled ? '启用' : '停用' }}</span> <button @click="toggleCourseEnabled(c)" class="text-xs px-2.5 py-1.5 bg-gray-100 text-gray-600 font-bold rounded-lg hover:bg-gray-200 transition-all">{{ c.enabled ? '停用' : '启用' }}</button> <button @click="editCourse(c)" class="text-xs px-2.5 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all">编辑</button> <button @click="deleteCourse(c)" class="text-xs px-2.5 py-1.5 bg-danger/10 text-danger font-bold rounded-lg hover:bg-danger/20 transition-all">删除</button> </div> </div> </div> <!-- 学员进度 --> <div class="glass-card relative z-10 p-6"> <div class="flex items-center justify-between mb-4"> <h2 class="text-lg font-bold text-gray-900"> 学员学习进度</h2> <button @click="loadLearnProgress" class="text-sm px-3 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all"> 刷新</button> </div> <div class="flex flex-wrap gap-3 mb-4"> <input v-model="progressFilterUid" type="text" placeholder="按 UID 筛选（可空）" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all w-52" @keyup.enter="loadLearnProgress"> <select v-model="progressFilterPkg" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all bg-white" @change="loadLearnProgress"> <option :value="null">全部课包</option> <option v-for="pkg in packages" :key="pkg.id" :value="pkg.id">{{ pkg.name }}</option> </select> <button @click="loadLearnProgress" class="px-4 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-all">查询</button> </div> <div v-if="learnProgress.length === 0" class="text-center text-gray-400 py-6 font-bold">暂无学习记录</div> <div v-else class="space-y-3"> <div v-for="stu in learnProgress" :key="stu.uid" class="p-4 rounded-2xl bg-white/70 border border-gray-100"> <div class="flex items-center gap-2 mb-2"> <span class="font-bold text-gray-900">{{ stu.nickname || '（未填昵称）' }}</span> <span class="text-xs text-gray-400">UID: {{ stu.uid }}</span> </div> <div class="grid grid-cols-1 md:grid-cols-2 gap-2"> <div v-for="p in stu.packages" :key="p.package_id" class="p-3 rounded-xl bg-gray-50 border border-gray-100"> <div class="flex items-center justify-between mb-1.5"> <span class="text-sm font-bold text-gray-700">{{ p.package_name }}</span> <span class="text-xs font-bold px-2 py-0.5 rounded-full" :class="examStatusBadge(p.exam_status).cls">{{ examStatusBadge(p.exam_status).text }}</span> </div> <div class="flex items-center gap-2 mb-1.5"> <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden"> <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full" :style="{ width: (p.total_courses ? p.completed_courses / p.total_courses * 100 : 0) + '%' }"></div> </div> <span class="text-xs text-gray-400 font-bold">{{ p.completed_courses }}/{{ p.total_courses }}</span> </div> <div class="space-y-0.5"> <div v-for="c in p.courses" :key="c.course_id" class="flex items-center justify-between text-xs"> <span class="text-gray-500 truncate">{{ c.title }}</span> <span class="font-bold shrink-0 ml-2" :class="c.completed ? 'text-success' : c.progress_percent > 0 ? 'text-primary' : 'text-gray-300'">
+                        {{ c.completed ? '' : c.progress_percent > 0 ? Math.floor(c.progress_percent) + '%' : '未开始' }}
+                      </span> </div> </div> </div> </div> </div> </div> </div> </div> </main> <!-- 新增/编辑题目弹窗 --> <div v-if="showQuestionModal" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4"> <div class="bg-white rounded-3xl p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto"> <h3 class="text-lg font-bold text-gray-900 mb-4">{{ editingQuestion ? ' 修改题目' : ' 新增题目' }}</h3> <div class="space-y-4"> <div> <label class="block text-sm font-bold text-gray-700 mb-2">题型</label> <select v-model="questionForm.type" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"> <option value="single">单选题</option> <option value="multiple">多选题</option> <option value="fill">填空题</option> <option value="essay">简答题</option> </select> </div> <div> <label class="block text-sm font-bold text-gray-700 mb-2">题干</label> <textarea v-model="questionForm.content" rows="3" placeholder="请输入题目内容" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea> </div> <!-- 单选/多选选项 --> <div v-if="questionForm.type === 'single' || questionForm.type === 'multiple'"> <label class="block text-sm font-bold text-gray-700 mb-2">选项（每行一个）</label> <textarea v-model="questionForm.optionsText" rows="4" placeholder="A. 选项1
 B. 选项2
 C. 选项3
-D. 选项4" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea>
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-2">正确答案</label>
-              <input v-model="questionForm.answer" type="text" placeholder="例如：A 或 A,B" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
-            </div>
-          </div>
-
-          <!-- 填空题答案 -->
-          <div v-if="questionForm.type === 'fill'">
-            <label class="block text-sm font-bold text-gray-700 mb-2">填空答案（每行一个，用|分隔多个可选答案）</label>
-            <textarea v-model="questionForm.blanksText" rows="3" placeholder="空1答案:18|十八
-空2答案:98" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea>
-          </div>
-
-          <div>
-            <label class="block text-sm font-bold text-gray-700 mb-2">答案解析</label>
-            <textarea v-model="questionForm.keyPoints" rows="3" placeholder="请输入答案解析或评分关键词" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <input type="checkbox" id="qEnabled" v-model="questionForm.enabled" class="w-4 h-4 text-primary rounded">
-            <label for="qEnabled" class="text-sm text-gray-700 font-bold">题目启用（启用后会被抽到试卷中）</label>
-          </div>
-        </div>
-        <div class="flex gap-3 mt-6">
-          <button @click="closeQuestionModal" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">取消</button>
-          <button @click="saveQuestion" class="flex-1 h-12 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark transition-all">{{ editingQuestion ? '保存修改' : '新增题目' }}</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 答题明细弹窗 -->
-  <div v-if="showDetailModal" class="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" @click.self="closeDetailModal">
-    <div class="glass-modal relative z-10 p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-bold text-gray-900">📋 答题明细</h3>
-        <button @click="closeDetailModal" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500">✕</button>
-      </div>
-      <div v-if="detailResult" class="mb-4 p-3 bg-primary/5 rounded-2xl">
-        <div class="flex flex-wrap gap-4 text-sm">
-          <span><span class="text-gray-500">考生：</span><span class="font-bold">{{ detailResult.user_name }}</span></span>
-          <span><span class="text-gray-500">UID：</span><span class="font-bold">{{ detailResult.user_uid }}</span></span>
-          <span><span class="text-gray-500">总分：</span><span class="font-bold" :class="detailResult.percentage >= 80 ? 'text-success' : detailResult.percentage >= 60 ? 'text-primary' : 'text-danger'">{{ detailResult.total_score }} / {{ detailResult.max_score }}</span></span>
-          <span><span class="text-gray-500">正确率：</span><span class="font-bold">{{ detailResult.percentage }}%</span></span>
-          <span><span class="text-gray-500">试卷：</span><span class="font-bold">{{ detailResult.exam_name || '未知试卷' }}</span></span>
-          <span><span class="text-gray-500">时间：</span><span class="font-bold">{{ formatTime(detailResult.created_at) }}</span></span>
-        </div>
-      </div>
-      <div v-if="detailResult && detailResult.details && detailResult.details.length > 0" class="space-y-3">
-        <div v-for="(a, idx) in detailResult.details" :key="idx" class="p-4 rounded-2xl border-2 transition-all" :class="a.is_correct ? 'border-success/30 bg-success/5' : 'border-danger/30 bg-danger/5'">
-          <div class="flex items-start justify-between mb-2">
-            <div class="flex-1">
-              <span class="text-xs font-bold text-gray-400 mr-2">{{ idx + 1 }}.</span>
-              <span class="text-sm font-bold text-gray-800">{{ a.title || '题目 ' + a.q_id }}</span>
-            </div>
-            <span class="text-xs px-2 py-1 rounded-lg font-bold ml-2 shrink-0" :class="a.is_correct ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'">
-              {{ a.is_correct ? '✅ 正确' : '❌ 错误' }}
-            </span>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm pl-6">
-            <div><span class="text-gray-500">题型：</span><span class="font-bold">{{ typeLabel(a.type) }}</span></div>
-            <div><span class="text-gray-500">得分：</span><span class="font-bold" :class="a.is_correct ? 'text-success' : 'text-danger'">{{ a.score }} / {{ a.max_score }}</span></div>
-            <div class="md:col-span-2">
-              <span class="text-gray-500">用户答案：</span>
-              <span class="font-bold break-all" :class="a.is_correct ? 'text-success' : 'text-danger'">{{ a.user_answer || '(未作答)' }}</span>
-            </div>
-            <div class="md:col-span-2">
-              <span class="text-gray-500">正确答案：</span>
-              <span class="font-bold text-success break-all">{{ a.correct_answer || '-' }}</span>
-            </div>
-            <div v-if="a.key_points" class="md:col-span-2">
-              <span class="text-gray-500">解析：</span>
-              <span class="text-gray-600 break-all">{{ a.key_points }}</span>
-            </div>
-            <div v-if="a.feedback" class="md:col-span-2">
-              <span class="text-gray-500">反馈：</span>
-              <span class="text-gray-600 break-all">{{ a.feedback }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div v-else class="text-center text-gray-400 py-8">暂无答题记录</div>
-    </div>
-  </div>
-
-  <!-- 预览试卷弹窗 -->
-  <div v-if="showPreviewModal" class="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" @click.self="closePreviewModal">
-    <div class="glass-modal relative z-10 p-6 max-w-3xl w-full max-h-[85vh] overflow-y-auto">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-bold text-gray-900">👁️ 试卷预览</h3>
-        <button @click="closePreviewModal" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500">✕</button>
-      </div>
-      <div v-if="previewData" class="mb-4 p-3 bg-primary/5 rounded-2xl">
-        <div class="flex flex-wrap gap-4 text-sm">
-          <span><span class="text-gray-500">试卷：</span><span class="font-bold">{{ previewData.config.name }}</span></span>
-          <span><span class="text-gray-500">总题数：</span><span class="font-bold">{{ previewData.totalQuestions }} 题</span></span>
-          <span><span class="text-gray-500">满分：</span><span class="font-bold">{{ previewData.questions.reduce((sum, q) => sum + (q.score || 5), 0) }} 分</span></span>
-        </div>
-      </div>
-      <div v-if="previewData && previewData.questions.length > 0" class="space-y-4">
-        <!-- 按题型分组 -->
-        <div v-for="type in ['single', 'multiple', 'fill', 'essay']" :key="type">
-          <div v-if="previewData.questions.filter(q => q.type === type).length > 0">
-            <h4 class="text-sm font-bold text-gray-700 mb-2 px-2 py-1 bg-gray-100 rounded-lg">{{ typeLabel(type) }}（{{ previewData.questions.filter(q => q.type === type).length }} 题）</h4>
-            <div v-for="(q, idx) in previewData.questions.filter(q => q.type === type)" :key="q.id" class="p-3 rounded-xl border border-gray-200 mb-2">
-              <div class="flex items-start gap-2 mb-2">
-                <span class="text-xs font-bold text-gray-400 mt-0.5">{{ idx + 1 }}.</span>
-                <div class="text-sm font-bold text-gray-800">{{ q.content }}</div>
-              </div>
-              <div v-if="q.options && q.options.length > 0" class="pl-5 space-y-1 mb-2">
-                <div v-for="opt in q.options" :key="opt" class="text-sm text-gray-600">{{ opt }}</div>
-              </div>
-              <div v-if="q.blanks && q.blanks.length > 0" class="pl-5 text-sm text-gray-600 mb-2">
-                <div v-for="b in q.blanks" :key="b.blank_no">空{{ b.blank_no }} 答案：{{ b.answer }}</div>
-              </div>
-              <div class="pl-5 text-xs mt-2 flex flex-wrap items-center gap-3 pt-2 border-t border-gray-100">
-                <span class="px-2 py-1 bg-primary/10 rounded-lg"><span class="text-gray-500">分值：</span><span class="font-bold text-primary">{{ q.score }} 分</span></span>
-                <span><span class="text-gray-500">答案：</span><span class="font-bold text-success">{{ q.answer || q.key_points || '-' }}</span></span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div v-else class="text-center text-gray-400 py-8">暂无题目</div>
-      <div class="flex gap-3 mt-4">
-        <button @click="closePreviewModal" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">关闭</button>
-        <button v-if="previewData && previewData.config" @click="publishFromPreview" class="flex-1 h-12 bg-success text-white font-bold rounded-2xl hover:bg-success/90 transition-all">🚀 确认发布</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 题目预览弹窗 -->
-  <div v-if="showQuestionPreviewModal" class="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" @click.self="showQuestionPreviewModal = false">
-    <div class="glass-modal relative z-10 p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-bold text-gray-900">👁️ 题目预览</h3>
-        <button @click="showQuestionPreviewModal = false" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500">✕</button>
-      </div>
-      <div v-if="currentPreviewQuestion" class="space-y-4">
-        <div class="flex items-center gap-2">
-          <span class="px-2 py-1 rounded-lg text-xs font-bold" :class="typeClass(currentPreviewQuestion.type)">{{ typeLabel(currentPreviewQuestion.type) }}</span>
-          <span class="text-xs text-gray-500">ID: {{ currentPreviewQuestion.id }}</span>
-          <span class="text-xs px-2 py-0.5 rounded-lg" :class="currentPreviewQuestion.enabled !== false ? 'bg-success/10 text-success' : 'bg-gray-100 text-gray-500'">{{ currentPreviewQuestion.enabled !== false ? '已启用' : '已禁用' }}</span>
-        </div>
-        <div class="p-4 bg-gray-50 rounded-2xl">
-          <p class="text-sm font-bold text-gray-700 mb-2">题干</p>
-          <p class="text-sm text-gray-800 leading-relaxed">{{ currentPreviewQuestion.title }}</p>
-        </div>
-        <div v-if="currentPreviewQuestion.options && currentPreviewQuestion.options.length > 0" class="p-4 bg-gray-50 rounded-2xl">
-          <p class="text-sm font-bold text-gray-700 mb-2">选项</p>
-          <div class="space-y-2">
-            <div v-for="opt in currentPreviewQuestion.options" :key="opt" class="text-sm text-gray-700">{{ opt }}</div>
-          </div>
-        </div>
-        <div v-if="currentPreviewQuestion.type === 'fill' && currentPreviewQuestion.blanks && currentPreviewQuestion.blanks.length > 0" class="p-4 bg-gray-50 rounded-2xl">
-          <p class="text-sm font-bold text-gray-700 mb-2">填空答案</p>
-          <div class="space-y-1">
-            <div v-for="b in currentPreviewQuestion.blanks" :key="b.blank_no" class="text-sm text-gray-700">空{{ b.blank_no }}：{{ b.answer }}</div>
-          </div>
-        </div>
-        <div class="p-4 bg-primary/5 rounded-2xl">
-          <p class="text-sm font-bold text-gray-700 mb-2">答案</p>
-          <p class="text-sm text-success font-bold">{{ currentPreviewQuestion.type === 'fill' ? currentPreviewQuestion.blanks?.map(b => b.answer).join(' / ') : currentPreviewQuestion.answer || '-' }}</p>
-        </div>
-        <div v-if="currentPreviewQuestion.keyPoints" class="p-4 bg-success/5 rounded-2xl">
-          <p class="text-sm font-bold text-gray-700 mb-2">解析</p>
-          <p class="text-sm text-gray-700 leading-relaxed">{{ currentPreviewQuestion.keyPoints }}</p>
-        </div>
-      </div>
-      <div class="flex gap-3 mt-4">
-        <button @click="showQuestionPreviewModal = false" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">关闭</button>
-      </div>
-    </div>
-  </div>
-</template>
-
-<script setup>
+D. 选项4" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea> <div> <label class="block text-sm font-bold text-gray-700 mb-2">正确答案</label> <input v-model="questionForm.answer" type="text" placeholder="例如：A 或 A,B" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"> </div> </div> <!-- 填空题答案 --> <div v-if="questionForm.type === 'fill'"> <label class="block text-sm font-bold text-gray-700 mb-2">填空答案（每行一个，用|分隔多个可选答案）</label> <textarea v-model="questionForm.blanksText" rows="3" placeholder="空1答案:18|十八
+空2答案:98" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea> </div> <div> <label class="block text-sm font-bold text-gray-700 mb-2">答案解析</label> <textarea v-model="questionForm.keyPoints" rows="3" placeholder="请输入答案解析或评分关键词" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea> </div> <div class="flex items-center gap-2"> <input type="checkbox" id="qEnabled" v-model="questionForm.enabled" class="w-4 h-4 text-primary rounded"> <label for="qEnabled" class="text-sm text-gray-700 font-bold">题目启用（启用后会被抽到试卷中）</label> </div> </div> <div class="flex gap-3 mt-6"> <button @click="closeQuestionModal" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">取消</button> <button @click="saveQuestion" class="flex-1 h-12 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark transition-all">{{ editingQuestion ? '保存修改' : '新增题目' }}</button> </div> </div> </div> </div> <!-- 答题明细弹窗 --> <div v-if="showDetailModal" class="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" @click.self="closeDetailModal"> <div class="glass-modal relative z-10 p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto"> <div class="flex items-center justify-between mb-4"> <h3 class="text-lg font-bold text-gray-900"> 答题明细</h3> <button @click="closeDetailModal" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500"></button> </div> <div v-if="detailResult" class="mb-4 p-3 bg-primary/5 rounded-2xl"> <div class="flex flex-wrap gap-4 text-sm"> <span><span class="text-gray-500">考生：</span><span class="font-bold">{{ detailResult.user_name }}</span></span> <span><span class="text-gray-500">UID：</span><span class="font-bold">{{ detailResult.user_uid }}</span></span> <span><span class="text-gray-500">总分：</span><span class="font-bold" :class="detailResult.percentage >= 80 ? 'text-success' : detailResult.percentage >= 60 ? 'text-primary' : 'text-danger'">{{ detailResult.total_score }} / {{ detailResult.max_score }}</span></span> <span><span class="text-gray-500">正确率：</span><span class="font-bold">{{ detailResult.percentage }}%</span></span> <span><span class="text-gray-500">试卷：</span><span class="font-bold">{{ detailResult.exam_name || '未知试卷' }}</span></span> <span><span class="text-gray-500">时间：</span><span class="font-bold">{{ formatTime(detailResult.created_at) }}</span></span> </div> </div> <div v-if="detailResult && detailResult.details && detailResult.details.length > 0" class="space-y-3"> <div v-for="(a, idx) in detailResult.details" :key="idx" class="p-4 rounded-2xl border-2 transition-all" :class="a.is_correct ? 'border-success/30 bg-success/5' : 'border-danger/30 bg-danger/5'"> <div class="flex items-start justify-between mb-2"> <div class="flex-1"> <span class="text-xs font-bold text-gray-400 mr-2">{{ idx + 1 }}.</span> <span class="text-sm font-bold text-gray-800">{{ a.title || '题目 ' + a.q_id }}</span> </div> <span class="text-xs px-2 py-1 rounded-lg font-bold ml-2 shrink-0" :class="a.is_correct ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'">
+              {{ a.is_correct ? ' 正确' : ' 错误' }}
+            </span> </div> <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm pl-6"> <div><span class="text-gray-500">题型：</span><span class="font-bold">{{ typeLabel(a.type) }}</span></div> <div><span class="text-gray-500">得分：</span><span class="font-bold" :class="a.is_correct ? 'text-success' : 'text-danger'">{{ a.score }} / {{ a.max_score }}</span></div> <div class="md:col-span-2"> <span class="text-gray-500">用户答案：</span> <span class="font-bold break-all" :class="a.is_correct ? 'text-success' : 'text-danger'">{{ a.user_answer || '(未作答)' }}</span> </div> <div class="md:col-span-2"> <span class="text-gray-500">正确答案：</span> <span class="font-bold text-success break-all">{{ a.correct_answer || '-' }}</span> </div> <div v-if="a.key_points" class="md:col-span-2"> <span class="text-gray-500">解析：</span> <span class="text-gray-600 break-all">{{ a.key_points }}</span> </div> <div v-if="a.feedback" class="md:col-span-2"> <span class="text-gray-500">反馈：</span> <span class="text-gray-600 break-all">{{ a.feedback }}</span> </div> </div> </div> </div> <div v-else class="text-center text-gray-400 py-8">暂无答题记录</div> </div> </div> <!-- 预览试卷弹窗 --> <div v-if="showPreviewModal" class="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" @click.self="closePreviewModal"> <div class="glass-modal relative z-10 p-6 max-w-3xl w-full max-h-[85vh] overflow-y-auto"> <div class="flex items-center justify-between mb-4"> <h3 class="text-lg font-bold text-gray-900"> 试卷预览</h3> <button @click="closePreviewModal" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500"></button> </div> <div v-if="previewData" class="mb-4 p-3 bg-primary/5 rounded-2xl"> <div class="flex flex-wrap gap-4 text-sm"> <span><span class="text-gray-500">试卷：</span><span class="font-bold">{{ previewData.config.name }}</span></span> <span><span class="text-gray-500">总题数：</span><span class="font-bold">{{ previewData.totalQuestions }} 题</span></span> <span><span class="text-gray-500">满分：</span><span class="font-bold">{{ previewData.questions.reduce((sum, q) => sum + (q.score || 5), 0) }} 分</span></span> </div> </div> <div v-if="previewData && previewData.questions.length > 0" class="space-y-4"> <!-- 按题型分组 --> <div v-for="type in ['single', 'multiple', 'fill', 'essay']" :key="type"> <div v-if="previewData.questions.filter(q => q.type === type).length > 0"> <h4 class="text-sm font-bold text-gray-700 mb-2 px-2 py-1 bg-gray-100 rounded-lg">{{ typeLabel(type) }}（{{ previewData.questions.filter(q => q.type === type).length }} 题）</h4> <div v-for="(q, idx) in previewData.questions.filter(q => q.type === type)" :key="q.id" class="p-3 rounded-xl border border-gray-200 mb-2"> <div class="flex items-start gap-2 mb-2"> <span class="text-xs font-bold text-gray-400 mt-0.5">{{ idx + 1 }}.</span> <div class="text-sm font-bold text-gray-800">{{ q.content }}</div> </div> <div v-if="q.options && q.options.length > 0" class="pl-5 space-y-1 mb-2"> <div v-for="opt in q.options" :key="opt" class="text-sm text-gray-600">{{ opt }}</div> </div> <div v-if="q.blanks && q.blanks.length > 0" class="pl-5 text-sm text-gray-600 mb-2"> <div v-for="b in q.blanks" :key="b.blank_no">空{{ b.blank_no }} 答案：{{ b.answer }}</div> </div> <div class="pl-5 text-xs mt-2 flex flex-wrap items-center gap-3 pt-2 border-t border-gray-100"> <span class="px-2 py-1 bg-primary/10 rounded-lg"><span class="text-gray-500">分值：</span><span class="font-bold text-primary">{{ q.score }} 分</span></span> <span><span class="text-gray-500">答案：</span><span class="font-bold text-success">{{ q.answer || q.key_points || '-' }}</span></span> </div> </div> </div> </div> </div> <div v-else class="text-center text-gray-400 py-8">暂无题目</div> <div class="flex gap-3 mt-4"> <button @click="closePreviewModal" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">关闭</button> <button v-if="previewData && previewData.config" @click="publishFromPreview" class="flex-1 h-12 bg-success text-white font-bold rounded-2xl hover:bg-success/90 transition-all"> 确认发布</button> </div> </div> </div> <!-- 题目预览弹窗 --> <div v-if="showQuestionPreviewModal" class="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" @click.self="showQuestionPreviewModal = false"> <div class="glass-modal relative z-10 p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto"> <div class="flex items-center justify-between mb-4"> <h3 class="text-lg font-bold text-gray-900"> 题目预览</h3> <button @click="showQuestionPreviewModal = false" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500"></button> </div> <div v-if="currentPreviewQuestion" class="space-y-4"> <div class="flex items-center gap-2"> <span class="px-2 py-1 rounded-lg text-xs font-bold" :class="typeClass(currentPreviewQuestion.type)">{{ typeLabel(currentPreviewQuestion.type) }}</span> <span class="text-xs text-gray-500">ID: {{ currentPreviewQuestion.id }}</span> <span class="text-xs px-2 py-0.5 rounded-lg" :class="currentPreviewQuestion.enabled !== false ? 'bg-success/10 text-success' : 'bg-gray-100 text-gray-500'">{{ currentPreviewQuestion.enabled !== false ? '已启用' : '已禁用' }}</span> </div> <div class="p-4 bg-gray-50 rounded-2xl"> <p class="text-sm font-bold text-gray-700 mb-2">题干</p> <p class="text-sm text-gray-800 leading-relaxed">{{ currentPreviewQuestion.title }}</p> </div> <div v-if="currentPreviewQuestion.options && currentPreviewQuestion.options.length > 0" class="p-4 bg-gray-50 rounded-2xl"> <p class="text-sm font-bold text-gray-700 mb-2">选项</p> <div class="space-y-2"> <div v-for="opt in currentPreviewQuestion.options" :key="opt" class="text-sm text-gray-700">{{ opt }}</div> </div> </div> <div v-if="currentPreviewQuestion.type === 'fill' && currentPreviewQuestion.blanks && currentPreviewQuestion.blanks.length > 0" class="p-4 bg-gray-50 rounded-2xl"> <p class="text-sm font-bold text-gray-700 mb-2">填空答案</p> <div class="space-y-1"> <div v-for="b in currentPreviewQuestion.blanks" :key="b.blank_no" class="text-sm text-gray-700">空{{ b.blank_no }}：{{ b.answer }}</div> </div> </div> <div class="p-4 bg-primary/5 rounded-2xl"> <p class="text-sm font-bold text-gray-700 mb-2">答案</p> <p class="text-sm text-success font-bold">{{ currentPreviewQuestion.type === 'fill' ? currentPreviewQuestion.blanks?.map(b => b.answer).join(' / ') : currentPreviewQuestion.answer || '-' }}</p> </div> <div v-if="currentPreviewQuestion.keyPoints" class="p-4 bg-success/5 rounded-2xl"> <p class="text-sm font-bold text-gray-700 mb-2">解析</p> <p class="text-sm text-gray-700 leading-relaxed">{{ currentPreviewQuestion.keyPoints }}</p> </div> </div> <div class="flex gap-3 mt-4"> <button @click="showQuestionPreviewModal = false" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">关闭</button> </div> </div> </div>
+</template> <script setup>
 import { ref, computed, onMounted, watch, inject } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -1374,7 +329,7 @@ function examStatusBadge(status) {
     case 'no_exam': return { text: '未配置考试', cls: 'bg-gray-100 text-gray-400' }
     default:
       return status.chain_locked
-        ? { text: '🔒 需先过姐妹团', cls: 'bg-gray-100 text-gray-500' }
+        ? { text: ' 需先过姐妹团', cls: 'bg-gray-100 text-gray-500' }
         : { text: `还差${status.remaining_courses || 0}门课`, cls: 'bg-primary/10 text-primary' }
   }
 }
@@ -1413,10 +368,10 @@ function toggleResultSelect(id) {
 async function batchDeleteResults() {
   if (selectedResultIds.value.length === 0) return
   if (!confirm(`确定删除选中的 ${selectedResultIds.value.length} 条考试记录？删除后将进入回收站，可在回收站中恢复。`)) return
-  
+
   let successCount = 0
   let failCount = 0
-  
+
   for (const id of selectedResultIds.value) {
     try {
       const res = await fetch(`/api/results/${id}`, { method: 'DELETE' })
@@ -1431,11 +386,11 @@ async function batchDeleteResults() {
       console.error('批量删除失败', err)
     }
   }
-  
+
   selectedResultIds.value = []
   await loadResults()
   await loadRecycleBin()
-  
+
   alert(`批量删除完成：成功 ${successCount} 条${failCount > 0 ? '，失败 ' + failCount + ' 条' : ''}`)
 }
 
@@ -1708,7 +663,7 @@ async function submitAiGen() {
     showToast('请选择文件', 'warning')
     return
   }
-  
+
   // 禁止重复生成：同一文件5分钟内不能重复生成
   const now = Date.now()
   const cooldown = 5 * 60 * 1000 // 5分钟
@@ -1717,9 +672,9 @@ async function submitAiGen() {
     showToast(`该文件已生成过，请等待 ${remain} 秒后再试`, 'warning')
     return
   }
-  
+
   const file = aiGenFile.value
-  
+
   aiGenLoading.value = true
   try {
     const formData = new FormData()
@@ -1728,7 +683,7 @@ async function submitAiGen() {
     formData.append('multiple_count', String(aiGenMultiple.value))
     formData.append('fill_count', String(aiGenFill.value))
     formData.append('essay_count', String(aiGenEssay.value))
-    
+
     const res = await fetch('/api/generate-questions', {
       method: 'POST',
       body: formData
@@ -1762,15 +717,15 @@ async function submitAiGenUpdate() {
     showToast('请先上传文档', 'warning')
     return
   }
-  
+
   const file = aiGenFile.value
-  
+
   aiGenUpdateLoading.value = true
   aiGenUpdateResult.value = null
   try {
     const formData = new FormData()
     formData.append('file', file)
-    
+
     const res = await fetch('/api/update-questions-from-doc', {
       method: 'POST',
       body: formData
@@ -1802,17 +757,17 @@ async function submitAiGenUpdate() {
 // 导入全部更新建议（更新+新增）
 async function importAllUpdateSuggestions() {
   if (!aiGenUpdateResult.value) return
-  
+
   const allQuestions = [
     ...(aiGenUpdateResult.value.updated || []),
     ...(aiGenUpdateResult.value.added || [])
   ]
-  
+
   if (allQuestions.length === 0) {
     showToast('没有可导入的建议', 'warning')
     return
   }
-  
+
   let successCount = 0
   for (const q of allQuestions) {
     try {
@@ -1835,7 +790,7 @@ async function importAllUpdateSuggestions() {
       console.error('导入失败', e)
     }
   }
-  
+
   showToast(`成功导入 ${successCount}/${allQuestions.length} 题`, 'success')
   await loadQuestions()
   aiGenUpdateResult.value = null
@@ -1848,13 +803,13 @@ async function submitAiGenVariants() {
     showToast('请先选择一道原题', 'warning')
     return
   }
-  
+
   const sourceQ = questions.value.find(q => q.id === parseInt(sourceId))
   if (!sourceQ) {
     showToast('原题不存在，请重新选择', 'error')
     return
   }
-  
+
   aiGenVariantLoading.value = true
   try {
     const payload = {
@@ -1869,7 +824,7 @@ async function submitAiGenVariants() {
       },
       variant_count: aiGenVariantCount.value
     }
-    
+
     const res = await fetch('/api/generate-variants', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1922,7 +877,7 @@ function closeAiGenEdit() {
 function saveAiGenEdit() {
   const idx = editingAiGenIdx.value
   if (idx < 0 || idx >= aiGenQuestions.value.length) return
-  
+
   const form = aiGenEditForm.value
   const updated = {
     ...aiGenQuestions.value[idx],
@@ -1931,13 +886,13 @@ function saveAiGenEdit() {
     answer: form.answer,
     key_points: form.key_points
   }
-  
+
   if (form.type === 'single' || form.type === 'multiple') {
     updated.options = form.optionsText.split('\n').map(s => s.trim()).filter(s => s)
   } else {
     updated.options = []
   }
-  
+
   if (form.type === 'fill' && form.blanksText.trim()) {
     updated.blanks = form.blanksText.split('\n').map((line, i) => {
       const text = line.trim()
@@ -1949,7 +904,7 @@ function saveAiGenEdit() {
       return { blank_no: i + 1, answer: text }
     }).filter(Boolean)
   }
-  
+
   aiGenQuestions.value[idx] = updated
   showAiGenEditModal.value = false
   editingAiGenIdx.value = -1
@@ -1975,16 +930,16 @@ function aiGenDeselectAll() {
 
 async function importSelectedQuestions() {
   let targetBankId = aiGenBankId.value
-  
+
   // 如果选择了新建题库
   if (targetBankId === -1) {
     showAiGenNewBank.value = true
     return
   }
-  
+
   const selected = aiGenQuestions.value.filter((_, i) => aiGenSelectedIds.value.includes(i))
   let imported = 0
-  
+
   for (const q of selected) {
     try {
       const newQuestion = {
@@ -2007,7 +962,7 @@ async function importSelectedQuestions() {
       console.error('导入题目失败', e)
     }
   }
-  
+
   showToast(`成功导入 ${imported} 道题目`, 'success')
   aiGenQuestions.value = []
   aiGenSelectedIds.value = []

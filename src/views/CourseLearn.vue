@@ -1,31 +1,5 @@
-<template>
-  <div class="min-h-screen bg-animated relative">
-    <!-- 顶部栏 -->
-    <header class="glass-nav relative z-10 sticky top-0">
-      <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-        <button @click="goBack" class="text-white font-bold text-sm bg-white/15 px-3 py-1.5 rounded-lg hover:bg-white/25 transition-all shrink-0">← 返回</button>
-        <h1 class="text-sm sm:text-base font-bold text-white truncate flex-1 text-center">{{ course ? course.title : '课程学习' }}</h1>
-        <span v-if="completed" class="text-xs font-bold px-2.5 py-1 rounded-full bg-success text-white shrink-0">✅ 已完成</span>
-        <span v-else class="text-xs font-bold px-2.5 py-1 rounded-full bg-white/20 text-white shrink-0">学习中</span>
-      </div>
-    </header>
-
-    <main class="max-w-3xl mx-auto px-4 py-5 relative z-10 pb-12">
-      <div v-if="loading" class="glass-card p-10 text-center text-gray-500 font-bold">
-        <div class="text-4xl mb-3 animate-bounce">📚</div>加载中…
-      </div>
-
-      <div v-else-if="!course" class="glass-card p-10 text-center">
-        <div class="text-4xl mb-3">😢</div>
-        <p class="font-bold text-gray-500">课程不存在或已下线</p>
-        <button @click="goBack" class="mt-4 px-6 h-11 bg-primary text-white font-bold rounded-2xl">返回课程列表</button>
-      </div>
-
-      <template v-else>
-        <!-- ===== 视频课 ===== -->
-        <div v-if="course.type === 'video'" class="glass-card p-4 sm:p-5 mb-4">
-          <div class="rounded-2xl overflow-hidden bg-black shadow-lg">
-            <video
+<template> <div class="min-h-screen bg-animated relative"> <!-- 顶部栏 --> <header class="glass-nav relative z-10 sticky top-0"> <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3"> <button @click="goBack" class="text-white font-bold text-sm bg-white/15 px-3 py-1.5 rounded-lg hover:bg-white/25 transition-all shrink-0"> 返回</button> <h1 class="text-sm sm:text-base font-bold text-white truncate flex-1 text-center">{{ course ? course.title : '课程学习' }}</h1> <span v-if="completed" class="text-xs font-bold px-2.5 py-1 rounded-full bg-success text-white shrink-0"> 已完成</span> <span v-else class="text-xs font-bold px-2.5 py-1 rounded-full bg-white/20 text-white shrink-0">学习中</span> </div> </header> <main class="max-w-3xl mx-auto px-4 py-5 relative z-10 pb-12"> <div v-if="loading" class="glass-card p-10 text-center text-gray-500 font-bold"> <div class="text-4xl mb-3 animate-bounce"></div>加载中…
+      </div> <div v-else-if="!course" class="glass-card p-10 text-center"> <div class="text-4xl mb-3"></div> <p class="font-bold text-gray-500">课程不存在或已下线</p> <button @click="goBack" class="mt-4 px-6 h-11 bg-primary text-white font-bold rounded-2xl">返回课程列表</button> </div> <template v-else> <!-- ===== 视频课 ===== --> <div v-if="course.type === 'video'" class="glass-card p-4 sm:p-5 mb-4"> <div class="rounded-2xl overflow-hidden bg-black shadow-lg"> <video
               ref="videoRef"
               :src="course.video_path"
               controls
@@ -37,57 +11,17 @@
               @ended="onPauseOrEnd"
               @ratechange="onRateChange"
               @loadedmetadata="onLoadedMetadata"
-            ></video>
-          </div>
-          <div class="mt-4">
-            <div class="flex justify-between text-xs font-bold mb-1.5">
-              <span class="text-gray-500">观看进度（实际播放时长，看到 90% 即完成）</span>
-              <span :class="completed ? 'text-success' : 'text-primary'">{{ Math.floor(progressPercent) }}%</span>
-            </div>
-            <div class="h-2.5 bg-gray-200 rounded-full overflow-hidden">
-              <div class="h-full rounded-full transition-all duration-500"
+            ></video> </div> <div class="mt-4"> <div class="flex justify-between text-xs font-bold mb-1.5"> <span class="text-gray-500">观看进度（实际播放时长，看到 90% 即完成）</span> <span :class="completed ? 'text-success' : 'text-primary'">{{ Math.floor(progressPercent) }}%</span> </div> <div class="h-2.5 bg-gray-200 rounded-full overflow-hidden"> <div class="h-full rounded-full transition-all duration-500"
                 :class="completed ? 'bg-gradient-to-r from-success to-emerald-400' : 'bg-gradient-to-r from-primary to-secondary'"
-                :style="{ width: Math.min(100, progressPercent) + '%' }"></div>
-            </div>
-            <p class="text-xs text-gray-400 mt-2">💡 倍速最高 2x，切出页面自动暂停；已累计观看 {{ formatSeconds(watchedSeconds) }}</p>
-          </div>
-        </div>
-
-        <!-- ===== 图文课 ===== -->
-        <div v-else class="glass-card p-5 sm:p-6 mb-4">
-          <!-- 倒计时 -->
-          <div class="mb-4 p-3.5 rounded-2xl flex items-center justify-between"
-            :class="completed ? 'bg-success/10 border border-success/20' : 'bg-primary/5 border border-primary/15'">
-            <span class="text-sm font-bold" :class="completed ? 'text-success' : 'text-gray-600'">
-              {{ completed ? '✅ 学习时长已达标' : '⏱️ 还需学习' }}
-            </span>
-            <span v-if="!completed" class="text-lg font-extrabold text-primary tabular-nums">{{ remainText }}</span>
-          </div>
-          <div class="h-2 bg-gray-200 rounded-full overflow-hidden mb-5">
-            <div class="h-full rounded-full transition-all duration-500"
+                :style="{ width: Math.min(100, progressPercent) + '%' }"></div> </div> <p class="text-xs text-gray-400 mt-2"> 倍速最高 2x，切出页面自动暂停；已累计观看 {{ formatSeconds(watchedSeconds) }}</p> </div> </div> <!-- ===== 图文课 ===== --> <div v-else class="glass-card p-5 sm:p-6 mb-4"> <!-- 倒计时 --> <div class="mb-4 p-3.5 rounded-2xl flex items-center justify-between"
+            :class="completed ? 'bg-success/10 border border-success/20' : 'bg-primary/5 border border-primary/15'"> <span class="text-sm font-bold" :class="completed ? 'text-success' : 'text-gray-600'">
+              {{ completed ? ' 学习时长已达标' : ' 还需学习' }}
+            </span> <span v-if="!completed" class="text-lg font-extrabold text-primary tabular-nums">{{ remainText }}</span> </div> <div class="h-2 bg-gray-200 rounded-full overflow-hidden mb-5"> <div class="h-full rounded-full transition-all duration-500"
               :class="completed ? 'bg-gradient-to-r from-success to-emerald-400' : 'bg-gradient-to-r from-primary to-secondary'"
-              :style="{ width: Math.min(100, progressPercent) + '%' }"></div>
-          </div>
-          <!-- 图文内容 -->
-          <article class="article-content text-gray-800" v-html="course.content"></article>
-          <p v-if="!completed" class="text-xs text-gray-400 mt-5 text-center">💡 停留在本页面即可累计学习时长，切出页面暂停计时</p>
-        </div>
-
-        <!-- 完成提示 + 返回 -->
-        <div v-if="completed" class="glass-card p-6 text-center">
-          <div class="text-5xl mb-3">🎉</div>
-          <p class="text-lg font-extrabold text-success mb-1">恭喜完成本课程！</p>
-          <p class="text-sm text-gray-500 mb-5">返回课程列表继续学习，全部完成后解锁考试</p>
-          <button @click="goBack" class="px-8 h-12 bg-gradient-to-r from-primary to-secondary text-white font-extrabold rounded-2xl shadow-lg shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all">
+              :style="{ width: Math.min(100, progressPercent) + '%' }"></div> </div> <!-- 图文内容 --> <article class="article-content text-gray-800" v-html="course.content"></article> <p v-if="!completed" class="text-xs text-gray-400 mt-5 text-center"> 停留在本页面即可累计学习时长，切出页面暂停计时</p> </div> <!-- 完成提示 + 返回 --> <div v-if="completed" class="glass-card p-6 text-center"> <div class="text-5xl mb-3"></div> <p class="text-lg font-extrabold text-success mb-1">恭喜完成本课程！</p> <p class="text-sm text-gray-500 mb-5">返回课程列表继续学习，全部完成后解锁考试</p> <button @click="goBack" class="px-8 h-12 bg-gradient-to-r from-primary to-secondary text-white font-extrabold rounded-2xl shadow-lg shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all">
             返回课程列表
-          </button>
-        </div>
-      </template>
-    </main>
-  </div>
-</template>
-
-<script setup>
+          </button> </div> </template> </main> </div>
+</template> <script setup>
 import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -246,7 +180,7 @@ async function sendHeartbeat() {
       progressPercent.value = data.data.progress_percent
       if (data.data.completed && !completed.value) {
         completed.value = true
-        showToast('🎉 本课程学习完成！', 'success')
+        showToast(' 本课程学习完成！', 'success')
       }
     }
   } catch (e) {
@@ -307,9 +241,7 @@ onUnmounted(() => {
     }
   }
 })
-</script>
-
-<style scoped>
+</script> <style scoped>
 .bg-animated {
   background: linear-gradient(-45deg, #FF5E3A, #FF8C42, #FFB347, #FF6B6B, #FFA502);
   background-size: 300% 300%;
