@@ -3,7 +3,7 @@
     <button class="bnav-item" :class="{ active: active === 'home' }" @click="goPortal('')">首页</button>
     <button class="bnav-item" :class="{ active: active === 'learn' }" @click="go('/learn')">学习</button>
     <button class="bnav-item" :class="{ active: active === 'query' }" @click="goQuery">查询</button>
-    <button class="bnav-item" :class="{ active: active === 'mine' }" @click="goPortal('#mine')">我的</button>
+    <button class="bnav-item" :class="{ active: active === 'mine' }" @click="go('/mine')">我的</button>
   </nav>
 </template>
 
@@ -14,7 +14,7 @@ import { useRouter } from 'vue-router'
 const PORTAL_URL = 'http://192.168.100.117:5000/portal-v2'
 
 const props = defineProps({
-  active: { type: String, default: 'learn' },  // learn / query
+  active: { type: String, default: 'learn' },  // learn / query / mine
   uid: { type: String, default: '' },
 })
 
@@ -26,8 +26,8 @@ function go(path) {
 function goQuery() {
   router.push({ path: '/query', query: props.uid ? { uid: props.uid } : {} })
 }
-function goPortal(hash) {
-  location.href = PORTAL_URL + hash
+function goPortal() {
+  location.href = PORTAL_URL
 }
 </script>
 

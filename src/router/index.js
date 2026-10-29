@@ -6,6 +6,7 @@ import AdminView from '../views/AdminView.vue'
 import CourseLearn from '../views/CourseLearn.vue'
 import PackageLearn from '../views/PackageLearn.vue'
 import QueryView from '../views/QueryView.vue'
+import MineView from '../views/MineView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -15,6 +16,7 @@ const router = createRouter({
     { path: '/learn/package/:key', name: 'package-learn', component: PackageLearn },
     { path: '/learn/course/:id', name: 'course-learn', component: CourseLearn },
     { path: '/query', name: 'query', component: QueryView },
+    { path: '/mine', name: 'mine', component: MineView },
     { path: '/exam', name: 'exam', component: ExamView },
     { path: '/result', name: 'result', component: ResultView },
     { path: '/admin', name: 'admin', component: AdminView },
