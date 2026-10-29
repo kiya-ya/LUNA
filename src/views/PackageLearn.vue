@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen flex flex-col bg-soft relative overflow-hidden" @click="menuOpen = false">
+  <div class="min-h-screen bg-soft relative" @click="menuOpen = false">
     <!-- 背景装饰 -->
     <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-purple-200/30 blur-3xl animate-pulse-slow"></div>
     <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-amber-200/30 blur-3xl animate-pulse-slow" style="animation-delay: 2s;"></div>
@@ -28,7 +28,7 @@
       </div>
     </header>
 
-    <main class="max-w-3xl w-full mx-auto px-4 pt-1 pb-2 relative z-10 flex-1 min-h-0 flex flex-col">
+    <main class="max-w-3xl w-full mx-auto px-4 pt-1 pb-44 relative z-10">
       <!-- 加载中 -->
       <div v-if="loading" class="glass-card p-10 text-center text-gray-500 font-bold shrink-0">课程加载中…</div>
 
@@ -71,7 +71,7 @@
         </div>
 
         <!-- 过渡装饰：渐变线段 + 当前课包名 -->
-        <div class="deco-divider shrink-0">
+        <div class="deco-divider">
           <span class="seg gold"></span>
           <em>{{ pkg ? pkg.name + ' · 课程明细' : '课程明细' }}</em>
           <span class="seg brown"></span>
@@ -83,11 +83,11 @@
           <p class="font-extrabold text-gray-700 mb-2">{{ pkg.name }}未解锁</p>
           <p class="text-sm text-gray-500">需先通过姐妹团考试</p>
         </div>
-        <div v-else-if="pkg" class="flex gap-3 flex-1 min-h-0">
+        <div v-else-if="pkg" class="flex gap-3 items-start">
           <!-- 左侧大纲：固定 + 独立滚动 -->
-          <aside ref="asideRef" class="w-[86px] shrink-0 h-full overflow-y-auto scrollbar-hide pb-2">
+          <aside ref="asideRef" class="w-[86px] shrink-0 sticky sidebar-stick overflow-y-auto scrollbar-hide pb-2">
             <template v-for="group in courseGroups" :key="group.name">
-              <div class="text-[10px] font-extrabold text-accent/60 px-2 pt-2 pb-1 sticky top-0 bg-[#f5effa]/95 backdrop-blur-sm z-10">{{ group.name }}</div>
+              <div class="text-[10px] font-extrabold text-accent/60 px-2 pt-2 pb-1">{{ group.name }}</div>
               <button
                 v-for="c in group.list" :key="c.id"
                 @click="scrollToCourse(c.id)"
@@ -99,7 +99,7 @@
           </aside>
 
           <!-- 右侧课程卡片：独立滚动 -->
-          <section ref="listRef" class="flex-1 min-w-0 h-full overflow-y-auto pb-3 pr-0.5">
+          <section ref="listRef" class="flex-1 min-w-0 pb-3 pr-0.5">
             <div class="space-y-3">
               <div v-if="pkg.courses.length === 0" class="glass-card p-8 text-center text-gray-400 font-bold">课程筹备中，敬请期待</div>
               <div
@@ -257,15 +257,11 @@ function setCourseRef(id, el) {
 function scrollToCourse(id) {
   activeCourseId.value = id
   const el = courseRefs[id]
-  if (el && listRef.value) {
-    // 在右侧独立滚动容器内定位
-    listRef.value.scrollTo({ top: el.offsetTop - listRef.value.offsetTop - 4, behavior: 'smooth' })
-  }
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 function scrollTop() {
-  if (listRef.value) listRef.value.scrollTo({ top: 0, behavior: 'smooth' })
-  if (asideRef.value) asideRef.value.scrollTo({ top: 0, behavior: 'smooth' })
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 function selectPackage(p) {
@@ -393,11 +389,17 @@ onUnmounted(() => {
 }
 .animate-pulse-slow { animation: pulse-slow 8s ease-in-out infinite; }
 
-/* 课包与课程明细之间的过渡装饰 */
+/* 课包与课程明细之间的过渡装饰（吸顶） */
 .deco-divider {
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 6px 0 10px;
+  padding: 8px 0 10px;
+  position: sticky; top: 0; z-index: 30;
+  background: linear-gradient(160deg, #EFE9F8 0%, #F8F2FC 60%, #FBF5EA 100%);
 }
+/* 左侧大纲吸顶（过渡栏下方） */
+.sidebar-stick { top: 46px; max-height: calc(100vh - 200px); }
+/* 课程卡定位时避开吸顶栏 */
+section .glass-card { scroll-margin-top: 56px; }
 .deco-divider em {
   font-style: normal; font-size: 11px; font-weight: 700;
   color: rgba(91, 42, 6, .55); letter-spacing: 2px;

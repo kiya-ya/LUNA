@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-soft relative">
     <!-- 顶部栏 -->
-    <header class="relative z-10 sticky top-0">
+    <header class="relative z-10 sticky top-0 glass-soft">
       <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
         <button @click="goBack" class="text-accent font-bold text-sm bg-accent/10 px-3 py-1.5 rounded-lg hover:bg-accent/20 transition-all shrink-0">返回</button>
         <h1 class="text-sm sm:text-base font-bold text-accent truncate flex-1 text-center">成绩查询</h1>
@@ -11,40 +11,54 @@
 
     <main class="max-w-3xl mx-auto px-4 py-5 relative z-10 pb-24">
       <!-- 查询输入 -->
-      <div class="glass-card p-5 mb-4">
-        <label class="block text-sm font-bold text-gray-700 mb-3">请输入你的点点UID</label>
+      <div class="glass-card p-4 mb-4">
         <div class="flex gap-2">
           <input
             v-model="queryUid"
             type="text"
-            placeholder="请输入UID"
-            class="flex-1 h-[52px] px-4 text-base border border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+            placeholder="输入点点 UID，查成绩 / 申请资质"
+            class="flex-1 h-[48px] px-4 text-base border border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
             @keyup.enter="doQuery"
           >
-          <button @click="doQuery" :disabled="queryLoading" class="h-[52px] px-6 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-2xl hover:shadow-lg hover:shadow-primary/20 transition-all disabled:opacity-50 flex items-center gap-2">
+          <button @click="doQuery" :disabled="queryLoading" class="h-[48px] px-6 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-2xl hover:shadow-lg hover:shadow-primary/20 transition-all disabled:opacity-50 flex items-center gap-2">
             <svg v-if="queryLoading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
             <span>{{ queryLoading ? '查询中' : '查询' }}</span>
           </button>
         </div>
       </div>
 
-      <!-- 资质申请（考试通过后可申请） -->
-      <div v-if="queryResults" class="glass-card p-5 mt-4">
-        <h3 class="text-base font-extrabold text-gray-900 mb-3">资质申请</h3>
-        <div v-for="pkg in applyPackages" :key="pkg.key" class="flex items-center justify-between gap-3 py-3 border-t first:border-0 border-gray-100">
-          <div class="min-w-0">
+      <!-- 资质进度（学习 → 考试 → 申请 → 激活） -->
+      <div v-if="queryResults" class="glass-card p-5 mb-4">
+        <h3 class="text-base font-extrabold text-gray-900 mb-1">我的资质进度</h3>
+        <p class="text-xs text-gray-400 mb-4">学习 → 考试 → 申请 → 激活，四步走完即获得资质</p>
+        <div v-for="pkg in applyPackages" :key="pkg.key" class="py-3 border-t first:border-0 border-gray-100">
+          <div class="flex items-center justify-between gap-3 mb-2.5">
             <p class="font-bold text-gray-800 text-sm">{{ pkg.name }}</p>
-            <p class="text-xs mt-0.5" :class="pkg.passed ? 'text-success' : 'text-gray-400'">
-              {{ pkg.passed ? `考试已通过 ${pkg.percentage}分` : '考试通过后可申请' }}
-            </p>
-            <p v-if="pkg.app && pkg.app.status === 'rejected'" class="text-xs text-danger mt-0.5">已驳回：{{ pkg.app.reason || '未填写原因' }}</p>
+            <!-- 操作按钮 -->
+            <button
+              class="h-9 px-4 rounded-xl font-bold text-xs shrink-0 transition-all"
+              :disabled="!pkg.canApply"
+              :class="pkg.canApply ? 'bg-gradient-to-r from-primary to-secondary text-white shadow' : 'bg-gray-100 text-gray-400'"
+              @click="applyFor(pkg)"
+            >{{ pkg.btnText }}</button>
           </div>
-          <button
-            class="h-10 px-4 rounded-xl font-bold text-sm shrink-0 transition-all"
-            :disabled="!pkg.canApply"
-            :class="pkg.canApply ? 'bg-gradient-to-r from-primary to-secondary text-white shadow' : 'bg-gray-100 text-gray-400'"
-            @click="applyFor(pkg)"
-          >{{ pkg.btnText }}</button>
+          <!-- 步骤条 -->
+          <div class="flex items-center">
+            <template v-for="(step, i) in pkg.steps" :key="i">
+              <div class="flex flex-col items-center gap-1 shrink-0">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-extrabold"
+                  :class="step.done ? 'bg-success text-white' : step.active ? 'bg-primary text-white' : 'bg-gray-200 text-gray-400'">
+                  {{ step.done ? '✓' : i + 1 }}
+                </div>
+                <span class="text-[10px] font-bold" :class="step.done ? 'text-success' : step.active ? 'text-primary' : 'text-gray-400'">{{ step.label }}</span>
+              </div>
+              <div v-if="i < pkg.steps.length - 1" class="flex-1 h-0.5 mx-1 rounded"
+                :class="step.done ? 'bg-success/60' : 'bg-gray-200'"></div>
+            </template>
+          </div>
+          <!-- 驳回原因 -->
+          <p v-if="pkg.app && pkg.app.status === 'rejected'" class="text-xs text-danger mt-2">已驳回：{{ pkg.app.reason || '未填写原因' }}（可重新申请）</p>
+          <p v-else-if="pkg.app && pkg.app.status === 'pending'" class="text-xs text-primary mt-2">申请已提交（{{ pkg.app.created_at }}），等待管理员审核</p>
         </div>
       </div>
 
@@ -72,8 +86,6 @@
         <button @click="queryResults = null; queryUid = ''" class="w-full h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all mt-5">重新查询</button>
       </div>
     </main>
-
-    <BottomNav active="query" :uid="queryUid" />
 
     <!-- 答题明细弹窗 -->
     <Transition name="fade-scale">
@@ -112,6 +124,8 @@
         </div>
       </div>
     </Transition>
+
+    <BottomNav active="query" :uid="queryUid" />
   </div>
 </template>
 
@@ -130,7 +144,12 @@ const queryResults = ref(null)
 const queryDetailResult = ref(null)
 const applyPackages = ref([])
 
-// 组装两个课包的申请状态
+function goBack() {
+  if (window.history.length > 1) router.back()
+  else router.push('/')
+}
+
+// 组装两个课包的资质进度（学习 → 考试 → 申请 → 激活）
 async function loadApplyStatus() {
   try {
     const [homeRes, statusRes] = await Promise.all([
@@ -143,14 +162,21 @@ async function loadApplyStatus() {
       const es = p.exam_status || {}
       const passed = es.status === 'passed'
       const app = apps[p.key] || null
+      const activated = app && app.status === 'approved'
       let btnText = '申请资质'
       let canApply = false
-      if (app && app.status === 'pending') btnText = '审核中'
-      else if (app && app.status === 'approved') btnText = '已通过'
+      if (activated) btnText = '已激活'
+      else if (app && app.status === 'pending') btnText = '审核中'
       else if (passed) { canApply = true; btnText = app && app.status === 'rejected' ? '重新申请' : '申请资质' }
-      return { key: p.key, name: p.name, passed, percentage: es.percentage, app, canApply, btnText }
+      const steps = [
+        { label: `课程 ${p.completed_courses}/${p.total_courses}`, done: p.all_completed, active: !p.all_completed },
+        { label: passed ? `考试 ${es.percentage}分` : '考试', done: passed, active: p.all_completed && !passed },
+        { label: activated ? '已通过' : app && app.status === 'pending' ? '审核中' : '申请', done: Boolean(app && (app.status === 'pending' || activated)), active: passed && !app },
+        { label: '激活', done: activated, active: false },
+      ]
+      return { key: p.key, name: p.name, passed, percentage: es.percentage, app, canApply, btnText, steps }
     })
-  } catch (e) { /* 忽略，申请区不阻塞查询 */ }
+  } catch (e) { /* 申请区不阻塞查询 */ }
 }
 
 async function applyFor(pkg) {
@@ -172,11 +198,6 @@ async function applyFor(pkg) {
   } catch (e) {
     showToast('网络错误，请稍后重试', 'error')
   }
-}
-
-function goBack() {
-  if (window.history.length > 1) router.back()
-  else router.push('/')
 }
 
 async function doQuery() {
@@ -235,6 +256,19 @@ if (queryUid.value) doQuery()
 </script>
 
 <style scoped>
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  border-radius: 1.5rem;
+}
+.glass-soft {
+  background: rgba(247, 243, 252, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
 .fade-scale-enter-active, .fade-scale-leave-active { transition: all 0.25s ease; }
 .fade-scale-enter-from, .fade-scale-leave-to { opacity: 0; transform: scale(0.95); }
 </style>
