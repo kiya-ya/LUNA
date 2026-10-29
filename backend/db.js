@@ -157,6 +157,9 @@ function initTables() {
     )
   `);
 
+  // 课程必修/选修分类
+  try { db.exec(`ALTER TABLE courses ADD COLUMN category TEXT DEFAULT 'required'`); } catch (e) { /* ignore */ }
+
   console.log('[DB] 表初始化完成');
 }
 
@@ -579,6 +582,7 @@ function loadCourses(packageId, onlyEnabled = false) {
     content: c.content || '',
     duration_minutes: c.duration_minutes || 0,
     sort: c.sort || 0,
+    category: c.category || 'required',
     enabled: c.enabled !== 0,
     created_at: c.created_at
   }));
@@ -596,6 +600,7 @@ function getCourseById(id) {
     content: c.content || '',
     duration_minutes: c.duration_minutes || 0,
     sort: c.sort || 0,
+    category: c.category || 'required',
     enabled: c.enabled !== 0,
     created_at: c.created_at
   };
@@ -603,8 +608,8 @@ function getCourseById(id) {
 
 function saveCourse(course) {
   const stmt = db.prepare(`
-    INSERT INTO courses (id, package_id, title, type, video_path, content, duration_minutes, sort, enabled)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO courses (id, package_id, title, type, video_path, content, duration_minutes, sort, category, enabled)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       package_id = excluded.package_id,
       title = excluded.title,
@@ -613,6 +618,7 @@ function saveCourse(course) {
       content = excluded.content,
       duration_minutes = excluded.duration_minutes,
       sort = excluded.sort,
+      category = excluded.category,
       enabled = excluded.enabled
   `);
   const result = stmt.run(
@@ -624,6 +630,7 @@ function saveCourse(course) {
     course.content || '',
     course.duration_minutes || 0,
     course.sort || 0,
+    course.category === 'optional' ? 'optional' : 'required',
     course.enabled !== false ? 1 : 0
   );
   return course.id || result.lastInsertRowid;

@@ -47,15 +47,17 @@
     <div v-else-if="pkg" class="max-w-3xl mx-auto px-4 relative z-10 flex gap-3 pb-40">
       <!-- 左侧大纲 -->
       <aside class="w-[86px] shrink-0 sticky top-[60px] self-start max-h-[calc(100vh-220px)] overflow-y-auto scrollbar-hide">
-        <button
-          v-for="(c, i) in pkg.courses" :key="c.id"
-          @click="scrollToCourse(c.id)"
-          class="w-full text-left px-2.5 py-3 rounded-xl text-xs font-bold mb-1.5 transition-all leading-snug"
-          :class="activeCourseId === c.id ? 'bg-primary text-white shadow' : 'bg-white/60 text-gray-500'"
-        >
-          <span class="block text-[10px] opacity-70 mb-0.5">{{ i + 1 }}</span>
-          {{ c.title }}
-        </button>
+        <template v-for="group in courseGroups" :key="group.name">
+          <div class="text-[10px] font-extrabold text-accent/60 px-2 pt-2 pb-1">{{ group.name }}</div>
+          <button
+            v-for="c in group.list" :key="c.id"
+            @click="scrollToCourse(c.id)"
+            class="w-full text-left px-2.5 py-2.5 rounded-xl text-xs font-bold mb-1.5 transition-all leading-snug"
+            :class="activeCourseId === c.id ? 'bg-primary text-white shadow' : 'bg-white/60 text-gray-500'"
+          >
+            {{ c.title }}
+          </button>
+        </template>
         <div v-if="pkg.courses.length === 0" class="text-xs text-gray-400 px-2 py-3">暂无课程</div>
       </aside>
 
@@ -75,7 +77,7 @@
             </div>
             <div class="flex-1 min-w-0">
               <p class="font-bold text-gray-800 text-sm"><span class="text-gray-400 text-xs mr-1">{{ idx + 1 }}.</span>{{ course.title }}</p>
-              <p class="text-xs text-gray-400 mt-1">必修<span v-if="course.duration_minutes"> · 约 {{ course.duration_minutes }} 分钟</span></p>
+              <p class="text-xs text-gray-400 mt-1">{{ course.category === 'optional' ? '选修' : '必修' }}<span v-if="course.duration_minutes"> · 约 {{ course.duration_minutes }} 分钟</span></p>
               <div v-if="!course.completed && course.progress_percent > 0" class="mt-2 flex items-center gap-2">
                 <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                   <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full" :style="{ width: course.progress_percent + '%' }"></div>
@@ -153,6 +155,16 @@ const now = ref(Date.now())
 let clockTimer = null
 let loadedAt = Date.now()
 const courseRefs = {}
+
+const courseGroups = computed(() => {
+  if (!pkg.value) return []
+  const req = pkg.value.courses.filter(c => c.category !== 'optional')
+  const opt = pkg.value.courses.filter(c => c.category === 'optional')
+  const groups = []
+  if (req.length) groups.push({ name: '必修课', list: req })
+  if (opt.length) groups.push({ name: '选修课', list: opt })
+  return groups
+})
 
 const cooldownText = computed(() => {
   if (!pkg.value || pkg.value.exam_status.status !== 'cooldown') return ''

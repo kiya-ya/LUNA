@@ -281,8 +281,8 @@ function checkPackageGate(uid, examConfigId) {
     }
   }
 
-  // 必修课必须全部完成
-  const courses = db.loadCourses(pkg.id, true);
+  // 必修课必须全部完成（选修课不计入解锁条件）
+  const courses = db.loadCourses(pkg.id, true).filter(c => c.category !== 'optional');
   const progress = db.getProgressByUid(uid);
   const doneSet = new Set(progress.filter(p => p.completed === 1).map(p => p.course_id));
   const remainingCourses = courses.filter(c => !doneSet.has(c.id));
@@ -322,6 +322,7 @@ function buildPackageState(pkg, uid) {
       video_path: c.video_path,
       duration_minutes: c.duration_minutes,
       sort: c.sort,
+      category: c.category || 'required',
       watched_seconds: p ? p.watched_seconds : 0,
       progress_percent: p ? p.progress_percent : 0,
       completed: p ? p.completed === 1 : false,
@@ -329,34 +330,35 @@ function buildPackageState(pkg, uid) {
     };
   });
 
-  const completedCount = courseList.filter(c => c.completed).length;
-  const allCompleted = completedCount === courseList.length;
+  const requiredList = courseList.filter(c => c.category !== 'optional');
+  const completedCount = requiredList.filter(c => c.completed).length;
+  const allCompleted = requiredList.length > 0 && completedCount === requiredList.length;
+
+  // 晋级链：培训师课包需先通过姐妹团考试（无论是否已配置考试都生效）
+  let chainLocked = false;
+  if (pkg.key === 'trainer') {
+    const sister = db.loadCoursePackages().find(p => p.key === 'sister');
+    if (sister && sister.exam_config_id && uid) {
+      const sr = db.getLatestResult(uid, sister.exam_config_id);
+      chainLocked = !sr || sr.percentage < PASS_SCORE;
+    } else {
+      // 未配置姐妹团考试或未登录：没人能通过姐妹团 → 培训师课包保持锁定
+      chainLocked = true;
+    }
+  }
 
   // 考试状态
   let examStatus;
-  if (!pkg.exam_config_id) {
+  if (chainLocked) {
+    examStatus = { status: 'locked', chain_locked: true, reason: '需先通过姐妹团考试' };
+  } else if (!pkg.exam_config_id) {
     examStatus = { status: 'no_exam' };
   } else {
     const latest = uid ? db.getLatestResult(uid, pkg.exam_config_id) : null;
     if (latest && latest.percentage >= PASS_SCORE) {
       examStatus = { status: 'passed', percentage: latest.percentage, total_score: latest.total_score, max_score: latest.max_score, exam_name: latest.exam_name };
-    } else if (pkg.key === 'trainer') {
-      // 晋级链检查
-      const sister = db.loadCoursePackages().find(p => p.key === 'sister');
-      let chainLocked = false;
-      if (sister && sister.exam_config_id && uid) {
-        const sr = db.getLatestResult(uid, sister.exam_config_id);
-        chainLocked = !sr || sr.percentage < PASS_SCORE;
-      } else if (!uid) {
-        chainLocked = true;
-      }
-      if (chainLocked) {
-        examStatus = { status: 'locked', chain_locked: true, reason: '需先通过姐妹团考试' };
-      } else {
-        examStatus = buildLockStatus(pkg, latest, allCompleted, courseList.length, completedCount);
-      }
     } else {
-      examStatus = buildLockStatus(pkg, latest, allCompleted, courseList.length, completedCount);
+      examStatus = buildLockStatus(pkg, latest, allCompleted, requiredList.length, completedCount);
     }
   }
 
@@ -369,10 +371,10 @@ function buildPackageState(pkg, uid) {
     exam_config_id: pkg.exam_config_id,
     sort: pkg.sort,
     courses: courseList,
-    total_courses: courseList.length,
+    total_courses: requiredList.length,
     completed_courses: completedCount,
     all_completed: allCompleted,
-    chain_locked: pkg.key === 'trainer' ? Boolean(examStatus.chain_locked) : false,
+    chain_locked: chainLocked,
     exam_status: examStatus
   };
 }
@@ -2084,6 +2086,7 @@ const server = http.createServer((req, res) => {
         content: body.content || '',
         duration_minutes: typeof body.duration_minutes === 'number' ? body.duration_minutes : 0,
         sort: body.sort || 0,
+        category: body.category === 'optional' ? 'optional' : 'required',
         enabled: body.enabled !== false
       };
       const id = db.saveCourse(course);
