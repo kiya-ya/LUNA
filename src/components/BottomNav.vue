@@ -10,8 +10,8 @@
 <script setup>
 import { useRouter } from 'vue-router'
 
-// 培训师系统用户端地址（上公网后与 LUNA 同域，届时改成相对路径 /portal）
-const PORTAL_URL = 'http://192.168.100.117:5000/portal'
+// 培训师系统统一入口（v2 灰度页会按身份自动分流：培训师→管理页，新人→主页面）
+const PORTAL_URL = 'http://192.168.100.117:5000/portal-v2'
 
 const props = defineProps({
   active: { type: String, default: 'learn' },  // learn / query
