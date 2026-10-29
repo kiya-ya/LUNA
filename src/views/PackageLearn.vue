@@ -1,10 +1,19 @@
 <template>
   <div class="min-h-screen bg-soft relative overflow-x-hidden" @click="menuOpen = false">
-    <!-- 顶栏：透明 + 返回 + 三横线 -->
+    <!-- 背景装饰 -->
+    <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-purple-200/30 blur-3xl animate-pulse-slow"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-amber-200/30 blur-3xl animate-pulse-slow" style="animation-delay: 2s;"></div>
+
+    <!-- 顶栏：透明 + 三横线 -->
     <header class="relative z-50">
-      <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-        <button @click="goBack" class="text-accent font-bold text-sm bg-accent/10 px-3 py-1.5 rounded-lg hover:bg-accent/20 transition-all shrink-0">返回</button>
-        <h1 class="text-sm sm:text-base font-bold text-accent truncate flex-1 text-center">{{ pkg ? pkg.name : '课程' }}</h1>
+      <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <img src="/logo.png" alt="点点开黑" class="w-9 h-9 object-contain rounded-xl shadow">
+          <div>
+            <h1 class="text-base font-bold text-accent leading-tight">新人培训中心</h1>
+            <p class="text-xs text-accent/60">{{ userName }} · UID: {{ uid }}</p>
+          </div>
+        </div>
         <div class="relative">
           <button @click.stop="menuOpen = !menuOpen" class="p-2 flex flex-col gap-[5px]" aria-label="菜单">
             <i class="block w-[22px] h-[2px] rounded bg-accent"></i>
@@ -13,90 +22,116 @@
           </button>
           <div v-if="menuOpen" class="absolute right-0 top-full mt-1.5 z-50 bg-[#fffaf2] rounded-2xl shadow-xl border border-white/80 p-2.5 flex flex-col gap-2 min-w-[140px]">
             <button @click="menuOpen = false; goQuery()" class="px-4 py-2.5 text-sm font-bold text-accent bg-white/70 hover:bg-white rounded-xl transition-all">成绩查询</button>
-            <button @click="menuOpen = false; goHome()" class="px-4 py-2.5 text-sm font-bold text-accent bg-white/70 hover:bg-white rounded-xl transition-all">学习中心</button>
+            <button @click="menuOpen = false; logout()" class="px-4 py-2.5 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all">切换账号</button>
           </div>
         </div>
       </div>
     </header>
 
-    <!-- 课包切换（自取/外卖式） -->
-    <div class="max-w-3xl mx-auto px-4 relative z-10">
-      <div class="flex gap-2.5 mb-4">
-        <button
-          v-for="p in packages" :key="p.id"
-          @click="switchPackage(p)"
-          class="flex-1 h-11 rounded-2xl font-bold text-sm transition-all"
-          :class="pkg && pkg.id === p.id ? 'bg-primary text-white shadow-lg shadow-primary/25' : 'bg-white/70 text-accent/60'"
-        >{{ p.name }}</button>
-      </div>
-    </div>
+    <main class="max-w-3xl mx-auto px-4 py-4 relative z-10 pb-44">
+      <!-- 加载中 -->
+      <div v-if="loading" class="glass-card p-10 text-center text-gray-500 font-bold">课程加载中…</div>
 
-    <!-- 加载中 -->
-    <div v-if="loading" class="glass-card p-10 text-center text-gray-500 font-bold max-w-3xl mx-auto mx-4">加载中…</div>
-
-    <!-- 锁定提示 -->
-    <div v-else-if="pkg && pkg.chain_locked" class="max-w-3xl mx-auto px-4">
-      <div class="glass-card p-10 text-center">
-        <p class="font-extrabold text-gray-700 mb-2">该课包未解锁</p>
-        <p class="text-sm text-gray-500">需先通过姐妹团考试</p>
-        <button @click="goHome" class="mt-5 px-6 h-11 bg-primary text-white font-bold rounded-2xl">返回学习中心</button>
-      </div>
-    </div>
-
-    <!-- 点单式布局：左侧大纲 + 右侧课程 -->
-    <div v-else-if="pkg" class="max-w-3xl mx-auto px-4 relative z-10 flex gap-3 pb-40">
-      <!-- 左侧大纲 -->
-      <aside class="w-[86px] shrink-0 sticky top-[60px] self-start max-h-[calc(100vh-220px)] overflow-y-auto scrollbar-hide">
-        <template v-for="group in courseGroups" :key="group.name">
-          <div class="text-[10px] font-extrabold text-accent/60 px-2 pt-2 pb-1">{{ group.name }}</div>
-          <button
-            v-for="c in group.list" :key="c.id"
-            @click="scrollToCourse(c.id)"
-            class="w-full text-left px-2.5 py-2.5 rounded-xl text-xs font-bold mb-1.5 transition-all leading-snug"
-            :class="activeCourseId === c.id ? 'bg-primary text-white shadow' : 'bg-white/60 text-gray-500'"
+      <template v-else>
+        <!-- 上部：双大卡选课包 -->
+        <div class="grid grid-cols-2 gap-3 sm:gap-4 mb-5">
+          <div
+            v-for="p in packages" :key="p.id"
+            @click="selectPackage(p)"
+            class="glass-card relative p-4 sm:p-5 cursor-pointer transition-all duration-300 border-2 rounded-3xl"
+            :class="pkg && pkg.id === p.id ? 'border-primary shadow-xl' : 'border-transparent hover:shadow-lg'"
           >
-            {{ c.title }}
-          </button>
-        </template>
-        <div v-if="pkg.courses.length === 0" class="text-xs text-gray-400 px-2 py-3">暂无课程</div>
-      </aside>
-
-      <!-- 右侧课程卡片 -->
-      <section class="flex-1 min-w-0 space-y-3">
-        <div v-if="pkg.courses.length === 0" class="glass-card p-8 text-center text-gray-400 font-bold">课程筹备中，敬请期待</div>
-        <div
-          v-for="(course, idx) in pkg.courses" :key="course.id"
-          :ref="el => setCourseRef(course.id, el)"
-          class="glass-card p-4 cursor-pointer transition-all hover:shadow-xl"
-          @click="openCourse(course)"
-        >
-          <div class="flex gap-3">
-            <div class="w-16 h-16 rounded-2xl shrink-0 flex items-center justify-center text-xs font-extrabold shadow-inner"
-              :class="course.completed ? 'bg-success/15 text-success' : course.type === 'video' ? 'bg-rose-100 text-rose-500' : 'bg-sky-100 text-sky-500'">
-              {{ course.completed ? '已完成' : course.type === 'video' ? '视频课' : '图文课' }}
+            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-xs font-extrabold text-white mb-3 shadow-inner"
+              :class="p.key === 'sister' ? 'bg-gradient-to-br from-pink-300 to-rose-400' : 'bg-gradient-to-br from-indigo-300 to-purple-400'">
+              {{ p.key === 'sister' ? '姐妹团' : '培训师' }}
             </div>
-            <div class="flex-1 min-w-0">
-              <p class="font-bold text-gray-800 text-sm"><span class="text-gray-400 text-xs mr-1">{{ idx + 1 }}.</span>{{ course.title }}</p>
-              <p class="text-xs text-gray-400 mt-1">{{ course.category === 'optional' ? '选修' : '必修' }}<span v-if="course.duration_minutes"> · 约 {{ course.duration_minutes }} 分钟</span></p>
-              <div v-if="!course.completed && course.progress_percent > 0" class="mt-2 flex items-center gap-2">
-                <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                  <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full" :style="{ width: course.progress_percent + '%' }"></div>
-                </div>
-                <span class="text-xs font-bold text-primary">{{ Math.floor(course.progress_percent) }}%</span>
+            <h2 class="text-base sm:text-lg font-extrabold text-gray-900 mb-1">{{ p.name }}</h2>
+            <p class="text-xs text-gray-500 mb-3 line-clamp-2 min-h-[2rem]">{{ p.description }}</p>
+            <div class="mb-2">
+              <div class="flex justify-between text-xs font-bold mb-1">
+                <span class="text-gray-500">课程进度</span>
+                <span :class="p.all_completed ? 'text-success' : 'text-primary'">{{ p.completed_courses }}/{{ p.total_courses }}</span>
+              </div>
+              <div class="h-2 bg-gray-200/70 rounded-full overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-500"
+                  :class="p.all_completed ? 'bg-gradient-to-r from-success to-emerald-400' : 'bg-gradient-to-r from-primary to-secondary'"
+                  :style="{ width: p.total_courses ? (p.completed_courses / p.total_courses * 100) + '%' : '0%' }"></div>
               </div>
             </div>
+            <div class="mt-2">
+              <span v-if="p.chain_locked" class="text-xs font-bold px-2.5 py-1 rounded-full bg-gray-500/10 text-gray-500">需先通过姐妹团考试</span>
+              <span v-else-if="p.exam_status.status === 'passed'" class="text-xs font-bold px-2.5 py-1 rounded-full bg-success/10 text-success">已通过 {{ p.exam_status.percentage }}分</span>
+              <span v-else-if="p.exam_status.status === 'ready'" class="text-xs font-bold px-2.5 py-1 rounded-full bg-success/10 text-success animate-pulse">考试已解锁</span>
+              <span v-else-if="p.exam_status.status === 'cooldown'" class="text-xs font-bold px-2.5 py-1 rounded-full bg-danger/10 text-danger">冷却中</span>
+              <span v-else-if="p.exam_status.status === 'no_exam'" class="text-xs font-bold px-2.5 py-1 rounded-full bg-gray-400/10 text-gray-400">未配置考试</span>
+              <span v-else class="text-xs font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary">完成课程解锁考试</span>
+            </div>
           </div>
-          <button class="mt-3 w-full h-10 rounded-xl font-bold text-sm transition-all"
-            :class="course.completed ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary hover:bg-primary/20'">
-            {{ course.completed ? '复习一遍' : course.progress_percent > 0 ? '继续学习' : '开始学习' }}
-          </button>
         </div>
-      </section>
-    </div>
 
-    <!-- 底部学习进度 + 去考试（固定在底部导航上方） -->
-    <div v-if="pkg && !pkg.chain_locked" class="fixed left-0 right-0 z-40 px-4" style="bottom: calc(64px + env(safe-area-inset-bottom));">
+        <!-- 下部：点单式课程明细（左侧大纲 + 右侧课程卡） -->
+        <div v-if="pkg && pkg.chain_locked" class="glass-card p-10 text-center">
+          <p class="font-extrabold text-gray-700 mb-2">{{ pkg.name }}未解锁</p>
+          <p class="text-sm text-gray-500">需先通过姐妹团考试</p>
+        </div>
+        <div v-else-if="pkg" class="flex gap-3">
+          <!-- 左侧大纲 -->
+          <aside class="w-[86px] shrink-0 sticky top-[60px] self-start max-h-[calc(100vh-240px)] overflow-y-auto scrollbar-hide">
+            <template v-for="group in courseGroups" :key="group.name">
+              <div class="text-[10px] font-extrabold text-accent/60 px-2 pt-2 pb-1">{{ group.name }}</div>
+              <button
+                v-for="c in group.list" :key="c.id"
+                @click="scrollToCourse(c.id)"
+                class="w-full text-left px-2.5 py-2.5 rounded-xl text-xs font-bold mb-1.5 transition-all leading-snug"
+                :class="activeCourseId === c.id ? 'bg-primary text-white shadow' : 'bg-white/60 text-gray-500'"
+              >{{ c.title }}</button>
+            </template>
+            <div v-if="pkg.courses.length === 0" class="text-xs text-gray-400 px-2 py-3">暂无课程</div>
+          </aside>
+
+          <!-- 右侧课程卡片 -->
+          <section class="flex-1 min-w-0 space-y-3">
+            <div v-if="pkg.courses.length === 0" class="glass-card p-8 text-center text-gray-400 font-bold">课程筹备中，敬请期待</div>
+            <div
+              v-for="(course, idx) in pkg.courses" :key="course.id"
+              :ref="el => setCourseRef(course.id, el)"
+              class="glass-card p-4 cursor-pointer transition-all hover:shadow-xl"
+              @click="openCourse(course)"
+            >
+              <div class="flex gap-3">
+                <div class="w-16 h-16 rounded-2xl shrink-0 flex items-center justify-center text-xs font-extrabold shadow-inner"
+                  :class="course.completed ? 'bg-success/15 text-success' : course.type === 'video' ? 'bg-rose-100 text-rose-500' : 'bg-sky-100 text-sky-500'">
+                  {{ course.completed ? '已完成' : course.type === 'video' ? '视频课' : '图文课' }}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="font-bold text-gray-800 text-sm"><span class="text-gray-400 text-xs mr-1">{{ idx + 1 }}.</span>{{ course.title }}</p>
+                  <p class="text-xs text-gray-400 mt-1">{{ course.category === 'optional' ? '选修' : '必修' }}<span v-if="course.duration_minutes"> · 约 {{ course.duration_minutes }} 分钟</span></p>
+                  <div v-if="!course.completed && course.progress_percent > 0" class="mt-2 flex items-center gap-2">
+                    <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full" :style="{ width: course.progress_percent + '%' }"></div>
+                    </div>
+                    <span class="text-xs font-bold text-primary">{{ Math.floor(course.progress_percent) }}%</span>
+                  </div>
+                </div>
+              </div>
+              <button class="mt-3 w-full h-10 rounded-xl font-bold text-sm transition-all"
+                :class="course.completed ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary hover:bg-primary/20'">
+                {{ course.completed ? '复习一遍' : course.progress_percent > 0 ? '继续学习' : '开始学习' }}
+              </button>
+            </div>
+          </section>
+        </div>
+      </template>
+    </main>
+
+    <!-- 底部固定栏：成绩记录图标 + 学习进度 + 去考试 -->
+    <div v-if="pkg" class="fixed left-0 right-0 z-40 px-4" style="bottom: calc(64px + env(safe-area-inset-bottom));">
       <div class="max-w-3xl mx-auto glass-card !rounded-2xl p-3 flex items-center gap-3">
+        <button @click="showRecords = true"
+          class="w-11 h-11 shrink-0 rounded-xl bg-accent/10 text-accent font-bold text-xs flex flex-col items-center justify-center leading-none hover:bg-accent/20 transition-all"
+          title="我的成绩记录">
+          <span class="text-base">%</span><span class="text-[10px] mt-0.5">成绩</span>
+        </button>
         <div class="flex-1 min-w-0">
           <div class="flex justify-between text-xs font-bold mb-1">
             <span class="text-gray-500">学习进度</span>
@@ -108,23 +143,41 @@
               :style="{ width: pkg.total_courses ? (pkg.completed_courses / pkg.total_courses * 100) + '%' : '0%' }"></div>
           </div>
         </div>
-        <!-- 去考试按钮（各状态） -->
         <button v-if="pkg.exam_status.status === 'passed'" disabled
-          class="h-11 px-4 rounded-xl font-bold text-sm bg-success/10 text-success shrink-0">
-          已通过 {{ pkg.exam_status.percentage }}分
-        </button>
+          class="h-11 px-4 rounded-xl font-bold text-sm bg-success/10 text-success shrink-0">已通过 {{ pkg.exam_status.percentage }}分</button>
         <button v-else-if="pkg.exam_status.status === 'cooldown'" disabled
-          class="h-11 px-4 rounded-xl font-bold text-sm bg-danger/10 text-danger shrink-0">
-          冷却中 {{ cooldownText }}
-        </button>
+          class="h-11 px-4 rounded-xl font-bold text-sm bg-danger/10 text-danger shrink-0">冷却中 {{ cooldownText }}</button>
         <button v-else-if="pkg.exam_status.status === 'ready'" @click="startExam" :disabled="startingExam"
           class="h-11 px-5 rounded-xl font-extrabold text-sm bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-primary/25 shrink-0 hover:scale-[1.02] active:scale-[0.98] transition-all">
           {{ startingExam ? '正在进入…' : '去考试' }}
         </button>
-        <button v-else disabled
-          class="h-11 px-4 rounded-xl font-bold text-sm bg-gray-200 text-gray-400 shrink-0">
-          {{ pkg.exam_status.status === 'no_exam' ? '考试未配置' : `还差 ${pkg.exam_status.remaining_courses} 门` }}
+        <button v-else disabled class="h-11 px-4 rounded-xl font-bold text-sm bg-gray-200 text-gray-400 shrink-0">
+          {{ pkg.chain_locked ? '未解锁' : pkg.exam_status.status === 'no_exam' ? '考试未配置' : `还差 ${pkg.exam_status.remaining_courses} 门` }}
         </button>
+      </div>
+    </div>
+
+    <!-- 成绩记录弹窗 -->
+    <div v-if="showRecords" class="fixed inset-0 z-[70] flex items-center justify-center p-4" style="background:rgba(63,42,20,.35)" @click.self="showRecords = false">
+      <div class="bg-white rounded-3xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-2xl">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-gray-900">我的成绩记录</h3>
+          <button @click="showRecords = false" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">×</button>
+        </div>
+        <div v-if="results.length === 0" class="text-center text-gray-400 py-8 font-bold">暂无考试记录</div>
+        <div v-else class="space-y-2.5">
+          <div v-for="r in results" :key="r.id" class="flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 border border-gray-100">
+            <div>
+              <p class="font-bold text-gray-800 text-sm">{{ r.exam_name || '未知试卷' }}</p>
+              <p class="text-xs text-gray-400 mt-0.5">{{ formatTime(r.created_at) }}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-extrabold" :class="r.passed ? 'text-success' : 'text-danger'">{{ r.percentage }}分</span>
+              <span class="text-xs font-bold px-2 py-1 rounded-full" :class="r.passed ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'">{{ r.passed ? '及格' : '未及格' }}</span>
+            </div>
+          </div>
+        </div>
+        <button @click="goQuery" class="mt-4 w-full h-11 bg-primary/10 text-primary font-bold rounded-2xl hover:bg-primary/20 transition-all">查看答题明细</button>
       </div>
     </div>
 
@@ -147,8 +200,10 @@ const uid = ref('')
 const userName = ref('')
 const loading = ref(true)
 const packages = ref([])
+const results = ref([])
 const pkg = ref(null)
 const menuOpen = ref(false)
+const showRecords = ref(false)
 const startingExam = ref(false)
 const activeCourseId = ref(null)
 const now = ref(Date.now())
@@ -187,23 +242,24 @@ function scrollToCourse(id) {
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
-function switchPackage(p) {
+function selectPackage(p) {
   if (pkg.value && pkg.value.id === p.id) return
-  router.push(`/learn/package/${p.key}`)
+  pkg.value = p
+  if (route.path !== '/learn') router.replace(`/learn/package/${p.key}`)
 }
 
 function openCourse(course) {
   router.push(`/learn/course/${course.id}`)
 }
 
-function goBack() {
-  router.push('/learn')
-}
-function goHome() {
-  router.push('/learn')
-}
 function goQuery() {
   router.push({ path: '/query', query: { uid: uid.value } })
+}
+
+function logout() {
+  localStorage.removeItem('learn_user')
+  store.setUserInfo('', '')
+  router.push('/')
 }
 
 async function startExam() {
@@ -222,6 +278,12 @@ async function startExam() {
   }
 }
 
+function formatTime(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
 async function load() {
   loading.value = true
   try {
@@ -229,10 +291,13 @@ async function load() {
     const data = await res.json()
     if (data.success) {
       packages.value = data.data.packages || []
+      results.value = data.data.results || []
       loadedAt = Date.now()
       now.value = Date.now()
       const key = route.params.key
-      pkg.value = packages.value.find(p => p.key === key) || packages.value[0] || null
+      pkg.value = packages.value.find(p => p.key === key)
+        || packages.value.find(p => p.key === 'sister')
+        || packages.value[0] || null
     } else {
       showToast(data.error || '加载失败', 'error')
     }
@@ -247,7 +312,7 @@ onMounted(() => {
   let name = store.userName
   let id = store.userPhone
   // 支持 URL 带 uid 移交身份（来自培训师系统跳转）
-  if (route && route.query && route.query.uid) {
+  if (route.query.uid) {
     id = String(route.query.uid)
     if (route.query.nickname) name = String(route.query.nickname)
     store.setUserInfo(name, id)
@@ -290,4 +355,15 @@ onUnmounted(() => {
 }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { scrollbar-width: none; }
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+.animate-pulse-slow { animation: pulse-slow 8s ease-in-out infinite; }
 </style>
