@@ -1,11 +1,11 @@
 <template>
-  <div class="min-h-screen bg-soft relative overflow-x-hidden" @click="menuOpen = false">
+  <div class="h-screen flex flex-col bg-soft relative overflow-hidden" @click="menuOpen = false">
     <!-- 背景装饰 -->
     <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-purple-200/30 blur-3xl animate-pulse-slow"></div>
     <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-amber-200/30 blur-3xl animate-pulse-slow" style="animation-delay: 2s;"></div>
 
     <!-- 顶栏：透明 + 三横线 -->
-    <header class="relative z-50">
+    <header class="relative z-50 shrink-0">
       <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <img src="/logo.png" alt="点点开黑" class="w-9 h-9 object-contain rounded-xl shadow">
@@ -28,25 +28,26 @@
       </div>
     </header>
 
-    <main class="max-w-3xl mx-auto px-4 py-4 relative z-10 pb-44">
+    <main class="max-w-3xl w-full mx-auto px-4 pt-1 pb-2 relative z-10 flex-1 min-h-0 flex flex-col">
       <!-- 加载中 -->
-      <div v-if="loading" class="glass-card p-10 text-center text-gray-500 font-bold">课程加载中…</div>
+      <div v-if="loading" class="glass-card p-10 text-center text-gray-500 font-bold shrink-0">课程加载中…</div>
 
       <template v-else>
-        <!-- 上部：双大卡选课包 -->
-        <div class="grid grid-cols-2 gap-3 sm:gap-4 mb-5">
+        <!-- 上部：双大卡选课包（固定不滚） -->
+        <div class="grid grid-cols-2 gap-3 sm:gap-4 mb-2 shrink-0">
           <div
             v-for="p in packages" :key="p.id"
             @click="selectPackage(p)"
-            class="glass-card relative p-4 sm:p-5 cursor-pointer transition-all duration-300 border-2 rounded-3xl"
+            class="glass-card relative p-3.5 sm:p-4 cursor-pointer transition-all duration-300 border-2 rounded-3xl"
             :class="pkg && pkg.id === p.id ? 'border-primary shadow-xl' : 'border-transparent hover:shadow-lg'"
           >
-            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-xs font-extrabold text-white mb-3 shadow-inner"
-              :class="p.key === 'sister' ? 'bg-gradient-to-br from-pink-300 to-rose-400' : 'bg-gradient-to-br from-indigo-300 to-purple-400'">
-              {{ p.key === 'sister' ? '姐妹团' : '培训师' }}
+            <div class="flex items-center gap-2.5 mb-2">
+              <div class="w-11 h-11 rounded-2xl shrink-0 flex items-center justify-center text-[11px] font-extrabold text-white shadow-inner"
+                :class="p.key === 'sister' ? 'bg-gradient-to-br from-pink-300 to-rose-400' : 'bg-gradient-to-br from-indigo-300 to-purple-400'">
+                {{ p.key === 'sister' ? '姐妹团' : '培训师' }}
+              </div>
+              <h2 class="text-sm sm:text-base font-extrabold text-gray-900 leading-tight">{{ p.name }}</h2>
             </div>
-            <h2 class="text-base sm:text-lg font-extrabold text-gray-900 mb-1">{{ p.name }}</h2>
-            <p class="text-xs text-gray-500 mb-3 line-clamp-2 min-h-[2rem]">{{ p.description }}</p>
             <div class="mb-2">
               <div class="flex justify-between text-xs font-bold mb-1">
                 <span class="text-gray-500">课程进度</span>
@@ -58,7 +59,7 @@
                   :style="{ width: p.total_courses ? (p.completed_courses / p.total_courses * 100) + '%' : '0%' }"></div>
               </div>
             </div>
-            <div class="mt-2">
+            <div>
               <span v-if="p.chain_locked" class="text-xs font-bold px-2.5 py-1 rounded-full bg-gray-500/10 text-gray-500">需先通过姐妹团考试</span>
               <span v-else-if="p.exam_status.status === 'passed'" class="text-xs font-bold px-2.5 py-1 rounded-full bg-success/10 text-success">已通过 {{ p.exam_status.percentage }}分</span>
               <span v-else-if="p.exam_status.status === 'ready'" class="text-xs font-bold px-2.5 py-1 rounded-full bg-success/10 text-success animate-pulse">考试已解锁</span>
@@ -69,16 +70,24 @@
           </div>
         </div>
 
-        <!-- 下部：点单式课程明细（左侧大纲 + 右侧课程卡） -->
-        <div v-if="pkg && pkg.chain_locked" class="glass-card p-10 text-center">
+        <!-- 过渡装饰：渐变线段 + 当前课包名 -->
+        <div class="deco-divider shrink-0">
+          <span class="seg gold"></span>
+          <em>{{ pkg ? pkg.name + ' · 课程明细' : '课程明细' }}</em>
+          <span class="seg brown"></span>
+          <span class="seg pink"></span>
+        </div>
+
+        <!-- 下部：点单式课程明细（左右独立滚动，整页不滚） -->
+        <div v-if="pkg && pkg.chain_locked" class="glass-card p-10 text-center shrink-0">
           <p class="font-extrabold text-gray-700 mb-2">{{ pkg.name }}未解锁</p>
           <p class="text-sm text-gray-500">需先通过姐妹团考试</p>
         </div>
-        <div v-else-if="pkg" class="flex gap-3">
-          <!-- 左侧大纲 -->
-          <aside class="w-[86px] shrink-0 sticky top-[60px] self-start max-h-[calc(100vh-240px)] overflow-y-auto scrollbar-hide">
+        <div v-else-if="pkg" class="flex gap-3 flex-1 min-h-0">
+          <!-- 左侧大纲：固定 + 独立滚动 -->
+          <aside ref="asideRef" class="w-[86px] shrink-0 h-full overflow-y-auto scrollbar-hide pb-2">
             <template v-for="group in courseGroups" :key="group.name">
-              <div class="text-[10px] font-extrabold text-accent/60 px-2 pt-2 pb-1">{{ group.name }}</div>
+              <div class="text-[10px] font-extrabold text-accent/60 px-2 pt-2 pb-1 sticky top-0 bg-[#f5effa]/95 backdrop-blur-sm z-10">{{ group.name }}</div>
               <button
                 v-for="c in group.list" :key="c.id"
                 @click="scrollToCourse(c.id)"
@@ -89,40 +98,47 @@
             <div v-if="pkg.courses.length === 0" class="text-xs text-gray-400 px-2 py-3">暂无课程</div>
           </aside>
 
-          <!-- 右侧课程卡片 -->
-          <section class="flex-1 min-w-0 space-y-3">
-            <div v-if="pkg.courses.length === 0" class="glass-card p-8 text-center text-gray-400 font-bold">课程筹备中，敬请期待</div>
-            <div
-              v-for="(course, idx) in pkg.courses" :key="course.id"
-              :ref="el => setCourseRef(course.id, el)"
-              class="glass-card p-4 cursor-pointer transition-all hover:shadow-xl"
-              @click="openCourse(course)"
-            >
-              <div class="flex gap-3">
-                <div class="w-16 h-16 rounded-2xl shrink-0 flex items-center justify-center text-xs font-extrabold shadow-inner"
-                  :class="course.completed ? 'bg-success/15 text-success' : course.type === 'video' ? 'bg-rose-100 text-rose-500' : 'bg-sky-100 text-sky-500'">
-                  {{ course.completed ? '已完成' : course.type === 'video' ? '视频课' : '图文课' }}
-                </div>
-                <div class="flex-1 min-w-0">
-                  <p class="font-bold text-gray-800 text-sm"><span class="text-gray-400 text-xs mr-1">{{ idx + 1 }}.</span>{{ course.title }}</p>
-                  <p class="text-xs text-gray-400 mt-1">{{ course.category === 'optional' ? '选修' : '必修' }}<span v-if="course.duration_minutes"> · 约 {{ course.duration_minutes }} 分钟</span></p>
-                  <div v-if="!course.completed && course.progress_percent > 0" class="mt-2 flex items-center gap-2">
-                    <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                      <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full" :style="{ width: course.progress_percent + '%' }"></div>
+          <!-- 右侧课程卡片：独立滚动 -->
+          <section ref="listRef" class="flex-1 min-w-0 h-full overflow-y-auto pb-3 pr-0.5">
+            <div class="space-y-3">
+              <div v-if="pkg.courses.length === 0" class="glass-card p-8 text-center text-gray-400 font-bold">课程筹备中，敬请期待</div>
+              <div
+                v-for="(course, idx) in pkg.courses" :key="course.id"
+                :ref="el => setCourseRef(course.id, el)"
+                class="glass-card p-4 cursor-pointer transition-all hover:shadow-xl"
+                @click="openCourse(course)"
+              >
+                <div class="flex gap-3">
+                  <div class="w-16 h-16 rounded-2xl shrink-0 flex items-center justify-center text-xs font-extrabold shadow-inner"
+                    :class="course.completed ? 'bg-success/15 text-success' : course.type === 'video' ? 'bg-rose-100 text-rose-500' : 'bg-sky-100 text-sky-500'">
+                    {{ course.completed ? '已完成' : course.type === 'video' ? '视频课' : '图文课' }}
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="font-bold text-gray-800 text-sm"><span class="text-gray-400 text-xs mr-1">{{ idx + 1 }}.</span>{{ course.title }}</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ course.category === 'optional' ? '选修' : '必修' }}<span v-if="course.duration_minutes"> · 约 {{ course.duration_minutes }} 分钟</span></p>
+                    <div v-if="!course.completed && course.progress_percent > 0" class="mt-2 flex items-center gap-2">
+                      <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full" :style="{ width: course.progress_percent + '%' }"></div>
+                      </div>
+                      <span class="text-xs font-bold text-primary">{{ Math.floor(course.progress_percent) }}%</span>
                     </div>
-                    <span class="text-xs font-bold text-primary">{{ Math.floor(course.progress_percent) }}%</span>
                   </div>
                 </div>
+                <button class="mt-3 w-full h-10 rounded-xl font-bold text-sm transition-all"
+                  :class="course.completed ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary hover:bg-primary/20'">
+                  {{ course.completed ? '复习一遍' : course.progress_percent > 0 ? '继续学习' : '开始学习' }}
+                </button>
               </div>
-              <button class="mt-3 w-full h-10 rounded-xl font-bold text-sm transition-all"
-                :class="course.completed ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary hover:bg-primary/20'">
-                {{ course.completed ? '复习一遍' : course.progress_percent > 0 ? '继续学习' : '开始学习' }}
-              </button>
             </div>
           </section>
         </div>
       </template>
     </main>
+
+    <!-- 回到顶部悬浮按钮（作用于右侧课程列表） -->
+    <button v-if="pkg && !pkg.chain_locked" @click="scrollTop"
+      class="fixed right-4 z-40 w-10 h-10 rounded-full bg-white/85 backdrop-blur border border-white/70 shadow-lg text-accent font-bold text-lg hover:scale-105 transition-all"
+      style="bottom: calc(150px + env(safe-area-inset-bottom));" title="回到顶部">↑</button>
 
     <!-- 底部固定栏：成绩记录图标 + 学习进度 + 去考试 -->
     <div v-if="pkg" class="fixed left-0 right-0 z-40 px-4" style="bottom: calc(64px + env(safe-area-inset-bottom));">
@@ -207,6 +223,8 @@ const showRecords = ref(false)
 const startingExam = ref(false)
 const activeCourseId = ref(null)
 const now = ref(Date.now())
+const listRef = ref(null)
+const asideRef = ref(null)
 let clockTimer = null
 let loadedAt = Date.now()
 const courseRefs = {}
@@ -239,7 +257,15 @@ function setCourseRef(id, el) {
 function scrollToCourse(id) {
   activeCourseId.value = id
   const el = courseRefs[id]
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  if (el && listRef.value) {
+    // 在右侧独立滚动容器内定位
+    listRef.value.scrollTo({ top: el.offsetTop - listRef.value.offsetTop - 4, behavior: 'smooth' })
+  }
+}
+
+function scrollTop() {
+  if (listRef.value) listRef.value.scrollTo({ top: 0, behavior: 'smooth' })
+  if (asideRef.value) asideRef.value.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 function selectPackage(p) {
@@ -366,4 +392,18 @@ onUnmounted(() => {
   50% { opacity: 0.6; transform: scale(1.1); }
 }
 .animate-pulse-slow { animation: pulse-slow 8s ease-in-out infinite; }
+
+/* 课包与课程明细之间的过渡装饰 */
+.deco-divider {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 6px 0 10px;
+}
+.deco-divider em {
+  font-style: normal; font-size: 11px; font-weight: 700;
+  color: rgba(91, 42, 6, .55); letter-spacing: 2px;
+}
+.deco-divider .seg { display: block; border-radius: 999px; }
+.deco-divider .seg.gold { width: 56px; height: 4px; background: linear-gradient(90deg, #ffc53d, #f5b301); }
+.deco-divider .seg.brown { width: 28px; height: 3px; background: #7a3e12; opacity: .65; }
+.deco-divider .seg.pink { width: 14px; height: 3px; background: #f48a8a; opacity: .8; }
 </style>
