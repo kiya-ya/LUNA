@@ -234,6 +234,13 @@ async function load() {
 onMounted(() => {
   let name = store.userName
   let id = store.userPhone
+  // 支持 URL 带 uid 移交身份（来自培训师系统跳转）
+  if (route && route.query && route.query.uid) {
+    id = String(route.query.uid)
+    if (route.query.nickname) name = String(route.query.nickname)
+    store.setUserInfo(name, id)
+    try { localStorage.setItem('learn_user', JSON.stringify({ name, uid: id })) } catch (e) { /* ignore */ }
+  }
   if (!id) {
     try {
       const saved = JSON.parse(localStorage.getItem('learn_user') || 'null')
