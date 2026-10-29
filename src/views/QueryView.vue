@@ -28,6 +28,26 @@
         </div>
       </div>
 
+      <!-- 资质申请（考试通过后可申请） -->
+      <div v-if="queryResults" class="glass-card p-5 mt-4">
+        <h3 class="text-base font-extrabold text-gray-900 mb-3">资质申请</h3>
+        <div v-for="pkg in applyPackages" :key="pkg.key" class="flex items-center justify-between gap-3 py-3 border-t first:border-0 border-gray-100">
+          <div class="min-w-0">
+            <p class="font-bold text-gray-800 text-sm">{{ pkg.name }}</p>
+            <p class="text-xs mt-0.5" :class="pkg.passed ? 'text-success' : 'text-gray-400'">
+              {{ pkg.passed ? `考试已通过 ${pkg.percentage}分` : '考试通过后可申请' }}
+            </p>
+            <p v-if="pkg.app && pkg.app.status === 'rejected'" class="text-xs text-danger mt-0.5">已驳回：{{ pkg.app.reason || '未填写原因' }}</p>
+          </div>
+          <button
+            class="h-10 px-4 rounded-xl font-bold text-sm shrink-0 transition-all"
+            :disabled="!pkg.canApply"
+            :class="pkg.canApply ? 'bg-gradient-to-r from-primary to-secondary text-white shadow' : 'bg-gray-100 text-gray-400'"
+            @click="applyFor(pkg)"
+          >{{ pkg.btnText }}</button>
+        </div>
+      </div>
+
       <!-- 成绩列表 -->
       <div v-if="queryResults && queryResults.length > 0" class="space-y-3">
         <p class="text-sm text-gray-500 font-medium px-1">共 {{ queryResults.length }} 条考试记录</p>
@@ -108,6 +128,51 @@ const queryUid = ref(String(route.query.uid || ''))
 const queryLoading = ref(false)
 const queryResults = ref(null)
 const queryDetailResult = ref(null)
+const applyPackages = ref([])
+
+// 组装两个课包的申请状态
+async function loadApplyStatus() {
+  try {
+    const [homeRes, statusRes] = await Promise.all([
+      fetch(`/api/learn/home?uid=${encodeURIComponent(queryUid.value.trim())}`).then(r => r.json()),
+      fetch(`/api/apply/status?uid=${encodeURIComponent(queryUid.value.trim())}`).then(r => r.json()),
+    ])
+    const pkgs = homeRes.success ? homeRes.data.packages : []
+    const apps = statusRes.success ? statusRes.data : {}
+    applyPackages.value = pkgs.map((p) => {
+      const es = p.exam_status || {}
+      const passed = es.status === 'passed'
+      const app = apps[p.key] || null
+      let btnText = '申请资质'
+      let canApply = false
+      if (app && app.status === 'pending') btnText = '审核中'
+      else if (app && app.status === 'approved') btnText = '已通过'
+      else if (passed) { canApply = true; btnText = app && app.status === 'rejected' ? '重新申请' : '申请资质' }
+      return { key: p.key, name: p.name, passed, percentage: es.percentage, app, canApply, btnText }
+    })
+  } catch (e) { /* 忽略，申请区不阻塞查询 */ }
+}
+
+async function applyFor(pkg) {
+  if (!pkg.canApply) return
+  if (!confirm(`确认申请「${pkg.name}」资质？管理员审核通过后即激活`)) return
+  try {
+    const res = await fetch('/api/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: queryUid.value.trim(), package_key: pkg.key }),
+    })
+    const data = await res.json()
+    if (data.success) {
+      showToast('申请已提交，请等待审核', 'success')
+      loadApplyStatus()
+    } else {
+      showToast(data.error || '申请失败', 'error')
+    }
+  } catch (e) {
+    showToast('网络错误，请稍后重试', 'error')
+  }
+}
 
 function goBack() {
   if (window.history.length > 1) router.back()
@@ -125,6 +190,7 @@ async function doQuery() {
     const data = await res.json()
     if (data.success) {
       queryResults.value = data.data
+      loadApplyStatus()
     } else {
       showToast(data.error || '查询失败', 'error')
     }

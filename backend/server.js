@@ -1905,6 +1905,108 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // ===== 资质申请 =====
+  // 提交申请：需该课包考试已通过（≥60），且无待审核/已通过的同课包申请
+  if (pathname === '/api/apply' && req.method === 'POST') {
+    parseBody(req, (err, body) => {
+      if (err) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }));
+        return;
+      }
+      const uid = String(body.uid || '').trim();
+      const pkgKey = String(body.package_key || '').trim();
+      if (!uid || !pkgKey) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: '缺少 uid 或 package_key' }));
+        return;
+      }
+      const pkg = db.loadCoursePackages().find(p => p.key === pkgKey);
+      if (!pkg) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: '课包不存在' }));
+        return;
+      }
+      if (!pkg.exam_config_id) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: '该课包还未配置考试' }));
+        return;
+      }
+      const latest = db.getLatestResult(uid, pkg.exam_config_id);
+      if (!latest || latest.percentage < PASS_SCORE) {
+        res.writeHead(403);
+        res.end(JSON.stringify({ success: false, error: '考试通过后才能申请资质' }));
+        return;
+      }
+      if (db.hasActiveApplication(uid, pkgKey)) {
+        res.writeHead(409);
+        res.end(JSON.stringify({ success: false, error: '已有待审核或已通过的申请，请勿重复提交' }));
+        return;
+      }
+      const id = db.createApplication({
+        uid, nickname: String(body.nickname || '').trim(), package_key: pkgKey,
+        exam_result_id: latest.id, percentage: latest.percentage
+      });
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, data: { id } }));
+    });
+    return;
+  }
+
+  // 申请状态查询（按 uid 返回各课包最新申请）
+  if (pathname === '/api/apply/status' && req.method === 'GET') {
+    const uid = String(query.uid || '').trim();
+    const data = {};
+    for (const key of ['sister', 'trainer']) {
+      const app = uid ? db.getLatestApplication(uid, key) : null;
+      if (app) {
+        data[key] = {
+          id: app.id, status: app.status, reason: app.reason || '',
+          percentage: app.percentage, created_at: app.created_at, reviewed_at: app.reviewed_at
+        };
+      }
+    }
+    res.writeHead(200);
+    res.end(JSON.stringify({ success: true, data }));
+    return;
+  }
+
+  // 管理端：申请列表（培训师系统服务端拉取）
+  if (pathname === '/api/admin/applications' && req.method === 'GET') {
+    const items = db.loadApplications(query.status || null);
+    res.writeHead(200);
+    res.end(JSON.stringify({ success: true, data: items }));
+    return;
+  }
+
+  // 管理端：审核（approve / reject + reason）
+  const reviewMatch = pathname.match(/^\/api\/admin\/applications\/(\d+)\/review$/);
+  if (reviewMatch && req.method === 'POST') {
+    const appId = parseInt(reviewMatch[1]);
+    parseBody(req, (err, body) => {
+      if (err) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }));
+        return;
+      }
+      const action = body.action === 'approve' ? 'approve' : 'reject';
+      if (action === 'reject' && !String(body.reason || '').trim()) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: '驳回需填写原因' }));
+        return;
+      }
+      const ok = db.reviewApplication(appId, action, String(body.reason || '').trim());
+      if (!ok) {
+        res.writeHead(404);
+        res.end(JSON.stringify({ success: false, error: '申请不存在' }));
+        return;
+      }
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true }));
+    });
+    return;
+  }
+
   // 图文课心跳：仅页面可见时前端发送，累计停留时长，达标自动完成
   if (pathname === '/api/learn/heartbeat' && req.method === 'POST') {
     parseBody(req, (err, body) => {

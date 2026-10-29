@@ -157,6 +157,23 @@ function initTables() {
     )
   `);
 
+  // 资质申请（考试通过后用户主动申请，管理员在培训师系统审核）
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS qualification_applications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      uid TEXT NOT NULL,
+      nickname TEXT,
+      package_key TEXT NOT NULL,           -- sister / trainer
+      exam_result_id INTEGER,
+      percentage REAL,
+      status TEXT NOT NULL DEFAULT 'pending',  -- pending / approved / rejected
+      reason TEXT,                          -- 驳回原因
+      created_at TEXT DEFAULT (datetime('now')),
+      reviewed_at TEXT
+    )
+  `);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_qual_uid ON qualification_applications(uid, package_key)');
+
   // 课程必修/选修分类
   try { db.exec(`ALTER TABLE courses ADD COLUMN category TEXT DEFAULT 'required'`); } catch (e) { /* ignore */ }
 
@@ -774,6 +791,50 @@ function getRecycleBinItemCount() {
   return db.prepare('SELECT COUNT(*) as count FROM recycle_bin').get().count;
 }
 
+// ============ 资质申请操作 ============
+
+function createApplication(app) {
+  const stmt = db.prepare(`
+    INSERT INTO qualification_applications (uid, nickname, package_key, exam_result_id, percentage)
+    VALUES (?, ?, ?, ?, ?)
+  `);
+  const r = stmt.run(app.uid, app.nickname || '', app.package_key, app.exam_result_id || null, app.percentage || 0);
+  return r.lastInsertRowid;
+}
+
+// 某 uid 在某课包最新一条申请
+function getLatestApplication(uid, packageKey) {
+  return db.prepare(
+    'SELECT * FROM qualification_applications WHERE uid = ? AND package_key = ? ORDER BY id DESC LIMIT 1'
+  ).get(uid, packageKey) || null;
+}
+
+// 有待审核/已通过的申请则视为在流程中
+function hasActiveApplication(uid, packageKey) {
+  return !!db.prepare(
+    "SELECT id FROM qualification_applications WHERE uid = ? AND package_key = ? AND status IN ('pending','approved') LIMIT 1"
+  ).get(uid, packageKey);
+}
+
+function loadApplications(status) {
+  let sql = 'SELECT * FROM qualification_applications';
+  const params = [];
+  if (status) {
+    sql += ' WHERE status = ?';
+    params.push(status);
+  }
+  sql += ' ORDER BY id DESC';
+  return db.prepare(sql).all(...params);
+}
+
+function reviewApplication(id, action, reason) {
+  const status = action === 'approve' ? 'approved' : 'rejected';
+  const r = db.prepare(
+    "UPDATE qualification_applications SET status = ?, reason = ?, reviewed_at = datetime('now') WHERE id = ?"
+  ).run(status, reason || '', id);
+  return r.changes > 0;
+}
+
 // ============ 数据迁移（从JSON到SQLite） ============
 function migrateFromJSON() {
   // 检查是否已迁移（有数据则跳过）
@@ -992,6 +1053,12 @@ module.exports = {
   deleteRecycleBinItem,
   cleanupExpiredRecycleBin,
   getRecycleBinItemCount,
+  // 资质申请
+  createApplication,
+  getLatestApplication,
+  hasActiveApplication,
+  loadApplications,
+  reviewApplication,
   // 迁移
   migrateFromJSON
 };
