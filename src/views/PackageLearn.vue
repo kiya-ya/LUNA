@@ -48,19 +48,20 @@
             v-for="p in packages" :key="p.id"
             @click="selectPackage(p)"
             class="pkg-card relative cursor-pointer transition-all duration-300 border-2 rounded-3xl overflow-hidden"
-            :class="pkg && pkg.id === p.id ? 'border-secondary shadow-xl shadow-secondary/20' : 'border-white/10 hover:border-white/25'"
+            :class="[pkg && pkg.id === p.id ? 'border-secondary shadow-xl shadow-secondary/20' : 'border-white/10 hover:border-white/25',
+                     p.key === 'sister' ? 'pkg-bg-sister' : 'pkg-bg-trainer']"
           >
-            <img :src="p.key === 'sister' ? '/img/pkg-sister.jpg' : '/img/pkg-trainer.jpg'" :alt="p.name"
-              class="absolute inset-0 w-full h-full object-cover">
-            <div class="absolute inset-0 pkg-shade"></div>
+            <img :src="p.key === 'sister' ? '/img/pkg-sister-cutout.png' : '/img/pkg-trainer-cutout.png'" :alt="p.name"
+              class="pkg-figure">
             <div class="relative z-10 p-3.5 sm:p-4">
-              <h2 class="text-sm sm:text-base font-extrabold text-white leading-tight drop-shadow">{{ p.name }}</h2>
+              <h2 class="text-sm sm:text-base font-extrabold leading-tight drop-shadow"
+                :class="p.key === 'sister' ? 'text-[#5b2a06]' : 'text-white'">{{ p.name }}</h2>
               <div class="mt-2 mb-2">
                 <div class="flex justify-between text-xs font-bold mb-1">
-                  <span class="text-white/70">课程进度</span>
-                  <span class="text-white">{{ p.completed_courses }}/{{ p.total_courses }}</span>
+                  <span :class="p.key === 'sister' ? 'text-[#5b2a06]/70' : 'text-white/70'">课程进度</span>
+                  <span :class="p.key === 'sister' ? 'text-[#5b2a06]' : 'text-white'">{{ p.completed_courses }}/{{ p.total_courses }}</span>
                 </div>
-                <div class="h-2 bg-black/30 rounded-full overflow-hidden">
+                <div class="h-2 bg-black/15 rounded-full overflow-hidden pkg-progress-bar">
                   <div class="h-full rounded-full transition-all duration-500"
                     :class="p.all_completed ? 'bg-gradient-to-r from-success to-emerald-400' : 'bg-gradient-to-r from-secondary to-amber-300'"
                     :style="{ width: p.total_courses ? (p.completed_courses / p.total_courses * 100) + '%' : '0%' }"></div>
@@ -422,11 +423,16 @@ onUnmounted(() => {
   box-shadow: 0 6px 20px rgba(20, 12, 40, 0.28);
 }
 
-/* 课包卡：背景图 + 深色渐变罩（保证文字可读） */
-.pkg-card { min-height: 130px; }
-.pkg-shade {
-  background: linear-gradient(180deg, rgba(30, 20, 50, 0.25) 0%, rgba(30, 20, 40, 0.72) 100%);
+/* 课包卡：上文下人物抠图（KFC 式） */
+.pkg-card { min-height: 150px; }
+.pkg-bg-sister { background: linear-gradient(160deg, #fbc2eb 0%, #f8a5c8 55%, #f48a8a 100%); }
+.pkg-bg-trainer { background: linear-gradient(160deg, #a18cd1 0%, #8E6BC8 55%, #7451A8 100%); }
+.pkg-figure {
+  position: absolute; right: -6px; bottom: 0; z-index: 1;
+  height: 88%; width: auto; pointer-events: none;
+  filter: drop-shadow(0 6px 12px rgba(20, 12, 40, .3));
 }
+.pkg-progress-bar { width: 58%; }
 
 /* 顶部轮播 */
 .banner-carousel {
