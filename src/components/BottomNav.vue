@@ -2,7 +2,7 @@
   <nav class="bottom-nav">
     <button class="bnav-item" :class="{ active: active === 'home' }" @click="goPortal('')">首页</button>
     <button class="bnav-item" :class="{ active: active === 'learn' }" @click="go('/learn')">学习</button>
-    <button class="bnav-item" :class="{ active: active === 'query' }" @click="goQuery">查询</button>
+    <button class="bnav-item" :class="{ active: active === 'exam' }" @click="goExam">考试</button>
     <button class="bnav-item" :class="{ active: active === 'mine' }" @click="go('/mine')">我的</button>
   </nav>
 </template>
@@ -23,8 +23,8 @@ const router = useRouter()
 function go(path) {
   router.push(path)
 }
-function goQuery() {
-  router.push({ path: '/query', query: props.uid ? { uid: props.uid } : {} })
+function goExam() {
+  router.push({ path: '/exam-center', query: props.uid ? { uid: props.uid } : {} })
 }
 function goPortal() {
   location.href = PORTAL_URL

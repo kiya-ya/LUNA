@@ -25,7 +25,7 @@
           @click="goHome"
           class="w-full h-12 rounded-xl font-bold text-white shadow-lg transition-all duration-200 hover:shadow-xl active:scale-[0.98]"
           style="background: linear-gradient(135deg, #8E6BC8, #7451A8);"
-        > <span class="flex items-center justify-center gap-2"> <span></span> <span>返回首页</span> </span> </button> </div> <!-- 底部文字 --> <div class="mt-6 text-center"> <p class="text-xs text-white/60">点点开黑 · 姐姐团考核系统</p> <p class="text-xs text-white/40 mt-1">design by Lu deng</p> </div> </div> </div>
+        > <span class="flex items-center justify-center gap-2"> <span></span> <span>查看成绩与申请资质</span> </span> </button> </div> <!-- 底部文字 --> <div class="mt-6 text-center"> <p class="text-xs text-white/60">点点开黑 · 姐姐团考核系统</p> <p class="text-xs text-white/40 mt-1">design by Lu deng</p> </div> </div> </div>
 </template> <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -276,7 +276,7 @@ const detail = computed(() => {
 })
 
 function goHome() {
-  router.push('/')
+  router.push('/mine')
 }
 </script> <style scoped>
 /* 动态渐变背景 */
