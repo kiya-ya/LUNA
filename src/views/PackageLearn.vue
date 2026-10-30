@@ -87,43 +87,46 @@
         </div>
 
         <!-- 下部：点单式课程明细 -->
-        <div v-if="pkg && pkg.chain_locked" class="glass-dark p-10 text-center">
-          <p class="font-extrabold text-white/80 mb-2">{{ pkg.name }}未解锁</p>
-          <p class="text-sm text-white/50">需先通过姐妹团考试</p>
+        <div v-if="pkg && pkg.chain_locked" class="course-card p-10 text-center">
+          <p class="font-extrabold text-gray-700 mb-2">{{ pkg.name }}未解锁</p>
+          <p class="text-sm text-gray-400">需先通过姐妹团考试</p>
         </div>
         <div v-else-if="pkg" class="flex gap-3 items-start">
           <!-- 左侧大纲：吸顶 + 内部滚动 -->
           <aside ref="asideRef" class="w-[86px] shrink-0 sticky sidebar-stick overflow-y-auto scrollbar-hide pb-2">
             <template v-for="group in courseGroups" :key="group.name">
-              <div class="text-[10px] font-extrabold text-white/40 px-2 pt-2 pb-1">{{ group.name }}</div>
+              <div class="px-1.5 pt-2 pb-1.5">
+              <span class="block text-center text-[11px] font-extrabold py-1 rounded-lg tracking-widest"
+                :class="group.name === '必修课' ? 'bg-secondary text-[#2A2140]' : 'bg-white/20 text-white'">{{ group.name }}</span>
+            </div>
               <button
                 v-for="c in group.list" :key="c.id"
                 @click="scrollToCourse(c.id)"
                 class="w-full text-left px-2.5 py-2.5 rounded-xl text-xs font-bold mb-1.5 transition-all leading-snug"
-                :class="activeCourseId === c.id ? 'bg-secondary text-[#2A2140] shadow' : 'bg-white/10 text-white/60'"
+                :class="activeCourseId === c.id ? 'bg-secondary text-[#2A2140] shadow' : 'bg-white/90 text-gray-600'"
               >{{ c.title }}</button>
             </template>
-            <div v-if="pkg.courses.length === 0" class="text-xs text-white/40 px-2 py-3">暂无课程</div>
+            <div v-if="pkg.courses.length === 0" class="text-xs text-white/50 px-2 py-3">暂无课程</div>
           </aside>
 
           <!-- 右侧课程卡片 -->
           <section ref="listRef" class="flex-1 min-w-0 pb-3 pr-0.5">
             <div class="space-y-3">
-              <div v-if="pkg.courses.length === 0" class="glass-dark p-8 text-center text-white/40 font-bold">课程筹备中，敬请期待</div>
+              <div v-if="pkg.courses.length === 0" class="course-card p-8 text-center text-gray-400 font-bold">课程筹备中，敬请期待</div>
               <div
                 v-for="(course, idx) in pkg.courses" :key="course.id"
                 :ref="el => setCourseRef(course.id, el)"
-                class="glass-dark p-4 cursor-pointer transition-all hover:border-secondary/40"
+                class="course-card p-4 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5"
                 @click="openCourse(course)"
               >
                 <div class="flex gap-3">
                   <div class="w-16 h-16 rounded-2xl shrink-0 flex items-center justify-center text-xs font-extrabold shadow-inner"
-                    :class="course.completed ? 'bg-success/20 text-success' : course.type === 'video' ? 'bg-rose-400/20 text-rose-300' : 'bg-sky-400/20 text-sky-300'">
+                    :class="course.completed ? 'bg-success/15 text-success' : course.type === 'video' ? 'bg-rose-100 text-rose-500' : 'bg-sky-100 text-sky-500'">
                     {{ course.completed ? '已完成' : course.type === 'video' ? '视频课' : '图文课' }}
                   </div>
                   <div class="flex-1 min-w-0">
-                    <p class="font-bold text-white text-sm"><span class="text-white/40 text-xs mr-1">{{ idx + 1 }}.</span>{{ course.title }}</p>
-                    <p class="text-xs text-white/40 mt-1">{{ course.category === 'optional' ? '选修' : '必修' }}<span v-if="course.duration_minutes"> · 约 {{ course.duration_minutes }} 分钟</span></p>
+                    <p class="font-bold text-gray-800 text-sm"><span class="text-gray-400 text-xs mr-1">{{ idx + 1 }}.</span>{{ course.title }}</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ course.category === 'optional' ? '选修' : '必修' }}<span v-if="course.duration_minutes"> · 约 {{ course.duration_minutes }} 分钟</span></p>
                     <div v-if="!course.completed && course.progress_percent > 0" class="mt-2 flex items-center gap-2">
                       <div class="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
                         <div class="h-full bg-gradient-to-r from-secondary to-amber-300 rounded-full" :style="{ width: course.progress_percent + '%' }"></div>
@@ -133,7 +136,7 @@
                   </div>
                 </div>
                 <button class="mt-3 w-full h-10 rounded-xl font-bold text-sm transition-all"
-                  :class="course.completed ? 'bg-success/15 text-success' : 'bg-secondary/15 text-secondary hover:bg-secondary/25'">
+                  :class="course.completed ? 'bg-success/10 text-success' : 'bg-secondary text-[#2A2140] hover:bg-amber-400'">
                   {{ course.completed ? '复习一遍' : course.progress_percent > 0 ? '继续学习' : '开始学习' }}
                 </button>
               </div>
@@ -411,6 +414,14 @@ onUnmounted(() => {
   border-radius: 1.5rem;
 }
 
+/* 课程明细卡：浅色实卡（深色背景上的高对比） */
+.course-card {
+  background: #FFF9EE;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 1.25rem;
+  box-shadow: 0 6px 20px rgba(20, 12, 40, 0.28);
+}
+
 /* 课包卡：背景图 + 深色渐变罩（保证文字可读） */
 .pkg-card { min-height: 130px; }
 .pkg-shade {
@@ -461,7 +472,7 @@ onUnmounted(() => {
 /* 左侧大纲吸顶（过渡栏下方） */
 .sidebar-stick { top: 46px; max-height: calc(100vh - 200px); }
 /* 课程卡定位时避开吸顶栏 */
-section .glass-dark { scroll-margin-top: 56px; }
+section .course-card { scroll-margin-top: 56px; }
 
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { scrollbar-width: none; }
