@@ -686,16 +686,16 @@ function addHeartbeat(uid, nickname, courseId, seconds, requiredSeconds) {
   const existing = getCourseProgress(uid, courseId);
   if (!existing) {
     const watched = Math.max(0, seconds);
-    const completed = requiredSeconds > 0 && watched >= requiredSeconds ? 1 : 0;
-    const percent = requiredSeconds > 0 ? Math.min(100, Math.round(watched / requiredSeconds * 1000) / 10) : 0;
+    const completed = watched >= requiredSeconds ? 1 : 0;
+    const percent = requiredSeconds > 0 ? Math.min(100, Math.round(watched / requiredSeconds * 1000) / 10) : (completed ? 100 : 0);
     db.prepare(`
       INSERT INTO course_progress (uid, nickname, course_id, watched_seconds, progress_percent, completed, completed_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(uid, nickname || '', courseId, watched, percent, completed, completed ? now : null, now);
   } else {
     const watched = existing.watched_seconds + Math.max(0, seconds);
-    const completed = existing.completed === 1 || (requiredSeconds > 0 && watched >= requiredSeconds) ? 1 : 0;
-    const percent = requiredSeconds > 0 ? Math.min(100, Math.round(watched / requiredSeconds * 1000) / 10) : 0;
+    const completed = existing.completed === 1 || watched >= requiredSeconds ? 1 : 0;
+    const percent = requiredSeconds > 0 ? Math.min(100, Math.round(watched / requiredSeconds * 1000) / 10) : (completed ? 100 : 0);
     db.prepare(`
       UPDATE course_progress
       SET watched_seconds = ?, progress_percent = ?, completed = ?,
