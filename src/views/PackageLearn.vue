@@ -35,7 +35,7 @@
       <template v-else>
         <!-- 顶部横幅插画 -->
         <div class="shrink-0 mb-3 rounded-3xl overflow-hidden shadow-lg" style="aspect-ratio: 21/9;">
-          <img src="/img/banner-learn.jpg" alt="新人培训中心" class="w-full h-full object-cover">
+          <img src="/img/banner-learn.jpg" alt="新人培训中心" class="w-full h-full object-cover" style="object-position: center 25%;">
         </div>
 
         <!-- 上部：双大卡选课包（固定不滚） -->
