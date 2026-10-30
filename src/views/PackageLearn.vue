@@ -94,17 +94,17 @@
         </div>
         <div v-else-if="pkg" class="flex gap-3 items-start">
           <!-- 左侧大纲：吸顶 + 内部滚动 -->
-          <aside ref="asideRef" class="w-[86px] shrink-0 sticky sidebar-stick overflow-y-auto scrollbar-hide pb-2">
+          <aside ref="asideRef" class="w-[92px] shrink-0 sticky sidebar-stick overflow-y-auto scrollbar-hide pb-2 -ml-4 bg-[#F6F3F0] border-r border-black/5 rounded-none">
             <template v-for="group in courseGroups" :key="group.name">
               <div class="px-1.5 pt-2 pb-1.5">
               <span class="block text-center text-[11px] font-extrabold py-1 rounded-lg tracking-widest"
-                :class="group.name === '必修课' ? 'bg-secondary text-[#2A2140]' : 'bg-white/20 text-white'">{{ group.name }}</span>
+                :class="group.name === '必修课' ? 'bg-secondary text-[#2A2140]' : 'bg-[#2A2140]/70 text-white'">{{ group.name }}</span>
             </div>
               <button
                 v-for="c in group.list" :key="c.id"
                 @click="scrollToCourse(c.id)"
-                class="w-full text-left px-2.5 py-2.5 rounded-xl text-xs font-bold mb-1.5 transition-all leading-snug"
-                :class="activeCourseId === c.id ? 'bg-secondary text-[#2A2140] shadow' : 'bg-white/90 text-gray-600'"
+                class="side-item"
+                :class="{ on: activeCourseId === c.id }"
               >{{ c.title }}</button>
             </template>
             <div v-if="pkg.courses.length === 0" class="text-xs text-white/50 px-2 py-3">暂无课程</div>
@@ -474,6 +474,20 @@ onUnmounted(() => {
 .deco-divider .seg.gold { width: 56px; height: 4px; background: linear-gradient(90deg, #ffc53d, #f5b301); }
 .deco-divider .seg.purple { width: 28px; height: 3px; background: #B39DF0; opacity: .8; }
 .deco-divider .seg.pink { width: 14px; height: 3px; background: #f48a8a; opacity: .9; }
+
+/* 侧边栏通栏行（贴合页面左缘，KFC 式） */
+.side-item {
+  display: block; width: 100%; text-align: center;
+  padding: 14px 4px; font-size: 12px; font-weight: 700; line-height: 1.4;
+  color: rgba(42, 33, 64, .65); background: transparent; border: none; cursor: pointer;
+  border-bottom: 1px solid rgba(0, 0, 0, .04);
+  border-left: 3px solid transparent;
+  transition: all .15s ease;
+}
+.side-item.on {
+  background: #fff; color: #2A2140;
+  border-left-color: #F5B301;
+}
 
 /* 左侧大纲吸顶（过渡栏下方） */
 .sidebar-stick { top: 46px; max-height: calc(100vh - 200px); }
