@@ -44,7 +44,8 @@
             <div class="flex items-center gap-2.5 mb-2">
               <div class="w-11 h-11 rounded-2xl shrink-0 flex items-center justify-center text-[11px] font-extrabold text-white shadow-inner"
                 :class="p.key === 'sister' ? 'bg-gradient-to-br from-pink-300 to-rose-400' : 'bg-gradient-to-br from-indigo-300 to-purple-400'">
-                {{ p.key === 'sister' ? '姐妹团' : '培训师' }}
+                <svg v-if="p.key === 'sister'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px"><circle cx="8.5" cy="8" r="3.2"/><circle cx="16" cy="9" r="2.6"/><path d="M3.5 19c1-3.2 3-4.5 5-4.5s4 1.3 5 4.5"/><path d="M14.2 15.2c2.3.2 4 1.6 4.8 4"/></svg>
+              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11.2v4.3c0 1.6 2.5 3 5.5 3s5.5-1.4 5.5-3v-4.3"/><path d="M21 9.2v5"/></svg>
               </div>
               <h2 class="text-sm sm:text-base font-extrabold text-gray-900 leading-tight">{{ p.name }}</h2>
             </div>
