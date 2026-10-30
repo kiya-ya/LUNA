@@ -222,6 +222,13 @@ async function handleDirectExam() {
   pointer-events: none;
 }
 
+/* 夜幕紫（与统一入口 v2 同风格，覆盖全局 bg-animated） */
+.bg-animated {
+  background: linear-gradient(160deg, #2A2140 0%, #4A3663 45%, #6B4FA0 80%, #8E6BC8 100%);
+  background-size: 200% 200%;
+  animation: gradient-flow 14s ease-in-out infinite alternate;
+}
+
 /* 安全区域适配（iPhone 刘海屏） */
 @supports (padding: max(0px)) {
   .bg-animated {

@@ -207,6 +207,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { useExamStore } from '../stores/exam.js'
 import BottomNav from '../components/BottomNav.vue'
 
+// 统一入口（培训师系统 v2）
+const PORTAL_URL = 'http://192.168.100.117:5000/portal-v2'
+
 const route = useRoute()
 const router = useRouter()
 const store = useExamStore()
@@ -281,7 +284,7 @@ function goQuery() {
 function logout() {
   localStorage.removeItem('learn_user')
   store.setUserInfo('', '')
-  router.push('/')
+  location.href = PORTAL_URL
 }
 
 async function startExam() {

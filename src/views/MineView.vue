@@ -224,7 +224,7 @@ function goPortal() {
 function logout() {
   localStorage.removeItem('learn_user')
   store.setUserInfo('', '')
-  router.push('/')
+  location.href = PORTAL_URL
 }
 
 onMounted(() => {
