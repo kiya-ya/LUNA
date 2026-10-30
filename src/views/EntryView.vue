@@ -55,7 +55,7 @@ const totalQuestions = computed(() => {
 })
 
 function goQuery() {
-  router.push('/query')
+  router.push('/mine')
 }
 
 async function handleSubmit() {

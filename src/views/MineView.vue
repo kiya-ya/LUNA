@@ -124,7 +124,7 @@
 
 <script setup>
 import { ref, onMounted, inject } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useExamStore } from '../stores/exam.js'
 import BottomNav from '../components/BottomNav.vue'
 
@@ -132,6 +132,7 @@ import BottomNav from '../components/BottomNav.vue'
 const PORTAL_URL = 'http://192.168.100.117:5000/portal-v2'
 
 const router = useRouter()
+const route = useRoute()
 const store = useExamStore()
 const showToast = inject('showToast')
 
@@ -229,6 +230,13 @@ function logout() {
 onMounted(() => {
   let name = store.userName
   let id = store.userPhone
+  // 支持 URL 带 uid 移交身份
+  if (route.query.uid) {
+    id = String(route.query.uid)
+    if (route.query.nickname) name = String(route.query.nickname)
+    store.setUserInfo(name, id)
+    try { localStorage.setItem('learn_user', JSON.stringify({ name, uid: id })) } catch (e) { /* ignore */ }
+  }
   if (!id) {
     try {
       const saved = JSON.parse(localStorage.getItem('learn_user') || 'null')
