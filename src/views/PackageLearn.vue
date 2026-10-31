@@ -1,18 +1,18 @@
 <template>
-  <div class="min-h-screen bg-night relative" @click="menuOpen = false">
+  <div class="min-h-screen bg-soft relative" @click="menuOpen = false">
     <!-- 顶栏：透明 + 三横线 -->
     <header class="relative z-50">
       <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <img src="/logo.png" alt="点点开黑" class="w-9 h-9 object-contain rounded-xl shadow">
           <div>
-            <h1 class="text-base font-bold text-white leading-tight">新人培训中心</h1>
-            <p class="text-xs text-white/60">{{ userName }} · UID: {{ uid }}</p>
+            <h1 class="text-base font-bold text-accent leading-tight">新人培训中心</h1>
+            <p class="text-xs text-accent/60">{{ userName }} · UID: {{ uid }}</p>
           </div>
         </div>
         <div class="relative">
           <button @click.stop="menuOpen = !menuOpen" class="p-2 flex flex-col gap-[5px]" aria-label="菜单">
-            <i class="block w-[22px] h-[2px] rounded bg-white"></i>
+            <i class="block w-[22px] h-[2px] rounded bg-accent"></i>
             <i class="block w-[22px] h-[2px] rounded bg-white"></i>
             <i class="block w-[22px] h-[2px] rounded bg-white"></i>
           </button>
@@ -26,7 +26,7 @@
 
     <main class="max-w-3xl w-full mx-auto px-4 pt-1 pb-44 relative z-10">
       <!-- 加载中 -->
-      <div v-if="loading" class="glass-dark p-10 text-center text-white/50 font-bold">课程加载中…</div>
+      <div v-if="loading" class="course-card p-10 text-center text-gray-400 font-bold">课程加载中…</div>
 
       <template v-else>
         <!-- 顶部轮播（占位图，后续可换重点提示/注意事项） -->
@@ -149,12 +149,12 @@
 
     <!-- 回到顶部 -->
     <button v-if="pkg && !pkg.chain_locked" @click="scrollTop"
-      class="fixed right-4 z-40 w-10 h-10 rounded-full bg-white/15 backdrop-blur border border-white/20 shadow-lg text-white font-bold text-lg hover:scale-105 transition-all"
+      class="fixed right-4 z-40 w-10 h-10 rounded-full bg-white/85 backdrop-blur border border-white/70 shadow-lg text-accent font-bold text-lg hover:scale-105 transition-all"
       style="bottom: calc(150px + env(safe-area-inset-bottom));" title="回到顶部">↑</button>
 
     <!-- 底部固定栏：成绩奖杯图标 + 学习进度 + 去考试 -->
     <div v-if="pkg" class="fixed left-0 right-0 z-40 px-4" style="bottom: calc(64px + env(safe-area-inset-bottom));">
-      <div class="max-w-3xl mx-auto glass-dark !rounded-2xl p-3 flex items-center gap-3">
+      <div class="max-w-3xl mx-auto bottom-bar p-3 flex items-center gap-3">
         <button @click="showRecords = true"
           class="w-11 h-11 shrink-0 rounded-xl bg-secondary/15 text-secondary flex items-center justify-center hover:bg-secondary/25 transition-all"
           title="我的成绩记录">
@@ -164,10 +164,10 @@
         </button>
         <div class="flex-1 min-w-0">
           <div class="flex justify-between text-xs font-bold mb-1">
-            <span class="text-white/60">学习进度</span>
+            <span class="text-gray-500">学习进度</span>
             <span :class="pkg.all_completed ? 'text-success' : 'text-secondary'">{{ pkg.completed_courses }}/{{ pkg.total_courses }}</span>
           </div>
-          <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+          <div class="h-2 bg-gray-200/70 rounded-full overflow-hidden">
             <div class="h-full rounded-full transition-all duration-500"
               :class="pkg.all_completed ? 'bg-gradient-to-r from-success to-emerald-400' : 'bg-gradient-to-r from-secondary to-amber-300'"
               :style="{ width: pkg.total_courses ? (pkg.completed_courses / pkg.total_courses * 100) + '%' : '0%' }"></div>
@@ -399,10 +399,18 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* 夜幕紫背景（与登录页同风格） */
-.bg-night {
-  background: linear-gradient(160deg, #2A2140 0%, #4A3663 45%, #6B4FA0 80%, #8E6BC8 100%);
-  background-attachment: fixed;
+/* 浅色背景（内页弱化） */
+.bg-soft {
+  background: linear-gradient(160deg, #EFE9F8 0%, #FAF6FD 50%, #FDF8EE 100%);
+}
+/* 底部栏浅色玻璃 */
+.bottom-bar {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  border-radius: 1.5rem;
 }
 
 /* 深色玻璃卡 */
@@ -464,11 +472,11 @@ onUnmounted(() => {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 8px 0 10px;
   position: sticky; top: 0; z-index: 30;
-  background: linear-gradient(160deg, #3A2C55 0%, #4A3663 100%);
+  background: linear-gradient(160deg, #EFE9F8 0%, #F8F2FC 60%, #FBF5EA 100%);
 }
 .deco-divider em {
   font-style: normal; font-size: 11px; font-weight: 700;
-  color: rgba(255, 255, 255, .55); letter-spacing: 2px;
+  color: rgba(91, 42, 6, .55); letter-spacing: 2px;
 }
 .deco-divider .seg { display: block; border-radius: 999px; }
 .deco-divider .seg.gold { width: 56px; height: 4px; background: linear-gradient(90deg, #ffc53d, #f5b301); }
