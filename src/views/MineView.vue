@@ -1,27 +1,31 @@
 <template>
-  <div class="min-h-screen bg-soft relative">
+  <div class="min-h-screen bg-white relative">
     <!-- 顶部栏 -->
-    <header class="relative z-10 sticky top-0 glass-soft">
+    <header class="absolute top-0 left-0 right-0 z-20">
       <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
         <span class="w-14 shrink-0"></span>
-        <h1 class="text-sm sm:text-base font-bold text-accent truncate flex-1 text-center">我的</h1>
+        <h1 class="text-sm sm:text-base font-bold text-white truncate flex-1 text-center">我的</h1>
         <span class="w-14 shrink-0"></span>
       </div>
     </header>
 
-    <main class="max-w-3xl mx-auto px-4 py-5 relative z-10 pb-24">
-      <!-- 账号卡 -->
-      <div class="glass-card p-5 mb-4 flex items-center gap-3">
-        <img src="/logo.png" alt="头像" class="w-12 h-12 rounded-2xl shadow">
+    <!-- 顶部粉橙账号区 -->
+    <div class="mine-hero relative z-10">
+      <div class="max-w-3xl mx-auto px-4 pt-16 pb-14 flex items-center gap-3">
+        <img src="/logo.png" alt="头像" class="w-14 h-14 rounded-2xl shadow-lg border-2 border-white/60">
         <div class="flex-1 min-w-0">
-          <p class="font-extrabold text-gray-900">{{ userName || '未填写昵称' }}</p>
-          <p class="text-xs text-gray-400 mt-0.5">UID: {{ uid }}</p>
+          <p class="font-extrabold text-white text-lg drop-shadow">{{ userName || '未填写昵称' }}</p>
+          <p class="text-xs text-white/75 mt-0.5">UID: {{ uid }}</p>
         </div>
-        <button @click="logout" class="h-9 px-4 rounded-xl font-bold text-xs bg-red-600 text-white hover:bg-red-700 transition-all shrink-0">切换账号</button>
+        <button @click="logout" class="h-9 px-4 rounded-xl font-bold text-xs bg-white/25 text-white hover:bg-white/35 transition-all shrink-0 backdrop-blur-sm">切换账号</button>
       </div>
+    </div>
+
+    <!-- 下方白底功能区 -->
+    <main class="mine-body max-w-3xl mx-auto px-4 relative z-10 pb-24">
 
       <!-- 我的资质进度（学习 → 考试 → 申请 → 激活） -->
-      <div class="glass-card p-5 mb-4">
+      <div class="glass-card p-5 mb-4 -mt-10">
         <h3 class="text-base font-extrabold text-gray-900 mb-1">我的资质进度</h3>
         <p class="text-xs text-gray-400 mb-4">学习 → 考试 → 申请 → 激活，四步走完即获得资质</p>
         <div v-for="pkg in applyPackages" :key="pkg.key" class="py-3 border-t first:border-0 border-gray-100">
@@ -265,6 +269,10 @@ onMounted(() => {
   border: 1px solid rgba(255, 255, 255, 0.6);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   border-radius: 1.5rem;
+}
+.mine-hero {
+  background: linear-gradient(135deg, #f9a8d4 0%, #f6b26b 60%, #f5b301 100%);
+  border-radius: 0 0 28px 28px;
 }
 .glass-soft {
   background: rgba(247, 243, 252, 0.85);
