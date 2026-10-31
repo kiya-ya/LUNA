@@ -10,44 +10,47 @@
     </header>
 
     <main class="max-w-3xl mx-auto px-4 py-5 relative z-10 pb-24">
-      <div v-if="loading" class="glass-card p-10 text-center text-gray-500 font-bold">加载中…</div>
+      <div v-if="loading" class="glass-card p-10 text-center text-gray-400 font-bold">加载中…</div>
 
       <div v-else class="space-y-4">
-        <div v-for="pkg in packages" :key="pkg.id" class="glass-card p-5">
-          <div class="flex items-center gap-3 mb-3">
-            <div class="w-11 h-11 rounded-2xl shrink-0 overflow-hidden shadow-inner"
-              >
-              <img :src="pkg.key === 'sister' ? '/img/pkg-sister.jpg' : '/img/pkg-trainer.jpg'"
-                :alt="pkg.name" class="w-full h-full object-cover">
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="font-extrabold text-gray-900">{{ pkg.exam_name || pkg.name + '考试' }}</p>
-              <p class="text-xs text-gray-400 mt-0.5">60 分及格 · 一次机会 · 挂科冷却 {{ pkg.cooldown_days }} 天</p>
-            </div>
-          </div>
+        <!-- 考试卡：左文右人物抠图（与课包卡同款） -->
+        <div v-for="pkg in packages" :key="pkg.id"
+          class="exam-card relative rounded-3xl overflow-hidden border-2 transition-all"
+          :class="[pkg.key === 'sister' ? 'pkg-bg-sister' : 'pkg-bg-trainer',
+                   pkg.exam_status.status === 'ready' ? 'border-secondary shadow-xl shadow-secondary/20' : 'border-white/40']">
+          <img :src="pkg.key === 'sister' ? '/img/pkg-sister-cutout.png' : '/img/pkg-trainer-cutout.png'" :alt="pkg.name"
+            class="exam-figure">
+          <div class="relative z-10 p-4 sm:p-5">
+            <h2 class="text-base sm:text-lg font-extrabold leading-tight drop-shadow-sm"
+              :class="pkg.key === 'sister' ? 'text-[#5b2a06]' : 'text-white'">{{ pkg.exam_status.exam_name || pkg.name + '考试' }}</h2>
+            <p class="text-xs mt-1"
+              :class="pkg.key === 'sister' ? 'text-[#5b2a06]/60' : 'text-white/60'">60 分及格 · 一次机会 · 挂科冷却 {{ pkg.cooldown_days }} 天</p>
 
-          <!-- 已通过 -->
-          <div v-if="pkg.exam_status.status === 'passed'" class="bg-success/5 border border-success/20 rounded-2xl p-4 flex items-center justify-between">
-            <div>
-              <p class="font-extrabold text-success">已通过</p>
-              <p class="text-xs text-gray-500 mt-0.5">{{ pkg.exam_status.exam_name }} · {{ pkg.exam_status.total_score }}/{{ pkg.exam_status.max_score }} 分</p>
+            <div class="mt-3 exam-status">
+              <!-- 已通过 -->
+              <div v-if="pkg.exam_status.status === 'passed'" class="status-box status-pass">
+                <div>
+                  <p class="font-extrabold text-success">已通过</p>
+                  <p class="text-xs text-gray-500 mt-0.5">{{ pkg.exam_status.exam_name }} · {{ pkg.exam_status.total_score }}/{{ pkg.exam_status.max_score }} 分</p>
+                </div>
+                <span class="text-2xl font-extrabold text-success">{{ pkg.exam_status.percentage }}<span class="text-sm">分</span></span>
+              </div>
+              <!-- 冷却中 -->
+              <div v-else-if="pkg.exam_status.status === 'cooldown'" class="status-box status-cool text-center">
+                <p class="font-extrabold text-danger mb-1">上次未及格（{{ pkg.exam_status.last_percentage }}分）</p>
+                <p class="text-sm text-gray-600">冷却剩余 <span class="font-extrabold text-danger tabular-nums">{{ cooldownText(pkg) }}</span></p>
+              </div>
+              <!-- 可考 -->
+              <button v-else-if="pkg.exam_status.status === 'ready'" @click="startExam(pkg)" :disabled="startingExam"
+                class="w-full h-[52px] bg-gradient-to-r from-secondary to-amber-400 text-[#2A2140] text-lg font-extrabold rounded-2xl shadow-lg shadow-secondary/30 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60">
+                {{ startingExam ? '正在进入…' : '开始考试' }}
+              </button>
+              <!-- 未解锁 -->
+              <button v-else disabled class="w-full h-[52px] bg-white/60 text-gray-500 font-bold rounded-2xl cursor-not-allowed">
+                {{ pkg.chain_locked ? '需先通过姐妹团考试' : pkg.exam_status.status === 'no_exam' ? '考试未配置，请联系管理员' : `完成全部必修课后解锁（还差 ${pkg.exam_status.remaining_courses} 门）` }}
+              </button>
             </div>
-            <span class="text-2xl font-extrabold text-success">{{ pkg.exam_status.percentage }}<span class="text-sm">分</span></span>
           </div>
-          <!-- 冷却中 -->
-          <div v-else-if="pkg.exam_status.status === 'cooldown'" class="bg-danger/5 border border-danger/20 rounded-2xl p-4 text-center">
-            <p class="font-extrabold text-danger mb-1">上次未及格（{{ pkg.exam_status.last_percentage }}分）</p>
-            <p class="text-sm text-gray-600">冷却剩余 <span class="font-extrabold text-danger tabular-nums">{{ cooldownText(pkg) }}</span></p>
-          </div>
-          <!-- 可考 -->
-          <button v-else-if="pkg.exam_status.status === 'ready'" @click="startExam(pkg)" :disabled="startingExam"
-            class="w-full h-[52px] bg-gradient-to-r from-primary to-secondary text-white text-lg font-extrabold rounded-2xl shadow-lg shadow-primary/25 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-60">
-            {{ startingExam ? '正在进入…' : '开始考试' }}
-          </button>
-          <!-- 未解锁 -->
-          <button v-else disabled class="w-full h-[52px] bg-gray-200 text-gray-400 font-bold rounded-2xl cursor-not-allowed">
-            {{ pkg.chain_locked ? '需先通过姐妹团考试' : pkg.exam_status.status === 'no_exam' ? '考试未配置，请联系管理员' : `完成全部必修课后解锁（还差 ${pkg.exam_status.remaining_courses} 门）` }}
-          </button>
         </div>
 
         <div class="glass-card p-4 text-center">
@@ -169,4 +172,23 @@ onUnmounted(() => {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
+
+/* 考试卡：左文右人物抠图（与课包卡同款） */
+.exam-card { min-height: 150px; }
+.pkg-bg-sister { background: linear-gradient(160deg, #fbc2eb 0%, #f8a5c8 55%, #f48a8a 100%); }
+.pkg-bg-trainer { background: linear-gradient(160deg, #a18cd1 0%, #8E6BC8 55%, #7451A8 100%); }
+.exam-figure {
+  position: absolute; right: -8px; bottom: 0; z-index: 1;
+  height: 96%; width: auto; pointer-events: none;
+  filter: drop-shadow(0 6px 12px rgba(20, 12, 40, .25));
+}
+.exam-status { max-width: 62%; }
+
+/* 状态盒 */
+.status-box {
+  border-radius: 1rem; padding: 12px 14px;
+  background: rgba(255, 255, 255, .75);
+  backdrop-filter: blur(8px);
+}
+.status-pass { display: flex; align-items: center; justify-content: space-between; }
 </style>
