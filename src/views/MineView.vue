@@ -17,7 +17,7 @@
           <p class="font-extrabold text-white text-lg drop-shadow">{{ userName || '未填写昵称' }}</p>
           <p class="text-xs text-white/75 mt-0.5">UID: {{ uid }}</p>
         </div>
-        <button @click="logout" class="h-9 px-4 rounded-xl font-bold text-xs bg-white/25 text-white hover:bg-white/35 transition-all shrink-0 backdrop-blur-sm">切换账号</button>
+        
       </div>
     </div>
 
@@ -81,6 +81,7 @@
         <h3 class="text-base font-extrabold text-gray-900 mb-2">更多功能</h3>
         <p class="text-xs text-gray-400 mb-3">绑定妹妹、名额管理等功能在统一入口（需 UID + 密码登录）</p>
         <button @click="goPortal" class="w-full h-11 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-2xl hover:shadow-lg transition-all">前往统一入口</button>
+        <button @click="logout" class="mt-3 w-full h-11 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 transition-all">切换账号</button>
       </div>
     </main>
 
