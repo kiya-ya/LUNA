@@ -1,11 +1,26 @@
 <template>
-  <div class="min-h-screen bg-soft relative">
+  <div class="min-h-screen bg-soft relative" @click="menuOpen = false">
     <!-- 顶部栏 -->
-    <header class="relative z-10 sticky top-0 glass-soft">
-      <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-        <span class="w-14 shrink-0"></span>
-        <h1 class="text-sm sm:text-base font-bold text-accent truncate flex-1 text-center">考试中心</h1>
-        <span class="w-14 shrink-0"></span>
+    <header class="relative z-20">
+      <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <img src="/logo.png" alt="点点开黑" class="w-9 h-9 object-contain rounded-xl shadow">
+          <div>
+            <h1 class="text-base font-bold text-accent leading-tight">考试中心</h1>
+            <p class="text-xs text-accent/60">{{ userName || '未登录' }} · UID: {{ uid || '-' }}</p>
+          </div>
+        </div>
+        <div class="relative">
+          <button @click.stop="menuOpen = !menuOpen" class="p-2 flex flex-col gap-[5px]" aria-label="菜单">
+            <i class="block w-[22px] h-[2px] rounded bg-accent"></i>
+            <i class="block w-[22px] h-[2px] rounded bg-accent"></i>
+            <i class="block w-[22px] h-[2px] rounded bg-accent"></i>
+          </button>
+          <div v-if="menuOpen" class="absolute right-0 top-full mt-1.5 z-50 bg-[#fffaf2] rounded-2xl shadow-xl border border-white/80 p-2.5 flex flex-col gap-2 min-w-[140px]">
+            <button @click="menuOpen = false; router.push('/learn')" class="px-4 py-2.5 text-sm font-bold text-accent bg-white/70 hover:bg-white rounded-xl transition-all">学习中心</button>
+            <button @click="menuOpen = false; logout()" class="px-4 py-2.5 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all">切换账号</button>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -70,6 +85,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { useExamStore } from '../stores/exam.js'
 import BottomNav from '../components/BottomNav.vue'
 
+// 统一入口（培训师系统 v2）
+const PORTAL_URL = 'http://192.168.100.117:5000/portal-v2'
+
 const route = useRoute()
 const router = useRouter()
 const store = useExamStore()
@@ -78,11 +96,18 @@ const showToast = inject('showToast')
 const uid = ref('')
 const userName = ref('')
 const loading = ref(true)
+const menuOpen = ref(false)
 const packages = ref([])
 const startingExam = ref(false)
 const now = ref(Date.now())
 let clockTimer = null
 let loadedAt = Date.now()
+
+function logout() {
+  localStorage.removeItem('learn_user')
+  store.setUserInfo('', '')
+  location.href = PORTAL_URL
+}
 
 function cooldownText(pkg) {
   if (pkg.exam_status.status !== 'cooldown') return ''
