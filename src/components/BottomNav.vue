@@ -12,7 +12,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5"/><path d="m9.5 13.5 2 2 4-4.5"/></svg>
       <span>考试</span>
     </button>
-    <button class="bnav-item" :class="{ active: active === 'mine' }" @click="go('/mine')">
+    <button class="bnav-item" :class="{ active: active === 'mine' }" @click="goMine">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.5-3.5 4.5-5 7.5-5s6 1.5 7.5 5"/></svg>
       <span>我的</span>
     </button>
@@ -37,6 +37,9 @@ function go(path) {
 }
 function goExam() {
   router.push({ path: '/exam-center', query: props.uid ? { uid: props.uid } : {} })
+}
+function goMine() {
+  location.href = PORTAL_URL + '#mine'
 }
 function goPortal() {
   location.href = PORTAL_URL

@@ -16,7 +16,7 @@ const router = createRouter({
     { path: '/learn/package/:key', name: 'package-learn', component: PackageLearn },
     { path: '/learn/course/:id', name: 'course-learn', component: CourseLearn },
     { path: '/query', redirect: to => ({ path: '/mine', query: to.query }) },
-    { path: '/mine', name: 'mine', component: MineView },
+    { path: '/mine', name: 'mine', component: MineView, beforeEnter: () => { location.href = 'http://192.168.100.117:5000/portal-v2#mine' } },
     { path: '/exam-center', name: 'exam-center', component: ExamCenter },
     { path: '/exam', name: 'exam', component: ExamView },
     { path: '/result', name: 'result', component: ResultView },
