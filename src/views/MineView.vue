@@ -81,12 +81,10 @@
         </div>
       </div>
 
-      <!-- 统一入口 -->
+      <!-- 账号操作 -->
       <div class="glass-card p-5">
-        <h3 class="text-base font-extrabold text-gray-900 mb-2">更多功能</h3>
-        <p class="text-xs text-gray-400 mb-3">绑定妹妹、名额管理等功能在统一入口（需 UID + 密码登录）</p>
-        <button @click="goPortal" class="w-full h-11 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-2xl hover:shadow-lg transition-all">前往统一入口</button>
-        <button @click="logout" class="mt-3 w-full h-11 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 transition-all">切换账号</button>
+        <h3 class="text-base font-extrabold text-gray-900 mb-3">更多功能</h3>
+        <button @click="logout" class="w-full h-11 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 transition-all">退出登录</button>
       </div>
     </main>
 
