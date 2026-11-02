@@ -1,32 +1,22 @@
 <template>
   <div class="min-h-screen bg-white relative" @click="menuOpen = false">
     <!-- 顶部栏 -->
-    <header class="absolute top-0 left-0 right-0 z-20">
-      <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <img src="/logo.png" alt="点点开黑" class="w-9 h-9 object-contain rounded-xl shadow">
-          <div>
-            <h1 class="text-base font-bold text-white leading-tight">我的</h1>
-            <p class="text-xs text-white/70">{{ userName || '未登录' }} · UID: {{ uid || '-' }}</p>
-          </div>
-        </div>
-        <div class="relative">
-          <button @click.stop="menuOpen = !menuOpen" class="p-2 flex flex-col gap-[5px]" aria-label="菜单">
-            <i class="block w-[22px] h-[2px] rounded bg-white"></i>
-            <i class="block w-[22px] h-[2px] rounded bg-white"></i>
-            <i class="block w-[22px] h-[2px] rounded bg-white"></i>
-          </button>
-          <div v-if="menuOpen" class="absolute right-0 top-full mt-1.5 z-50 bg-[#fffaf2] rounded-2xl shadow-xl border border-white/80 p-2.5 flex flex-col gap-2 min-w-[140px]">
-            <button @click="menuOpen = false; router.push('/learn')" class="px-4 py-2.5 text-sm font-bold text-accent bg-white/70 hover:bg-white rounded-xl transition-all">学习中心</button>
-            <button @click="menuOpen = false; logout()" class="px-4 py-2.5 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all">切换账号</button>
-          </div>
-        </div>
+    <!-- 右上角悬浮三横线（hero 已有账号信息，不再重复顶栏） -->
+    <div class="absolute top-3 right-4 z-20">
+      <button @click.stop="menuOpen = !menuOpen" class="p-2 flex flex-col gap-[5px]" aria-label="菜单">
+        <i class="block w-[22px] h-[2px] rounded bg-white"></i>
+        <i class="block w-[22px] h-[2px] rounded bg-white"></i>
+        <i class="block w-[22px] h-[2px] rounded bg-white"></i>
+      </button>
+      <div v-if="menuOpen" class="absolute right-0 top-full mt-1.5 z-50 bg-[#fffaf2] rounded-2xl shadow-xl border border-white/80 p-2.5 flex flex-col gap-2 min-w-[140px]">
+        <button @click="menuOpen = false; router.push('/learn')" class="px-4 py-2.5 text-sm font-bold text-accent bg-white/70 hover:bg-white rounded-xl transition-all">学习中心</button>
+        <button @click="menuOpen = false; logout()" class="px-4 py-2.5 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all">切换账号</button>
       </div>
-    </header>
+    </div>
 
     <!-- 顶部粉橙账号区 -->
     <div class="mine-hero relative z-10">
-      <div class="max-w-3xl mx-auto px-4 pt-16 pb-14 flex items-center gap-3">
+      <div class="max-w-3xl mx-auto px-4 pt-8 pb-14 flex items-center gap-3">
         <img src="/logo.png" alt="头像" class="w-14 h-14 rounded-2xl shadow-lg border-2 border-white/60">
         <div class="flex-1 min-w-0">
           <p class="font-extrabold text-white text-lg drop-shadow">{{ userName || '未填写昵称' }}</p>
