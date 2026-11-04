@@ -59,11 +59,11 @@ B. 选项2
 C. 选项3
 D. 选项4" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea> <div> <label class="block text-sm font-bold text-gray-700 mb-2">正确答案</label> <input v-model="aiGenEditForm.answer" type="text" placeholder="例如：A 或 A,B" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"> </div> </div> <!-- 填空题答案 --> <div v-if="aiGenEditForm.type === 'fill'"> <label class="block text-sm font-bold text-gray-700 mb-2">填空答案（每行一个，用|分隔多个可选答案）</label> <textarea v-model="aiGenEditForm.blanksText" rows="3" placeholder="空1答案:18|十八
 空2答案:98" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea> </div> <div> <label class="block text-sm font-bold text-gray-700 mb-2">答案解析 / 评分关键词</label> <textarea v-model="aiGenEditForm.key_points" rows="3" placeholder="请输入答案解析或评分关键词" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea> </div> </div> <div class="flex gap-3 mt-6"> <button @click="closeAiGenEdit" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">取消</button> <button @click="saveAiGenEdit" class="flex-1 h-12 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark transition-all">保存修改</button> </div> </div> </div> <!-- 新建题库弹窗（用于智能生题） --> <div v-if="showAiGenNewBank" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"> <div class="bg-white rounded-2xl p-6 w-full max-w-sm"> <h3 class="text-lg font-bold text-gray-900 mb-4">新建题库</h3> <input v-model="aiGenNewBankName" type="text" placeholder="请输入新题库名称" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all mb-4"> <div class="flex gap-3"> <button @click="showAiGenNewBank = false" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">取消</button> <button @click="createAiGenBank" class="flex-1 h-12 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark transition-all">创建</button> </div> </div> </div> </div> <!-- 课程管理内容 --> <div v-if="currentTab === 'learn'" class="space-y-6"> <!-- 课包列表 --> <div class="glass-card relative z-10 p-6"> <div class="flex items-center justify-between mb-4"> <h2 class="text-lg font-bold text-gray-900"> 课程包管理</h2> <button @click="loadPackages" class="text-sm px-3 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all"> 刷新</button> </div> <div class="space-y-4"> <div v-for="pkg in packages" :key="pkg.id" class="p-4 rounded-2xl border-2 transition-all" :class="learnSelectedPkgId === pkg.id ? 'border-primary bg-primary/5' : 'border-gray-100 bg-white/60'"> <div class="flex items-center justify-between mb-3"> <div class="flex items-center gap-2"> <span class="text-xl">{{ pkg.key === 'sister' ? '' : pkg.key === 'trainer' ? '' : '' }}</span> <span class="font-bold text-gray-900">{{ pkg.name }}</span> <span class="text-xs text-gray-400">({{ (pkg.courses || []).length }} 门课程)</span> <span class="text-xs px-2 py-0.5 rounded-full font-bold" :class="pkg.enabled ? 'bg-success/10 text-success' : 'bg-gray-100 text-gray-400'">{{ pkg.enabled ? '启用' : '停用' }}</span> </div> <div class="flex items-center gap-2"> <button @click="learnSelectedPkgId = pkg.id; resetCourseForm()" class="text-xs px-3 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all">管理课程</button> <button @click="deletePackage(pkg)" class="text-xs px-3 py-1.5 bg-danger/10 text-danger font-bold rounded-lg hover:bg-danger/20 transition-all">删除</button> </div> </div> <div class="grid grid-cols-1 md:grid-cols-4 gap-3"> <div> <label class="block text-xs font-bold text-gray-500 mb-1">课包名称</label> <input v-model="pkg.name" type="text" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all"> </div> <div> <label class="block text-xs font-bold text-gray-500 mb-1">挂科冷却天数</label> <input v-model.number="pkg.cooldown_days" type="number" min="0" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all"> </div> <div> <label class="block text-xs font-bold text-gray-500 mb-1">关联试卷配置</label> <select v-model="pkg.exam_config_id" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all bg-white"> <option :value="null">（不关联，无需考试）</option> <option v-for="cfg in examConfigs" :key="cfg.id" :value="cfg.id">{{ cfg.name }} ({{ cfg.status }})</option> </select> </div> <div class="flex items-end gap-2"> <label class="flex items-center gap-1.5 text-sm font-bold text-gray-600 pb-2"> <input v-model="pkg.enabled" type="checkbox" class="w-4 h-4 accent-primary"> 启用
-                  </label> <button @click="savePackage(pkg)" class="flex-1 h-9 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-all">保存</button> </div> </div> <div class="mt-2"> <input v-model="pkg.description" type="text" placeholder="课包描述" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all"> </div> </div> <div v-if="packages.length === 0" class="text-center text-gray-400 py-6 font-bold">暂无课包</div> </div> </div> <!-- 课程 CRUD --> <div v-if="learnSelectedPkg" class="glass-card relative z-10 p-6"> <h2 class="text-lg font-bold text-gray-900 mb-4"> 「{{ learnSelectedPkg.name }}」课程列表</h2> <!-- 课程表单 --> <div class="p-4 rounded-2xl bg-gray-50 border-2 border-gray-100 mb-5"> <h3 class="text-sm font-bold text-gray-700 mb-3">{{ editingCourseId ? ' 编辑课程' : ' 新增课程' }}</h3> <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3"> <input v-model="courseForm.title" type="text" placeholder="课程标题" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all"> <select v-model="courseForm.type" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all bg-white"> <option value="video"> 视频课</option> <option value="article"> 图文课</option> </select> <input v-model.number="courseForm.duration_minutes" type="number" min="0" :placeholder="courseForm.type === 'article' ? '要求停留分钟数（必填）' : '视频时长（分钟，可选）'" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all"> </div> <!-- 视频课：上传 --> <div v-if="courseForm.type === 'video'" class="mb-3"> <div class="flex items-center gap-3"> <button @click="$refs.videoFileInput.click()" :disabled="videoUploading" class="px-4 py-2 bg-secondary/10 text-secondary font-bold rounded-xl text-sm hover:bg-secondary/20 transition-all disabled:opacity-50">
+                  </label> <button @click="savePackage(pkg)" class="flex-1 h-9 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-all">保存</button> </div> </div> <div class="mt-2"> <input v-model="pkg.description" type="text" placeholder="课包描述" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all"> </div> </div> <div v-if="packages.length === 0" class="text-center text-gray-400 py-6 font-bold">暂无课包</div> </div> </div> <!-- 课程 CRUD --> <div v-if="learnSelectedPkg" class="glass-card relative z-10 p-6"> <h2 class="text-lg font-bold text-gray-900 mb-4"> 「{{ learnSelectedPkg.name }}」课程列表</h2> <!-- 课程表单 --> <div class="p-4 rounded-2xl bg-gray-50 border-2 border-gray-100 mb-5"> <h3 class="text-sm font-bold text-gray-700 mb-3">{{ editingCourseId ? ' 编辑课程' : ' 新增课程' }}</h3> <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3"> <input v-model="courseForm.title" type="text" placeholder="课程标题" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all"> <select v-model="courseForm.type" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all bg-white"> <option value="video"> 视频课</option> <option value="article"> 图文课</option> </select> <div> <label class="block text-xs font-bold text-gray-500 mb-1">预计时长（分钟）</label> <input v-model.number="courseForm.duration_minutes" type="number" min="0" :placeholder="courseForm.type === 'article' ? '要求停留分钟数（必填）' : '视频时长（分钟，可选）'" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all"> </div> </div> <!-- 视频课：上传 --> <div v-if="courseForm.type === 'video'" class="mb-3"> <div class="flex items-center gap-3"> <button @click="$refs.videoFileInput.click()" :disabled="videoUploading" class="px-4 py-2 bg-secondary/10 text-secondary font-bold rounded-xl text-sm hover:bg-secondary/20 transition-all disabled:opacity-50">
                   {{ videoUploading ? '上传中 ' + videoUploadPercent + '%' : ' 上传视频' }}
-                </button> <input ref="videoFileInput" type="file" accept="video/*,.mp4,.webm,.mov,.mkv,.m4v,.avi" class="hidden" @change="handleVideoUpload"> <span v-if="courseForm.video_path" class="text-xs text-success font-bold truncate"> {{ courseForm.video_path }}</span> <span v-else class="text-xs text-gray-400">未上传视频（500MB 以内）</span> </div> <video v-if="courseForm.video_path" :src="courseForm.video_path" controls class="mt-2 w-full max-w-md rounded-xl bg-black max-h-48"></video> </div> <!-- 图文课：内容 --> <div v-if="courseForm.type === 'article'" class="mb-3"> <textarea v-model="courseForm.content" rows="6" placeholder="图文内容（支持 HTML，如 <h2>标题</h2><p>正文</p>）" class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all resize-y font-mono"></textarea> </div> <div class="flex gap-2"> <button v-if="editingCourseId" @click="resetCourseForm" class="px-5 h-10 bg-gray-100 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-200 transition-all">取消编辑</button> <button @click="saveCourse" class="flex-1 h-10 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl text-sm hover:shadow-lg transition-all">
+                </button> <input ref="videoFileInput" type="file" accept="video/*,.mp4,.webm,.mov,.mkv,.m4v,.avi" class="hidden" @change="handleVideoUpload"> <span v-if="courseForm.video_path" class="text-xs text-success font-bold truncate"> {{ courseForm.video_path }}</span> <span v-else class="text-xs text-gray-400">未上传视频（500MB 以内）</span> </div> <video v-if="courseForm.video_path" :src="courseForm.video_path" controls class="mt-2 w-full max-w-md rounded-xl bg-black max-h-48"></video> </div> <!-- 图文课：内容 --> <div v-if="courseForm.type === 'article'" class="mb-3"> <div class="border-2 border-gray-200 rounded-xl overflow-hidden focus-within:border-primary transition-all"> <!-- 富文本工具栏 --> <div class="flex flex-wrap items-center gap-1 px-2 py-1.5 bg-gray-100 border-b border-gray-200"> <button type="button" @mousedown.prevent="execCmd('bold')" title="加粗" class="px-2 py-1 text-sm font-bold rounded-lg text-gray-600 hover:bg-primary/10 hover:text-primary transition-all">B</button> <button type="button" @mousedown.prevent="execCmd('italic')" title="斜体" class="px-2 py-1 text-sm italic rounded-lg text-gray-600 hover:bg-primary/10 hover:text-primary transition-all">I</button> <button type="button" @mousedown.prevent="execCmd('underline')" title="下划线" class="px-2 py-1 text-sm underline rounded-lg text-gray-600 hover:bg-primary/10 hover:text-primary transition-all">U</button> <span class="w-px h-5 bg-gray-300 mx-1"></span> <button type="button" @mousedown.prevent="execCmd('formatBlock', 'h2')" title="大标题" class="px-2 py-1 text-sm font-bold rounded-lg text-gray-600 hover:bg-primary/10 hover:text-primary transition-all">H2</button> <button type="button" @mousedown.prevent="execCmd('formatBlock', 'h3')" title="小标题" class="px-2 py-1 text-sm font-bold rounded-lg text-gray-600 hover:bg-primary/10 hover:text-primary transition-all">H3</button> <button type="button" @mousedown.prevent="execCmd('formatBlock', 'p')" title="正文" class="px-2 py-1 text-xs rounded-lg text-gray-600 hover:bg-primary/10 hover:text-primary transition-all">正文</button> <span class="w-px h-5 bg-gray-300 mx-1"></span> <button type="button" @mousedown.prevent="execCmd('insertUnorderedList')" title="无序列表" class="px-2 py-1 rounded-lg text-gray-600 hover:bg-primary/10 hover:text-primary transition-all flex items-center"> <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg> </button> <label title="文字颜色" class="px-1.5 py-1 rounded-lg text-gray-600 hover:bg-primary/10 hover:text-primary transition-all flex items-center gap-1 cursor-pointer text-xs font-bold">A<input type="color" value="#1f2937" @mousedown.stop @input="execCmd('foreColor', $event.target.value)" class="w-5 h-5 p-0 border-0 bg-transparent cursor-pointer"></label> <button type="button" @mousedown.prevent="execCmd('removeFormat')" title="清除格式" class="px-2 py-1 text-xs rounded-lg text-gray-600 hover:bg-primary/10 hover:text-primary transition-all">清除格式</button> <span class="w-px h-5 bg-gray-300 mx-1"></span> <button type="button" @mousedown.prevent="execCmd('undo')" title="撤销" class="px-2 py-1 rounded-lg text-gray-600 hover:bg-primary/10 hover:text-primary transition-all flex items-center"> <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14L4 9l5-5"/><path stroke-linecap="round" stroke-linejoin="round" d="M4 9h10a6 6 0 016 6v1"/></svg> </button> <button type="button" @mousedown.prevent="execCmd('redo')" title="重做" class="px-2 py-1 rounded-lg text-gray-600 hover:bg-primary/10 hover:text-primary transition-all flex items-center"> <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 14l5-5-5-5"/><path stroke-linecap="round" stroke-linejoin="round" d="M20 9H10a6 6 0 00-6 6v1"/></svg> </button> <span class="flex-1"></span> <button type="button" @click="toggleSourceView" class="px-2 py-1 text-xs font-bold rounded-lg transition-all" :class="courseSourceView ? 'bg-primary text-white' : 'text-gray-500 hover:bg-primary/10 hover:text-primary'">{{ courseSourceView ? '返回编辑' : '查看源码' }}</button> </div> <!-- 可视化编辑区 --> <div v-show="!courseSourceView" ref="richEditor" contenteditable="true" @input="onEditorInput" class="rte-content px-3 py-2 min-h-[10rem] max-h-96 overflow-y-auto text-sm bg-white outline-none"></div> <!-- 源码编辑区 --> <textarea v-if="courseSourceView" v-model="courseForm.content" rows="8" placeholder="直接编辑 HTML 源码" class="w-full px-3 py-2 text-sm bg-white outline-none resize-y font-mono"></textarea> </div> <p class="text-xs text-gray-400 mt-1">支持加粗、标题、列表、文字颜色等排版，保存后学员端按此样式展示</p> </div> <div class="flex gap-2"> <button v-if="editingCourseId" @click="resetCourseForm" class="px-5 h-10 bg-gray-100 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-200 transition-all">取消编辑</button> <button @click="saveCourse" class="flex-1 h-10 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl text-sm hover:shadow-lg transition-all">
                 {{ editingCourseId ? '保存修改' : '添加课程' }}
-              </button> </div> </div> <!-- 课程列表 --> <div v-if="(learnSelectedPkg.courses || []).length === 0" class="text-center text-gray-400 py-6 font-bold">暂无课程，请在上方添加</div> <div v-else class="space-y-2"> <div v-for="(c, idx) in learnSelectedPkg.courses" :key="c.id" class="flex items-center gap-3 p-3 rounded-xl bg-white/70 border border-gray-100"> <span class="text-lg">{{ c.type === 'video' ? '' : '' }}</span> <div class="flex-1 min-w-0"> <p class="font-bold text-gray-800 text-sm truncate">{{ idx + 1 }}. {{ c.title }}</p> <p class="text-xs text-gray-400">{{ c.type === 'video' ? '视频课' : '图文课' }}<span v-if="c.duration_minutes"> · {{ c.duration_minutes }} 分钟</span><span v-if="c.video_path"> · {{ c.video_path }}</span></p> </div> <span class="text-xs px-2 py-0.5 rounded-full font-bold" :class="c.enabled ? 'bg-success/10 text-success' : 'bg-gray-100 text-gray-400'">{{ c.enabled ? '启用' : '停用' }}</span> <button @click="toggleCourseEnabled(c)" class="text-xs px-2.5 py-1.5 bg-gray-100 text-gray-600 font-bold rounded-lg hover:bg-gray-200 transition-all">{{ c.enabled ? '停用' : '启用' }}</button> <button @click="editCourse(c)" class="text-xs px-2.5 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all">编辑</button> <button @click="deleteCourse(c)" class="text-xs px-2.5 py-1.5 bg-danger/10 text-danger font-bold rounded-lg hover:bg-danger/20 transition-all">删除</button> </div> </div> </div> <!-- 学员进度 --> <div class="glass-card relative z-10 p-6"> <div class="flex items-center justify-between mb-4"> <h2 class="text-lg font-bold text-gray-900"> 学员学习进度</h2> <button @click="loadLearnProgress" class="text-sm px-3 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all"> 刷新</button> </div> <div class="flex flex-wrap gap-3 mb-4"> <input v-model="progressFilterUid" type="text" placeholder="按 UID 筛选（可空）" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all w-52" @keyup.enter="loadLearnProgress"> <select v-model="progressFilterPkg" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all bg-white" @change="loadLearnProgress"> <option :value="null">全部课包</option> <option v-for="pkg in packages" :key="pkg.id" :value="pkg.id">{{ pkg.name }}</option> </select> <button @click="loadLearnProgress" class="px-4 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-all">查询</button> </div> <div v-if="learnProgress.length === 0" class="text-center text-gray-400 py-6 font-bold">暂无学习记录</div> <div v-else class="space-y-3"> <div v-for="stu in learnProgress" :key="stu.uid" class="p-4 rounded-2xl bg-white/70 border border-gray-100"> <div class="flex items-center gap-2 mb-2"> <span class="font-bold text-gray-900">{{ stu.nickname || '（未填昵称）' }}</span> <span class="text-xs text-gray-400">UID: {{ stu.uid }}</span> </div> <div class="grid grid-cols-1 md:grid-cols-2 gap-2"> <div v-for="p in stu.packages" :key="p.package_id" class="p-3 rounded-xl bg-gray-50 border border-gray-100"> <div class="flex items-center justify-between mb-1.5"> <span class="text-sm font-bold text-gray-700">{{ p.package_name }}</span> <span class="text-xs font-bold px-2 py-0.5 rounded-full" :class="examStatusBadge(p.exam_status).cls">{{ examStatusBadge(p.exam_status).text }}</span> </div> <div class="flex items-center gap-2 mb-1.5"> <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden"> <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full" :style="{ width: (p.total_courses ? p.completed_courses / p.total_courses * 100 : 0) + '%' }"></div> </div> <span class="text-xs text-gray-400 font-bold">{{ p.completed_courses }}/{{ p.total_courses }}</span> </div> <div class="space-y-0.5"> <div v-for="c in p.courses" :key="c.course_id" class="flex items-center justify-between text-xs"> <span class="text-gray-500 truncate">{{ c.title }}</span> <span class="font-bold shrink-0 ml-2" :class="c.completed ? 'text-success' : c.progress_percent > 0 ? 'text-primary' : 'text-gray-300'">
+              </button> </div> </div> <!-- 课程列表 --> <div v-if="(learnSelectedPkg.courses || []).length === 0" class="text-center text-gray-400 py-6 font-bold">暂无课程，请在上方添加</div> <template v-else> <p class="text-xs text-gray-400 mb-3">拖动左侧手柄可调整顺序，拖到另一分组可切换必修/选修</p> <div v-for="grp in [{ key: 'required', label: '必修课', list: groupedCourses.required }, { key: 'optional', label: '选修课', list: groupedCourses.optional }]" :key="grp.key" class="mb-4 rounded-2xl border-2 p-3 transition-all" :class="dropIndicator.group === grp.key && dropIndicator.id === null ? 'border-primary bg-primary/5' : 'border-gray-100'" @dragover.prevent="onGroupDragOver(grp.key, $event)" @drop.prevent="onGroupDrop(grp.key)" @dragleave="onGroupDragLeave(grp.key)"> <div class="flex items-center gap-2 mb-2 px-1"> <h3 class="text-sm font-bold" :class="grp.key === 'required' ? 'text-primary' : 'text-secondary'">{{ grp.label }}</h3> <span class="text-xs text-gray-400">{{ grp.list.length }} 门</span> </div> <div v-if="grp.list.length === 0" class="text-center text-xs text-gray-300 py-3 border border-dashed border-gray-200 rounded-xl">拖拽课程到此处</div> <div v-else class="space-y-2"> <div v-for="(c, idx) in grp.list" :key="c.id" draggable="true" class="flex items-center gap-3 p-3 rounded-xl bg-white/70 border border-gray-100 transition-all" :class="draggingCourseId === c.id ? 'opacity-40' : ''" :style="dropIndicator.id === c.id ? (dropIndicator.pos === 'top' ? 'box-shadow: 0 -2px 0 0 #8E6BC8' : 'box-shadow: 0 2px 0 0 #8E6BC8') : ''" @dragstart="onCourseDragStart(c, $event)" @dragover.prevent.stop="onCourseDragOver(grp.key, c, $event)" @drop.prevent.stop="onCourseDrop(grp.key)" @dragend="onCourseDragEnd"> <span class="cursor-grab active:cursor-grabbing text-gray-300 hover:text-primary shrink-0" title="拖拽排序"> <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg> </span> <div class="flex-1 min-w-0"> <p class="font-bold text-gray-800 text-sm truncate">{{ idx + 1 }}. {{ c.title }}</p> <p class="text-xs text-gray-400">{{ c.type === 'video' ? '视频课' : '图文课' }}<span v-if="c.duration_minutes"> · {{ c.duration_minutes }} 分钟</span><span v-if="c.video_path"> · {{ c.video_path }}</span></p> </div> <span class="text-xs px-2 py-0.5 rounded-full font-bold" :class="c.enabled ? 'bg-success/10 text-success' : 'bg-gray-100 text-gray-400'">{{ c.enabled ? '启用' : '停用' }}</span> <button @click="previewCourse(c)" class="text-xs px-2.5 py-1.5 bg-secondary/10 text-secondary font-bold rounded-lg hover:bg-secondary/20 transition-all">预览</button> <button @click="toggleCourseEnabled(c)" class="text-xs px-2.5 py-1.5 bg-gray-100 text-gray-600 font-bold rounded-lg hover:bg-gray-200 transition-all">{{ c.enabled ? '停用' : '启用' }}</button> <button @click="editCourse(c)" class="text-xs px-2.5 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all">编辑</button> <button @click="deleteCourse(c)" class="text-xs px-2.5 py-1.5 bg-danger/10 text-danger font-bold rounded-lg hover:bg-danger/20 transition-all">删除</button> </div> </div> </div> </template> </div> <!-- 学员进度 --> <div class="glass-card relative z-10 p-6"> <div class="flex items-center justify-between mb-4"> <h2 class="text-lg font-bold text-gray-900"> 学员学习进度</h2> <button @click="loadLearnProgress" class="text-sm px-3 py-1.5 bg-primary/10 text-primary font-bold rounded-lg hover:bg-primary/20 transition-all"> 刷新</button> </div> <div class="flex flex-wrap gap-3 mb-4"> <input v-model="progressFilterUid" type="text" placeholder="按 UID 筛选（可空）" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all w-52" @keyup.enter="loadLearnProgress"> <select v-model="progressFilterPkg" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-primary transition-all bg-white" @change="loadLearnProgress"> <option :value="null">全部课包</option> <option v-for="pkg in packages" :key="pkg.id" :value="pkg.id">{{ pkg.name }}</option> </select> <button @click="loadLearnProgress" class="px-4 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-all">查询</button> </div> <div v-if="learnProgress.length === 0" class="text-center text-gray-400 py-6 font-bold">暂无学习记录</div> <div v-else class="space-y-3"> <div v-for="stu in learnProgress" :key="stu.uid" class="p-4 rounded-2xl bg-white/70 border border-gray-100"> <div class="flex items-center gap-2 mb-2"> <span class="font-bold text-gray-900">{{ stu.nickname || '（未填昵称）' }}</span> <span class="text-xs text-gray-400">UID: {{ stu.uid }}</span> </div> <div class="grid grid-cols-1 md:grid-cols-2 gap-2"> <div v-for="p in stu.packages" :key="p.package_id" class="p-3 rounded-xl bg-gray-50 border border-gray-100"> <div class="flex items-center justify-between mb-1.5"> <span class="text-sm font-bold text-gray-700">{{ p.package_name }}</span> <span class="text-xs font-bold px-2 py-0.5 rounded-full" :class="examStatusBadge(p.exam_status).cls">{{ examStatusBadge(p.exam_status).text }}</span> </div> <div class="flex items-center gap-2 mb-1.5"> <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden"> <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full" :style="{ width: (p.total_courses ? p.completed_courses / p.total_courses * 100 : 0) + '%' }"></div> </div> <span class="text-xs text-gray-400 font-bold">{{ p.completed_courses }}/{{ p.total_courses }}</span> </div> <div class="space-y-0.5"> <div v-for="c in p.courses" :key="c.course_id" class="flex items-center justify-between text-xs"> <span class="text-gray-500 truncate">{{ c.title }}</span> <span class="font-bold shrink-0 ml-2" :class="c.completed ? 'text-success' : c.progress_percent > 0 ? 'text-primary' : 'text-gray-300'">
                         {{ c.completed ? '' : c.progress_percent > 0 ? Math.floor(c.progress_percent) + '%' : '未开始' }}
                       </span> </div> </div> </div> </div> </div> </div> </div> </div> </main> <!-- 新增/编辑题目弹窗 --> <div v-if="showQuestionModal" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4"> <div class="bg-white rounded-3xl p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto"> <h3 class="text-lg font-bold text-gray-900 mb-4">{{ editingQuestion ? ' 修改题目' : ' 新增题目' }}</h3> <div class="space-y-4"> <div> <label class="block text-sm font-bold text-gray-700 mb-2">题型</label> <select v-model="questionForm.type" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"> <option value="single">单选题</option> <option value="multiple">多选题</option> <option value="fill">填空题</option> <option value="essay">简答题</option> </select> </div> <div> <label class="block text-sm font-bold text-gray-700 mb-2">题干</label> <textarea v-model="questionForm.content" rows="3" placeholder="请输入题目内容" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea> </div> <!-- 单选/多选选项 --> <div v-if="questionForm.type === 'single' || questionForm.type === 'multiple'"> <label class="block text-sm font-bold text-gray-700 mb-2">选项（每行一个）</label> <textarea v-model="questionForm.optionsText" rows="4" placeholder="A. 选项1
 B. 选项2
@@ -72,8 +72,9 @@ D. 选项4" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:b
 空2答案:98" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea> </div> <div> <label class="block text-sm font-bold text-gray-700 mb-2">答案解析</label> <textarea v-model="questionForm.keyPoints" rows="3" placeholder="请输入答案解析或评分关键词" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea> </div> <div class="flex items-center gap-2"> <input type="checkbox" id="qEnabled" v-model="questionForm.enabled" class="w-4 h-4 text-primary rounded"> <label for="qEnabled" class="text-sm text-gray-700 font-bold">题目启用（启用后会被抽到试卷中）</label> </div> </div> <div class="flex gap-3 mt-6"> <button @click="closeQuestionModal" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">取消</button> <button @click="saveQuestion" class="flex-1 h-12 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark transition-all">{{ editingQuestion ? '保存修改' : '新增题目' }}</button> </div> </div> </div> </div> <!-- 答题明细弹窗 --> <div v-if="showDetailModal" class="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" @click.self="closeDetailModal"> <div class="glass-modal relative z-10 p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto"> <div class="flex items-center justify-between mb-4"> <h3 class="text-lg font-bold text-gray-900"> 答题明细</h3> <button @click="closeDetailModal" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500"></button> </div> <div v-if="detailResult" class="mb-4 p-3 bg-primary/5 rounded-2xl"> <div class="flex flex-wrap gap-4 text-sm"> <span><span class="text-gray-500">考生：</span><span class="font-bold">{{ detailResult.user_name }}</span></span> <span><span class="text-gray-500">UID：</span><span class="font-bold">{{ detailResult.user_uid }}</span></span> <span><span class="text-gray-500">总分：</span><span class="font-bold" :class="detailResult.percentage >= 80 ? 'text-success' : detailResult.percentage >= 60 ? 'text-primary' : 'text-danger'">{{ detailResult.total_score }} / {{ detailResult.max_score }}</span></span> <span><span class="text-gray-500">正确率：</span><span class="font-bold">{{ detailResult.percentage }}%</span></span> <span><span class="text-gray-500">试卷：</span><span class="font-bold">{{ detailResult.exam_name || '未知试卷' }}</span></span> <span><span class="text-gray-500">时间：</span><span class="font-bold">{{ formatTime(detailResult.created_at) }}</span></span> </div> </div> <div v-if="detailResult && detailResult.details && detailResult.details.length > 0" class="space-y-3"> <div v-for="(a, idx) in detailResult.details" :key="idx" class="p-4 rounded-2xl border-2 transition-all" :class="a.is_correct ? 'border-success/30 bg-success/5' : 'border-danger/30 bg-danger/5'"> <div class="flex items-start justify-between mb-2"> <div class="flex-1"> <span class="text-xs font-bold text-gray-400 mr-2">{{ idx + 1 }}.</span> <span class="text-sm font-bold text-gray-800">{{ a.title || '题目 ' + a.q_id }}</span> </div> <span class="text-xs px-2 py-1 rounded-lg font-bold ml-2 shrink-0" :class="a.is_correct ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'">
               {{ a.is_correct ? ' 正确' : ' 错误' }}
             </span> </div> <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm pl-6"> <div><span class="text-gray-500">题型：</span><span class="font-bold">{{ typeLabel(a.type) }}</span></div> <div><span class="text-gray-500">得分：</span><span class="font-bold" :class="a.is_correct ? 'text-success' : 'text-danger'">{{ a.score }} / {{ a.max_score }}</span></div> <div class="md:col-span-2"> <span class="text-gray-500">用户答案：</span> <span class="font-bold break-all" :class="a.is_correct ? 'text-success' : 'text-danger'">{{ a.user_answer || '(未作答)' }}</span> </div> <div class="md:col-span-2"> <span class="text-gray-500">正确答案：</span> <span class="font-bold text-success break-all">{{ a.correct_answer || '-' }}</span> </div> <div v-if="a.key_points" class="md:col-span-2"> <span class="text-gray-500">解析：</span> <span class="text-gray-600 break-all">{{ a.key_points }}</span> </div> <div v-if="a.feedback" class="md:col-span-2"> <span class="text-gray-500">反馈：</span> <span class="text-gray-600 break-all">{{ a.feedback }}</span> </div> </div> </div> </div> <div v-else class="text-center text-gray-400 py-8">暂无答题记录</div> </div> </div> <!-- 预览试卷弹窗 --> <div v-if="showPreviewModal" class="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" @click.self="closePreviewModal"> <div class="glass-modal relative z-10 p-6 max-w-3xl w-full max-h-[85vh] overflow-y-auto"> <div class="flex items-center justify-between mb-4"> <h3 class="text-lg font-bold text-gray-900"> 试卷预览</h3> <button @click="closePreviewModal" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500"></button> </div> <div v-if="previewData" class="mb-4 p-3 bg-primary/5 rounded-2xl"> <div class="flex flex-wrap gap-4 text-sm"> <span><span class="text-gray-500">试卷：</span><span class="font-bold">{{ previewData.config.name }}</span></span> <span><span class="text-gray-500">总题数：</span><span class="font-bold">{{ previewData.totalQuestions }} 题</span></span> <span><span class="text-gray-500">满分：</span><span class="font-bold">{{ previewData.questions.reduce((sum, q) => sum + (q.score || 5), 0) }} 分</span></span> </div> </div> <div v-if="previewData && previewData.questions.length > 0" class="space-y-4"> <!-- 按题型分组 --> <div v-for="type in ['single', 'multiple', 'fill', 'essay']" :key="type"> <div v-if="previewData.questions.filter(q => q.type === type).length > 0"> <h4 class="text-sm font-bold text-gray-700 mb-2 px-2 py-1 bg-gray-100 rounded-lg">{{ typeLabel(type) }}（{{ previewData.questions.filter(q => q.type === type).length }} 题）</h4> <div v-for="(q, idx) in previewData.questions.filter(q => q.type === type)" :key="q.id" class="p-3 rounded-xl border border-gray-200 mb-2"> <div class="flex items-start gap-2 mb-2"> <span class="text-xs font-bold text-gray-400 mt-0.5">{{ idx + 1 }}.</span> <div class="text-sm font-bold text-gray-800">{{ q.content }}</div> </div> <div v-if="q.options && q.options.length > 0" class="pl-5 space-y-1 mb-2"> <div v-for="opt in q.options" :key="opt" class="text-sm text-gray-600">{{ opt }}</div> </div> <div v-if="q.blanks && q.blanks.length > 0" class="pl-5 text-sm text-gray-600 mb-2"> <div v-for="b in q.blanks" :key="b.blank_no">空{{ b.blank_no }} 答案：{{ b.answer }}</div> </div> <div class="pl-5 text-xs mt-2 flex flex-wrap items-center gap-3 pt-2 border-t border-gray-100"> <span class="px-2 py-1 bg-primary/10 rounded-lg"><span class="text-gray-500">分值：</span><span class="font-bold text-primary">{{ q.score }} 分</span></span> <span><span class="text-gray-500">答案：</span><span class="font-bold text-success">{{ q.answer || q.key_points || '-' }}</span></span> </div> </div> </div> </div> </div> <div v-else class="text-center text-gray-400 py-8">暂无题目</div> <div class="flex gap-3 mt-4"> <button @click="closePreviewModal" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">关闭</button> <button v-if="previewData && previewData.config" @click="publishFromPreview" class="flex-1 h-12 bg-success text-white font-bold rounded-2xl hover:bg-success/90 transition-all"> 确认发布</button> </div> </div> </div> <!-- 题目预览弹窗 --> <div v-if="showQuestionPreviewModal" class="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" @click.self="showQuestionPreviewModal = false"> <div class="glass-modal relative z-10 p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto"> <div class="flex items-center justify-between mb-4"> <h3 class="text-lg font-bold text-gray-900"> 题目预览</h3> <button @click="showQuestionPreviewModal = false" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500"></button> </div> <div v-if="currentPreviewQuestion" class="space-y-4"> <div class="flex items-center gap-2"> <span class="px-2 py-1 rounded-lg text-xs font-bold" :class="typeClass(currentPreviewQuestion.type)">{{ typeLabel(currentPreviewQuestion.type) }}</span> <span class="text-xs text-gray-500">ID: {{ currentPreviewQuestion.id }}</span> <span class="text-xs px-2 py-0.5 rounded-lg" :class="currentPreviewQuestion.enabled !== false ? 'bg-success/10 text-success' : 'bg-gray-100 text-gray-500'">{{ currentPreviewQuestion.enabled !== false ? '已启用' : '已禁用' }}</span> </div> <div class="p-4 bg-gray-50 rounded-2xl"> <p class="text-sm font-bold text-gray-700 mb-2">题干</p> <p class="text-sm text-gray-800 leading-relaxed">{{ currentPreviewQuestion.title }}</p> </div> <div v-if="currentPreviewQuestion.options && currentPreviewQuestion.options.length > 0" class="p-4 bg-gray-50 rounded-2xl"> <p class="text-sm font-bold text-gray-700 mb-2">选项</p> <div class="space-y-2"> <div v-for="opt in currentPreviewQuestion.options" :key="opt" class="text-sm text-gray-700">{{ opt }}</div> </div> </div> <div v-if="currentPreviewQuestion.type === 'fill' && currentPreviewQuestion.blanks && currentPreviewQuestion.blanks.length > 0" class="p-4 bg-gray-50 rounded-2xl"> <p class="text-sm font-bold text-gray-700 mb-2">填空答案</p> <div class="space-y-1"> <div v-for="b in currentPreviewQuestion.blanks" :key="b.blank_no" class="text-sm text-gray-700">空{{ b.blank_no }}：{{ b.answer }}</div> </div> </div> <div class="p-4 bg-primary/5 rounded-2xl"> <p class="text-sm font-bold text-gray-700 mb-2">答案</p> <p class="text-sm text-success font-bold">{{ currentPreviewQuestion.type === 'fill' ? currentPreviewQuestion.blanks?.map(b => b.answer).join(' / ') : currentPreviewQuestion.answer || '-' }}</p> </div> <div v-if="currentPreviewQuestion.keyPoints" class="p-4 bg-success/5 rounded-2xl"> <p class="text-sm font-bold text-gray-700 mb-2">解析</p> <p class="text-sm text-gray-700 leading-relaxed">{{ currentPreviewQuestion.keyPoints }}</p> </div> </div> <div class="flex gap-3 mt-4"> <button @click="showQuestionPreviewModal = false" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">关闭</button> </div> </div> </div>
+<!-- 课程预览弹窗 --> <div v-if="showCoursePreview" class="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" @click.self="closeCoursePreview"> <div class="glass-modal relative z-10 p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto"> <div class="flex items-center justify-between mb-4"> <h3 class="text-lg font-bold text-gray-900">课程预览（学员视角）</h3> <button @click="closeCoursePreview" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500"> <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg> </button> </div> <div v-if="previewCourseData" class="mb-4 p-3 bg-primary/5 rounded-2xl"> <div class="flex flex-wrap items-center gap-3 text-sm"> <span class="font-bold text-gray-900">{{ previewCourseData.title }}</span> <span class="px-2 py-0.5 rounded-lg text-xs font-bold" :class="previewCourseData.type === 'video' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'">{{ previewCourseData.type === 'video' ? '视频课' : '图文课' }}</span> <span class="px-2 py-0.5 rounded-lg text-xs font-bold" :class="previewCourseData.category === 'optional' ? 'bg-gray-100 text-gray-500' : 'bg-accent/10 text-accent'">{{ previewCourseData.category === 'optional' ? '选修' : '必修' }}</span> <span v-if="previewCourseData.duration_minutes" class="text-xs text-gray-500">约 {{ previewCourseData.duration_minutes }} 分钟</span> </div> </div> <div v-if="previewCourseData && previewCourseData.type === 'video'"> <video v-if="previewCourseData.video_path" :src="previewCourseData.video_path" controls class="w-full rounded-2xl bg-black max-h-[50vh]"></video> <p v-else class="text-center text-gray-400 py-8 text-sm">未上传视频</p> </div> <article v-else-if="previewCourseData" class="course-preview-content text-gray-800" v-html="previewCourseData.content || '<p style=&quot;color:#9ca3af&quot;>暂无内容</p>'"></article> <div class="flex gap-3 mt-5"> <button @click="closeCoursePreview" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">关闭</button> </div> </div> </div>
 </template> <script setup>
-import { ref, computed, onMounted, watch, inject } from 'vue'
+import { ref, computed, onMounted, watch, inject, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -258,6 +259,153 @@ async function deleteCourse(c) {
   } catch (e) {
     showToast('删除失败', 'error')
   }
+}
+
+// 课程分组（必修/选修，按 sort 排序）
+const groupedCourses = computed(() => {
+  const courses = (learnSelectedPkg.value?.courses || []).slice().sort((a, b) => (a.sort || 0) - (b.sort || 0) || a.id - b.id)
+  return {
+    required: courses.filter(c => c.category !== 'optional'),
+    optional: courses.filter(c => c.category === 'optional')
+  }
+})
+
+// 富文本编辑器
+const richEditor = ref(null)
+const courseSourceView = ref(false)
+
+function syncEditorContent() {
+  nextTick(() => {
+    if (richEditor.value && richEditor.value.innerHTML !== (courseForm.value.content || '')) {
+      richEditor.value.innerHTML = courseForm.value.content || ''
+    }
+  })
+}
+
+watch(() => courseForm.value.content, () => { if (!courseSourceView.value) syncEditorContent() })
+watch(() => courseForm.value.type, (t) => { if (t === 'article') syncEditorContent() })
+
+function onEditorInput() {
+  if (richEditor.value) courseForm.value.content = richEditor.value.innerHTML
+}
+
+function execCmd(cmd, val = null) {
+  if (richEditor.value) richEditor.value.focus()
+  document.execCommand(cmd, false, val)
+  onEditorInput()
+}
+
+function toggleSourceView() {
+  courseSourceView.value = !courseSourceView.value
+  if (!courseSourceView.value) syncEditorContent()
+}
+
+// 课程拖拽排序
+const draggingCourseId = ref(null)
+const dropIndicator = ref({ group: null, id: null, pos: null })
+let draggingCourse = null
+
+function onCourseDragStart(c, e) {
+  draggingCourse = c
+  draggingCourseId.value = c.id
+  e.dataTransfer.effectAllowed = 'move'
+  e.dataTransfer.setData('text/plain', String(c.id))
+}
+
+function onCourseDragOver(group, c, e) {
+  if (!draggingCourse) return
+  const rect = e.currentTarget.getBoundingClientRect()
+  const pos = e.clientY < rect.top + rect.height / 2 ? 'top' : 'bottom'
+  dropIndicator.value = { group, id: c.id, pos }
+  e.dataTransfer.dropEffect = 'move'
+}
+
+function onGroupDragOver(group, e) {
+  if (!draggingCourse) return
+  dropIndicator.value = { group, id: null, pos: null }
+  e.dataTransfer.dropEffect = 'move'
+}
+
+function onGroupDragLeave(group) {
+  if (dropIndicator.value.group === group && dropIndicator.value.id === null) {
+    dropIndicator.value = { group: null, id: null, pos: null }
+  }
+}
+
+function onCourseDrop(group) {
+  persistCourseDrop(group)
+}
+
+function onGroupDrop(group) {
+  persistCourseDrop(group)
+}
+
+function onCourseDragEnd() {
+  draggingCourse = null
+  draggingCourseId.value = null
+  dropIndicator.value = { group: null, id: null, pos: null }
+}
+
+async function persistCourseDrop(targetGroup) {
+  const c = draggingCourse
+  const indicator = { ...dropIndicator.value }
+  onCourseDragEnd()
+  if (!c || indicator.group !== targetGroup) return
+  const groups = groupedCourses.value
+  const srcGroup = c.category === 'optional' ? 'optional' : 'required'
+  const dstOriginal = groups[targetGroup]
+  let insertIdx = dstOriginal.length
+  if (indicator.id !== null) {
+    const rowIdx = dstOriginal.findIndex(x => x.id === indicator.id)
+    if (rowIdx >= 0) insertIdx = rowIdx + (indicator.pos === 'bottom' ? 1 : 0)
+  }
+  const removedIdx = dstOriginal.findIndex(x => x.id === c.id)
+  const newDst = dstOriginal.filter(x => x.id !== c.id)
+  if (removedIdx >= 0 && removedIdx < insertIdx) insertIdx--
+  newDst.splice(insertIdx, 0, c)
+  if (srcGroup === targetGroup && newDst.every((x, i) => x.id === dstOriginal[i].id)) return
+  const updates = []
+  newDst.forEach((x, i) => {
+    const sort = i + 1
+    if (x.id === c.id || (x.sort || 0) !== sort || (x.category === 'optional' ? 'optional' : 'required') !== targetGroup) {
+      updates.push({ id: x.id, sort, category: targetGroup })
+    }
+  })
+  if (srcGroup !== targetGroup) {
+    groups[srcGroup].filter(x => x.id !== c.id).forEach((x, i) => {
+      const sort = i + 1
+      if ((x.sort || 0) !== sort) updates.push({ id: x.id, sort, category: srcGroup })
+    })
+  }
+  try {
+    for (const u of updates) {
+      const res = await fetch(`/api/admin/courses/${u.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sort: u.sort, category: u.category })
+      })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.error || '保存失败')
+    }
+    showToast(srcGroup !== targetGroup ? `已移动到「${targetGroup === 'required' ? '必修课' : '选修课'}」` : '顺序已保存', 'success')
+  } catch (e) {
+    showToast(e.message || '保存排序失败', 'error')
+  }
+  await loadPackages()
+}
+
+// 课程预览
+const showCoursePreview = ref(false)
+const previewCourseData = ref(null)
+
+function previewCourse(c) {
+  previewCourseData.value = c
+  showCoursePreview.value = true
+}
+
+function closeCoursePreview() {
+  showCoursePreview.value = false
+  previewCourseData.value = null
 }
 
 function handleVideoUpload(event) {
@@ -1580,3 +1728,63 @@ watch(currentTab, (newTab) => {
   }
 })
 </script>
+
+<style scoped>
+.rte-content :deep(h2) {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin: 0.8rem 0 0.4rem;
+  color: #1f2937;
+}
+.rte-content :deep(h3) {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0.7rem 0 0.35rem;
+  color: #1f2937;
+}
+.rte-content :deep(p) {
+  margin: 0.5rem 0;
+  line-height: 1.8;
+}
+.rte-content :deep(ul),
+.rte-content :deep(ol) {
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+  line-height: 1.8;
+}
+.rte-content :deep(img) {
+  max-width: 100%;
+  border-radius: 0.75rem;
+}
+.rte-content:empty::before {
+  content: '在此输入图文课程内容...';
+  color: #9ca3af;
+}
+.course-preview-content :deep(h1),
+.course-preview-content :deep(h2),
+.course-preview-content :deep(h3) {
+  font-weight: 800;
+  margin: 1rem 0 0.5rem;
+  color: #1f2937;
+}
+.course-preview-content :deep(p) {
+  margin: 0.6rem 0;
+  line-height: 1.8;
+  font-size: 0.95rem;
+}
+.course-preview-content :deep(img) {
+  max-width: 100%;
+  border-radius: 0.75rem;
+  margin: 0.5rem 0;
+}
+.course-preview-content :deep(ul),
+.course-preview-content :deep(ol) {
+  padding-left: 1.25rem;
+  margin: 0.6rem 0;
+  line-height: 1.8;
+}
+.course-preview-content :deep(a) {
+  color: #8E6BC8;
+  text-decoration: underline;
+}
+</style>
