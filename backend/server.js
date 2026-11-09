@@ -1905,6 +1905,72 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // ===== 课程互动（点赞/拉踩/评论） =====
+  if (pathname === '/api/learn/social' && req.method === 'GET') {
+    const courseId = parseInt(query.course_id);
+    const uid = String(query.uid || '').trim();
+    if (!courseId) {
+      res.writeHead(400);
+      res.end(JSON.stringify({ success: false, error: 'course_id 必填' }));
+      return;
+    }
+    res.writeHead(200);
+    res.end(JSON.stringify({ success: true, data: db.getCourseSocial(courseId, uid) }));
+    return;
+  }
+
+  if (pathname === '/api/learn/like' && req.method === 'POST') {
+    parseBody(req, (err, body) => {
+      if (err) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }));
+        return;
+      }
+      const uid = String(body.uid || '').trim();
+      const courseId = parseInt(body.course_id);
+      let value = parseInt(body.value);
+      if (!uid || !courseId || ![1, -1, 0].includes(value)) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: 'uid、course_id、value(1/-1/0) 必填' }));
+        return;
+      }
+      // 再点一次同值 = 取消
+      const existing = (db.getCourseSocial(courseId, uid) || {}).my_value || 0;
+      if (existing === value) value = 0;
+      db.setCourseLike(uid, courseId, value);
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, data: db.getCourseSocial(courseId, uid) }));
+    });
+    return;
+  }
+
+  if (pathname === '/api/learn/comment' && req.method === 'POST') {
+    parseBody(req, (err, body) => {
+      if (err) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }));
+        return;
+      }
+      const uid = String(body.uid || '').trim();
+      const courseId = parseInt(body.course_id);
+      const content = String(body.content || '').trim();
+      if (!uid || !courseId || !content) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: 'uid、course_id、content 必填' }));
+        return;
+      }
+      if (content.length > 500) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: '评论最多 500 字' }));
+        return;
+      }
+      const id = db.addCourseComment(uid, String(body.nickname || '').trim(), courseId, content);
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, data: { id } }));
+    });
+    return;
+  }
+
   // ===== 资质申请 =====
   // 提交申请：需该课包考试已通过（≥60），且无待审核/已通过的同课包申请
   if (pathname === '/api/apply' && req.method === 'POST') {

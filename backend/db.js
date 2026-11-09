@@ -174,6 +174,29 @@ function initTables() {
   `);
   db.exec('CREATE INDEX IF NOT EXISTS idx_qual_uid ON qualification_applications(uid, package_key)');
 
+  // 课程互动：点赞/拉踩
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS course_likes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      uid TEXT NOT NULL,
+      course_id INTEGER NOT NULL,
+      value INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(uid, course_id)
+    )
+  `);
+  // 课程互动：评论
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS course_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      course_id INTEGER NOT NULL,
+      uid TEXT NOT NULL,
+      nickname TEXT,
+      content TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+
   // 课程必修/选修分类
   try { db.exec(`ALTER TABLE courses ADD COLUMN category TEXT DEFAULT 'required'`); } catch (e) { /* ignore */ }
 
@@ -791,6 +814,30 @@ function getRecycleBinItemCount() {
   return db.prepare('SELECT COUNT(*) as count FROM recycle_bin').get().count;
 }
 
+// ============ 课程互动（点赞/评论） ============
+
+function getCourseSocial(courseId, uid) {
+  const likes = db.prepare("SELECT COUNT(*) AS c FROM course_likes WHERE course_id=? AND value=1").get(courseId).c;
+  const dislikes = db.prepare("SELECT COUNT(*) AS c FROM course_likes WHERE course_id=? AND value=-1").get(courseId).c;
+  const mine = uid ? (db.prepare('SELECT value FROM course_likes WHERE uid=? AND course_id=?').get(uid, courseId) || {}).value || 0 : 0;
+  const comments = db.prepare('SELECT id, uid, nickname, content, created_at FROM course_comments WHERE course_id=? ORDER BY id DESC LIMIT 100').all(courseId);
+  return { likes, dislikes, my_value: mine, comments, comment_count: comments.length };
+}
+
+function setCourseLike(uid, courseId, value) {
+  const now = new Date().toISOString();
+  db.prepare(`
+    INSERT INTO course_likes (uid, course_id, value, updated_at) VALUES (?, ?, ?, ?)
+    ON CONFLICT(uid, course_id) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+  `).run(uid, courseId, value, now);
+}
+
+function addCourseComment(uid, nickname, courseId, content) {
+  const r = db.prepare('INSERT INTO course_comments (course_id, uid, nickname, content) VALUES (?, ?, ?, ?)')
+    .run(courseId, uid, nickname || '', content);
+  return r.lastInsertRowid;
+}
+
 // ============ 资质申请操作 ============
 
 function createApplication(app) {
@@ -1053,6 +1100,10 @@ module.exports = {
   deleteRecycleBinItem,
   cleanupExpiredRecycleBin,
   getRecycleBinItemCount,
+  // 课程互动
+  getCourseSocial,
+  setCourseLike,
+  addCourseComment,
   // 资质申请
   createApplication,
   getLatestApplication,
