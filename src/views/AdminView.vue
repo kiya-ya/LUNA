@@ -72,7 +72,76 @@ D. 选项4" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:b
 空2答案:98" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea> </div> <div> <label class="block text-sm font-bold text-gray-700 mb-2">答案解析</label> <textarea v-model="questionForm.keyPoints" rows="3" placeholder="请输入答案解析或评分关键词" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea> </div> <div class="flex items-center gap-2"> <input type="checkbox" id="qEnabled" v-model="questionForm.enabled" class="w-4 h-4 text-primary rounded"> <label for="qEnabled" class="text-sm text-gray-700 font-bold">题目启用（启用后会被抽到试卷中）</label> </div> </div> <div class="flex gap-3 mt-6"> <button @click="closeQuestionModal" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">取消</button> <button @click="saveQuestion" class="flex-1 h-12 bg-primary text-white font-bold rounded-2xl hover:bg-primary-dark transition-all">{{ editingQuestion ? '保存修改' : '新增题目' }}</button> </div> </div> </div> </div> <!-- 答题明细弹窗 --> <div v-if="showDetailModal" class="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" @click.self="closeDetailModal"> <div class="glass-modal relative z-10 p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto"> <div class="flex items-center justify-between mb-4"> <h3 class="text-lg font-bold text-gray-900"> 答题明细</h3> <button @click="closeDetailModal" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500"></button> </div> <div v-if="detailResult" class="mb-4 p-3 bg-primary/5 rounded-2xl"> <div class="flex flex-wrap gap-4 text-sm"> <span><span class="text-gray-500">考生：</span><span class="font-bold">{{ detailResult.user_name }}</span></span> <span><span class="text-gray-500">UID：</span><span class="font-bold">{{ detailResult.user_uid }}</span></span> <span><span class="text-gray-500">总分：</span><span class="font-bold" :class="detailResult.percentage >= 80 ? 'text-success' : detailResult.percentage >= 60 ? 'text-primary' : 'text-danger'">{{ detailResult.total_score }} / {{ detailResult.max_score }}</span></span> <span><span class="text-gray-500">正确率：</span><span class="font-bold">{{ detailResult.percentage }}%</span></span> <span><span class="text-gray-500">试卷：</span><span class="font-bold">{{ detailResult.exam_name || '未知试卷' }}</span></span> <span><span class="text-gray-500">时间：</span><span class="font-bold">{{ formatTime(detailResult.created_at) }}</span></span> </div> </div> <div v-if="detailResult && detailResult.details && detailResult.details.length > 0" class="space-y-3"> <div v-for="(a, idx) in detailResult.details" :key="idx" class="p-4 rounded-2xl border-2 transition-all" :class="a.is_correct ? 'border-success/30 bg-success/5' : 'border-danger/30 bg-danger/5'"> <div class="flex items-start justify-between mb-2"> <div class="flex-1"> <span class="text-xs font-bold text-gray-400 mr-2">{{ idx + 1 }}.</span> <span class="text-sm font-bold text-gray-800">{{ a.title || '题目 ' + a.q_id }}</span> </div> <span class="text-xs px-2 py-1 rounded-lg font-bold ml-2 shrink-0" :class="a.is_correct ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'">
               {{ a.is_correct ? ' 正确' : ' 错误' }}
             </span> </div> <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm pl-6"> <div><span class="text-gray-500">题型：</span><span class="font-bold">{{ typeLabel(a.type) }}</span></div> <div><span class="text-gray-500">得分：</span><span class="font-bold" :class="a.is_correct ? 'text-success' : 'text-danger'">{{ a.score }} / {{ a.max_score }}</span></div> <div class="md:col-span-2"> <span class="text-gray-500">用户答案：</span> <span class="font-bold break-all" :class="a.is_correct ? 'text-success' : 'text-danger'">{{ a.user_answer || '(未作答)' }}</span> </div> <div class="md:col-span-2"> <span class="text-gray-500">正确答案：</span> <span class="font-bold text-success break-all">{{ a.correct_answer || '-' }}</span> </div> <div v-if="a.key_points" class="md:col-span-2"> <span class="text-gray-500">解析：</span> <span class="text-gray-600 break-all">{{ a.key_points }}</span> </div> <div v-if="a.feedback" class="md:col-span-2"> <span class="text-gray-500">反馈：</span> <span class="text-gray-600 break-all">{{ a.feedback }}</span> </div> </div> </div> </div> <div v-else class="text-center text-gray-400 py-8">暂无答题记录</div> </div> </div> <!-- 预览试卷弹窗 --> <div v-if="showPreviewModal" class="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" @click.self="closePreviewModal"> <div class="glass-modal relative z-10 p-6 max-w-3xl w-full max-h-[85vh] overflow-y-auto"> <div class="flex items-center justify-between mb-4"> <h3 class="text-lg font-bold text-gray-900"> 试卷预览</h3> <button @click="closePreviewModal" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500"></button> </div> <div v-if="previewData" class="mb-4 p-3 bg-primary/5 rounded-2xl"> <div class="flex flex-wrap gap-4 text-sm"> <span><span class="text-gray-500">试卷：</span><span class="font-bold">{{ previewData.config.name }}</span></span> <span><span class="text-gray-500">总题数：</span><span class="font-bold">{{ previewData.totalQuestions }} 题</span></span> <span><span class="text-gray-500">满分：</span><span class="font-bold">{{ previewData.questions.reduce((sum, q) => sum + (q.score || 5), 0) }} 分</span></span> </div> </div> <div v-if="previewData && previewData.questions.length > 0" class="space-y-4"> <!-- 按题型分组 --> <div v-for="type in ['single', 'multiple', 'fill', 'essay']" :key="type"> <div v-if="previewData.questions.filter(q => q.type === type).length > 0"> <h4 class="text-sm font-bold text-gray-700 mb-2 px-2 py-1 bg-gray-100 rounded-lg">{{ typeLabel(type) }}（{{ previewData.questions.filter(q => q.type === type).length }} 题）</h4> <div v-for="(q, idx) in previewData.questions.filter(q => q.type === type)" :key="q.id" class="p-3 rounded-xl border border-gray-200 mb-2"> <div class="flex items-start gap-2 mb-2"> <span class="text-xs font-bold text-gray-400 mt-0.5">{{ idx + 1 }}.</span> <div class="text-sm font-bold text-gray-800">{{ q.content }}</div> </div> <div v-if="q.options && q.options.length > 0" class="pl-5 space-y-1 mb-2"> <div v-for="opt in q.options" :key="opt" class="text-sm text-gray-600">{{ opt }}</div> </div> <div v-if="q.blanks && q.blanks.length > 0" class="pl-5 text-sm text-gray-600 mb-2"> <div v-for="b in q.blanks" :key="b.blank_no">空{{ b.blank_no }} 答案：{{ b.answer }}</div> </div> <div class="pl-5 text-xs mt-2 flex flex-wrap items-center gap-3 pt-2 border-t border-gray-100"> <span class="px-2 py-1 bg-primary/10 rounded-lg"><span class="text-gray-500">分值：</span><span class="font-bold text-primary">{{ q.score }} 分</span></span> <span><span class="text-gray-500">答案：</span><span class="font-bold text-success">{{ q.answer || q.key_points || '-' }}</span></span> </div> </div> </div> </div> </div> <div v-else class="text-center text-gray-400 py-8">暂无题目</div> <div class="flex gap-3 mt-4"> <button @click="closePreviewModal" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">关闭</button> <button v-if="previewData && previewData.config" @click="publishFromPreview" class="flex-1 h-12 bg-success text-white font-bold rounded-2xl hover:bg-success/90 transition-all"> 确认发布</button> </div> </div> </div> <!-- 题目预览弹窗 --> <div v-if="showQuestionPreviewModal" class="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" @click.self="showQuestionPreviewModal = false"> <div class="glass-modal relative z-10 p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto"> <div class="flex items-center justify-between mb-4"> <h3 class="text-lg font-bold text-gray-900"> 题目预览</h3> <button @click="showQuestionPreviewModal = false" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500"></button> </div> <div v-if="currentPreviewQuestion" class="space-y-4"> <div class="flex items-center gap-2"> <span class="px-2 py-1 rounded-lg text-xs font-bold" :class="typeClass(currentPreviewQuestion.type)">{{ typeLabel(currentPreviewQuestion.type) }}</span> <span class="text-xs text-gray-500">ID: {{ currentPreviewQuestion.id }}</span> <span class="text-xs px-2 py-0.5 rounded-lg" :class="currentPreviewQuestion.enabled !== false ? 'bg-success/10 text-success' : 'bg-gray-100 text-gray-500'">{{ currentPreviewQuestion.enabled !== false ? '已启用' : '已禁用' }}</span> </div> <div class="p-4 bg-gray-50 rounded-2xl"> <p class="text-sm font-bold text-gray-700 mb-2">题干</p> <p class="text-sm text-gray-800 leading-relaxed">{{ currentPreviewQuestion.title }}</p> </div> <div v-if="currentPreviewQuestion.options && currentPreviewQuestion.options.length > 0" class="p-4 bg-gray-50 rounded-2xl"> <p class="text-sm font-bold text-gray-700 mb-2">选项</p> <div class="space-y-2"> <div v-for="opt in currentPreviewQuestion.options" :key="opt" class="text-sm text-gray-700">{{ opt }}</div> </div> </div> <div v-if="currentPreviewQuestion.type === 'fill' && currentPreviewQuestion.blanks && currentPreviewQuestion.blanks.length > 0" class="p-4 bg-gray-50 rounded-2xl"> <p class="text-sm font-bold text-gray-700 mb-2">填空答案</p> <div class="space-y-1"> <div v-for="b in currentPreviewQuestion.blanks" :key="b.blank_no" class="text-sm text-gray-700">空{{ b.blank_no }}：{{ b.answer }}</div> </div> </div> <div class="p-4 bg-primary/5 rounded-2xl"> <p class="text-sm font-bold text-gray-700 mb-2">答案</p> <p class="text-sm text-success font-bold">{{ currentPreviewQuestion.type === 'fill' ? currentPreviewQuestion.blanks?.map(b => b.answer).join(' / ') : currentPreviewQuestion.answer || '-' }}</p> </div> <div v-if="currentPreviewQuestion.keyPoints" class="p-4 bg-success/5 rounded-2xl"> <p class="text-sm font-bold text-gray-700 mb-2">解析</p> <p class="text-sm text-gray-700 leading-relaxed">{{ currentPreviewQuestion.keyPoints }}</p> </div> </div> <div class="flex gap-3 mt-4"> <button @click="showQuestionPreviewModal = false" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">关闭</button> </div> </div> </div>
-<!-- 课程预览弹窗 --> <div v-if="showCoursePreview" class="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" @click.self="closeCoursePreview"> <div class="glass-modal relative z-10 p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto"> <div class="flex items-center justify-between mb-4"> <h3 class="text-lg font-bold text-gray-900">课程预览（学员视角）</h3> <button @click="closeCoursePreview" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500"> <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg> </button> </div> <div v-if="previewCourseData" class="mb-4 p-3 bg-primary/5 rounded-2xl"> <div class="flex flex-wrap items-center gap-3 text-sm"> <span class="font-bold text-gray-900">{{ previewCourseData.title }}</span> <span class="px-2 py-0.5 rounded-lg text-xs font-bold" :class="previewCourseData.type === 'video' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'">{{ previewCourseData.type === 'video' ? '视频课' : '图文课' }}</span> <span class="px-2 py-0.5 rounded-lg text-xs font-bold" :class="previewCourseData.category === 'optional' ? 'bg-gray-100 text-gray-500' : 'bg-accent/10 text-accent'">{{ previewCourseData.category === 'optional' ? '选修' : '必修' }}</span> <span v-if="previewCourseData.duration_minutes" class="text-xs text-gray-500">约 {{ previewCourseData.duration_minutes }} 分钟</span> </div> </div> <div v-if="previewCourseData && previewCourseData.type === 'video'"> <video v-if="previewCourseData.video_path" :src="previewCourseData.video_path" controls class="w-full rounded-2xl bg-black max-h-[50vh]"></video> <p v-else class="text-center text-gray-400 py-8 text-sm">未上传视频</p> </div> <article v-else-if="previewCourseData" class="course-preview-content text-gray-800" v-html="previewCourseData.content || '<p style=&quot;color:#9ca3af&quot;>暂无内容</p>'"></article> <div class="flex gap-3 mt-5"> <button @click="closeCoursePreview" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">关闭</button> </div> </div> </div>
+<!-- 课程预览弹窗（B 站式学员视角） -->
+<div v-if="showCoursePreview" class="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4" @click.self="closeCoursePreview">
+  <div class="glass-modal relative z-10 p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-bold text-gray-900">课程预览（学员视角）</h3>
+      <button @click="closeCoursePreview" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- 顶部：视频/图文内容 -->
+    <div v-if="previewCourseData && previewCourseData.type === 'video'" class="mb-4">
+      <video v-if="previewCourseData.video_path" :src="previewCourseData.video_path" controls class="w-full rounded-2xl bg-black max-h-[46vh]"></video>
+      <p v-else class="text-center text-gray-400 py-8 text-sm">未上传视频</p>
+    </div>
+    <article v-else-if="previewCourseData" class="course-preview-content text-gray-800 mb-4" v-html="previewCourseData.content || '<p style=&quot;color:#9ca3af&quot;>暂无内容</p>'"></article>
+
+    <!-- 互动栏（只读展示真实数据） -->
+    <div class="flex items-center gap-6 px-2 py-3 mb-4 rounded-2xl bg-gray-50 border border-gray-100">
+      <span class="flex items-center gap-1.5 text-sm font-bold" :class="previewSocial.my_value === 1 ? 'text-secondary' : 'text-gray-500'">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3z"/><path d="M7 10l4-7a2 2 0 0 1 2 2v4h6.5a2 2 0 0 1 2 2.4l-1.5 7a2 2 0 0 1-2 1.6H7z"/></svg>
+        {{ previewSocial.likes }}
+      </span>
+      <span class="flex items-center gap-1.5 text-sm font-bold text-gray-500">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" style="transform:scaleY(-1)"><path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3z"/><path d="M7 10l4-7a2 2 0 0 1 2 2v4h6.5a2 2 0 0 1 2 2.4l-1.5 7a2 2 0 0 1-2 1.6H7z"/></svg>
+        {{ previewSocial.dislikes }}
+      </span>
+      <span class="flex items-center gap-1.5 text-sm font-bold text-gray-500">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H4l2-3a8 8 0 1 1 15-5z"/></svg>
+        {{ previewSocial.comment_count }}
+      </span>
+    </div>
+
+    <!-- 评论区 -->
+    <div class="mb-4">
+      <h4 class="text-sm font-bold text-gray-800 mb-2">评论（{{ previewSocial.comment_count }}）</h4>
+      <div v-if="previewSocial.comments.length === 0" class="text-center text-gray-400 py-4 text-xs font-bold">暂无评论</div>
+      <div v-else class="space-y-2.5 max-h-48 overflow-y-auto">
+        <div v-for="c in previewSocial.comments" :key="c.id" class="pb-2 border-b border-gray-100 last:border-0">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-gray-700">{{ c.nickname || '学员' }}</span>
+            <span class="text-[11px] text-gray-400">{{ c.created_at }}</span>
+          </div>
+          <p class="text-xs text-gray-600 mt-0.5 leading-relaxed break-words">{{ c.content }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 其余课程概览 -->
+    <div v-if="previewOthers.length" class="mb-4">
+      <h4 class="text-sm font-bold text-gray-800 mb-2">其余课程</h4>
+      <div class="space-y-2 max-h-52 overflow-y-auto">
+        <div v-for="c in previewOthers" :key="c.id" class="flex items-center gap-3 p-2.5 rounded-xl bg-white/70 border border-gray-100">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-extrabold shrink-0"
+            :class="c.type === 'video' ? 'bg-rose-100 text-rose-500' : 'bg-sky-100 text-sky-500'">
+            {{ c.type === 'video' ? '视' : '文' }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="font-bold text-gray-800 text-xs truncate">{{ c.title }}</p>
+            <p class="text-[11px] text-gray-400">{{ c.type === 'video' ? '视频课' : '图文课' }}<span v-if="c.duration_minutes"> · 约 {{ c.duration_minutes }} 分钟</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button @click="closeCoursePreview" class="flex-1 h-12 bg-gray-100 text-gray-700 font-bold rounded-2xl hover:bg-gray-200 transition-all">关闭</button>
+    </div>
+  </div>
+</div>
 </template> <script setup>
 import { ref, computed, onMounted, watch, inject, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
@@ -397,15 +466,26 @@ async function persistCourseDrop(targetGroup) {
 // 课程预览
 const showCoursePreview = ref(false)
 const previewCourseData = ref(null)
+const previewSocial = ref({ likes: 0, dislikes: 0, my_value: 0, comments: [], comment_count: 0 })
+const previewOthers = ref([])
 
-function previewCourse(c) {
+async function previewCourse(c) {
   previewCourseData.value = c
+  previewOthers.value = (learnSelectedPkg.value?.courses || []).filter(x => x.id !== c.id)
   showCoursePreview.value = true
+  previewSocial.value = { likes: 0, dislikes: 0, my_value: 0, comments: [], comment_count: 0 }
+  try {
+    const res = await fetch(`/api/learn/social?course_id=${c.id}&uid=admin`)
+    const data = await res.json()
+    if (data.success) previewSocial.value = data.data
+  } catch (e) { /* 忽略 */ }
 }
 
 function closeCoursePreview() {
   showCoursePreview.value = false
   previewCourseData.value = null
+  previewSocial.value = { likes: 0, dislikes: 0, my_value: 0, comments: [], comment_count: 0 }
+  previewOthers.value = []
 }
 
 function handleVideoUpload(event) {
