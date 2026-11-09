@@ -47,6 +47,8 @@
             </div>
             <p class="text-xs text-gray-400 mt-2">倍速最高 2x，切出页面自动暂停；已累计观看 {{ formatSeconds(watchedSeconds) }}</p>
           </div>
+          <!-- 视频下方说明文案 -->
+          <article v-if="course.content" class="article-content text-gray-800 mt-4 pt-4 border-t border-gray-100" v-html="course.content"></article>
         </div>
         <div v-else class="glass-card p-5 sm:p-6 mb-4">
           <div class="mb-4 p-3.5 rounded-2xl flex items-center justify-between"

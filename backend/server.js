@@ -323,6 +323,7 @@ function buildPackageState(pkg, uid) {
       duration_minutes: c.duration_minutes,
       sort: c.sort,
       category: c.category || 'required',
+      content: c.content || '',
       watched_seconds: p ? p.watched_seconds : 0,
       progress_percent: p ? p.progress_percent : 0,
       completed: p ? p.completed === 1 : false,
