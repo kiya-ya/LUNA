@@ -115,7 +115,7 @@
             <div class="space-y-3">
               <div v-if="pkg.courses.length === 0" class="course-card p-8 text-center text-gray-400 font-bold">课程筹备中，敬请期待</div>
               <div
-                v-for="(course, idx) in pkg.courses" :key="course.id"
+                v-for="(course, idx) in orderedCourses" :key="course.id"
                 :ref="el => setCourseRef(course.id, el)"
                 class="course-card p-4 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5"
                 @click="openCourse(course)"
@@ -272,6 +272,9 @@ const courseGroups = computed(() => {
   if (opt.length) groups.push({ name: '选修课', list: opt })
   return groups
 })
+
+// 右侧课程列表：必修在前、选修在后（与侧边栏分组顺序一致）
+const orderedCourses = computed(() => courseGroups.value.flatMap(g => g.list))
 
 const cooldownText = computed(() => {
   if (!pkg.value || pkg.value.exam_status.status !== 'cooldown') return ''

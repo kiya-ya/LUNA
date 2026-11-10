@@ -12,3 +12,4 @@ backend/server.log
 exam.db
 backup
 dist
+uploads/
