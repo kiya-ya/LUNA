@@ -20,6 +20,14 @@ import { useRouter } from 'vue-router'
 import { useExamStore } from '../stores/exam.js'
 
 const router = useRouter()
+
+// 统一入口：LUNA 不再有自己的登记页，直接跳培训师系统统一入口
+const PORTAL_URL = 'http://192.168.100.117:5000/portal-v2'
+const hasUidParam = new URLSearchParams(location.search).get('uid')
+if (!hasUidParam) {
+  // 带身份参数进入时不拦（内部跳转链路）
+  location.href = PORTAL_URL
+}
 const store = useExamStore()
 const showToast = inject('showToast')
 
