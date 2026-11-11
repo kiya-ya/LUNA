@@ -130,3 +130,31 @@ input:focus, textarea:focus {
   border-color: #8E6BC8;
   background-color: #EFE7FA;
 }
+
+/* ===== 全局 Q 弹动效体系 ===== */
+:root {
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 按钮按压弹性反馈：未自定义 active 变换的按钮统一缩小回弹 */
+button {
+  transition: transform 0.18s var(--spring);
+}
+button:not(:disabled):active {
+  transform: scale(0.95);
+}
+
+/* 卡片错峰入场 */
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.anim-card {
+  animation: card-in 0.35s var(--spring) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button { transition: none; }
+  button:not(:disabled):active { transform: none; }
+  .anim-card { animation: none; }
+}

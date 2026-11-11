@@ -61,8 +61,14 @@ function goPortal() {
   flex: 1; max-width: 140px; padding: 5px 0 4px; border: none; background: none;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
   font-size: 11px; font-weight: 600; color: rgba(91, 42, 6, .5); cursor: pointer;
-  border-radius: 12px; transition: color .15s ease, background .15s ease;
+  border-radius: 12px; transition: color .15s ease, background .15s ease, transform .18s var(--spring, cubic-bezier(.34,1.56,.64,1));
 }
+.bnav-item:active { transform: scale(.88); }
 .bnav-item svg { width: 22px; height: 22px; }
 .bnav-item.active { color: #5B2A06; background: rgba(245, 179, 1, .16); }
+.bnav-item.active svg { animation: bnav-pop .32s var(--spring, cubic-bezier(.34,1.56,.64,1)); }
+@keyframes bnav-pop {
+  0% { transform: scale(.55); }
+  100% { transform: scale(1); }
+}
 </style>

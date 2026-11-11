@@ -1,25 +1,12 @@
 <template>
-  <div class="min-h-screen bg-soft relative" @click="menuOpen = false">
-    <!-- 顶栏：透明 + 三横线 -->
+  <div class="min-h-screen bg-soft relative">
+    <!-- 顶栏 -->
     <header class="relative z-50">
-      <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <img src="/logo.png" alt="点点开黑" class="w-9 h-9 object-contain rounded-xl shadow">
-          <div>
-            <h1 class="text-base font-bold text-accent leading-tight">新人培训中心</h1>
-            <p class="text-xs text-accent/60">{{ userName }} · UID: {{ uid }}</p>
-          </div>
-        </div>
-        <div class="relative">
-          <button @click.stop="menuOpen = !menuOpen" class="p-2 flex flex-col gap-[5px]" aria-label="菜单">
-            <i class="block w-[22px] h-[2px] rounded bg-accent"></i>
-            <i class="block w-[22px] h-[2px] rounded bg-white"></i>
-            <i class="block w-[22px] h-[2px] rounded bg-white"></i>
-          </button>
-          <div v-if="menuOpen" class="absolute right-0 top-full mt-1.5 z-50 bg-[#fffaf2] rounded-2xl shadow-xl border border-white/80 p-2.5 flex flex-col gap-2 min-w-[140px]">
-            <button @click="menuOpen = false; router.push('/mine')" class="px-4 py-2.5 text-sm font-bold text-accent bg-white/70 hover:bg-white rounded-xl transition-all">成绩与申请</button>
-            <button @click="menuOpen = false; logout()" class="px-4 py-2.5 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all">切换账号</button>
-          </div>
+      <div class="max-w-3xl mx-auto px-4 py-3 flex items-center gap-2">
+        <img src="/logo.png" alt="点点开黑" class="w-9 h-9 object-contain rounded-xl shadow">
+        <div>
+          <h1 class="text-base font-bold text-accent leading-tight">新人培训中心</h1>
+          <p class="text-xs text-accent/60">{{ userName }} · UID: {{ uid }}</p>
         </div>
       </div>
     </header>
@@ -221,9 +208,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { useExamStore } from '../stores/exam.js'
 import BottomNav from '../components/BottomNav.vue'
 
-// 统一入口（培训师系统 v2）
-const PORTAL_URL = 'http://192.168.100.117:5000/portal-v2'
-
 const route = useRoute()
 const router = useRouter()
 const store = useExamStore()
@@ -235,7 +219,6 @@ const loading = ref(true)
 const packages = ref([])
 const results = ref([])
 const pkg = ref(null)
-const menuOpen = ref(false)
 const showRecords = ref(false)
 const startingExam = ref(false)
 const activeCourseId = ref(null)
@@ -309,12 +292,6 @@ function selectPackage(p) {
 
 function openCourse(course) {
   router.push(`/learn/course/${course.id}`)
-}
-
-function logout() {
-  localStorage.removeItem('learn_user')
-  store.setUserInfo('', '')
-  location.href = PORTAL_URL
 }
 
 async function startExam() {
