@@ -10,6 +10,7 @@ services:
     volumes:
       - ./data.db:/app/data.db
       - ./uploads:/app/uploads
+      - ./secrets:/app/secrets:ro
     restart: unless-stopped
     environment:
       - NODE_ENV=production

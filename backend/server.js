@@ -8,6 +8,17 @@ const aiService = require('./ai_service.js');
 
 const PORT = process.env.PORT || 5000;
 
+// 管理端门禁 key（与培训师系统共享；secrets 文件不入库，未配置时门禁关闭——本地开发用）
+let ADMIN_KEY = process.env.LUNA_ADMIN_KEY || '';
+if (!ADMIN_KEY) {
+  try { ADMIN_KEY = fs.readFileSync('/app/secrets/luna_admin_key.txt', 'utf8').trim(); } catch (e) { /* ignore */ }
+}
+function hasAdminCookie(req) {
+  const raw = req.headers.cookie || '';
+  const pair = raw.split(';').map(s => s.trim()).find(s => s.startsWith('luna_admin='));
+  return Boolean(pair) && decodeURIComponent(pair.slice('luna_admin='.length)) === ADMIN_KEY;
+}
+
 // CORS 响应头
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -454,6 +465,30 @@ const server = http.createServer((req, res) => {
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname;
   const query = parsedUrl.query;
+
+  // ── 管理端门禁：/admin 页面与 /api/admin/* 需管理 Cookie（从培训师系统管理端带 key 进入时种下）
+  if (ADMIN_KEY && (pathname === '/admin' || pathname.startsWith('/api/admin/'))) {
+    if (!hasAdminCookie(req)) {
+      if (pathname === '/admin' && query.key === ADMIN_KEY) {
+        // key 校验通过：种 Cookie 后跳干净地址（key 不留在地址栏）
+        res.writeHead(302, {
+          'Set-Cookie': 'luna_admin=' + encodeURIComponent(ADMIN_KEY) + '; Path=/; Max-Age=43200; SameSite=Lax',
+          'Location': '/admin',
+          'Content-Type': 'text/plain; charset=utf-8',
+        });
+        res.end('redirecting');
+        return;
+      }
+      if (pathname.startsWith('/api/')) {
+        res.writeHead(401);
+        res.end(JSON.stringify({ success: false, error: '未授权：请从培训师系统管理端进入' }));
+      } else {
+        res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end('<div style="font-family:sans-serif;text-align:center;margin-top:100px;color:#6b7280"><h2>403</h2><p>管理端请从培训师系统进入</p></div>');
+      }
+      return;
+    }
+  }
 
   // 健康检查
   if (pathname === '/api/health' && req.method === 'GET') {
