@@ -19,6 +19,10 @@ function hasAdminCookie(req) {
   return Boolean(pair) && decodeURIComponent(pair.slice('luna_admin='.length)) === ADMIN_KEY;
 }
 
+// 测试账号后门：这些 UID 跳过冷却/已考/时长/重复申请限制（仅全链路联调用，不影响真实用户）
+const TEST_UIDS = new Set((process.env.LUNA_TEST_UIDS || '990066').split(',').map(s => s.trim()).filter(Boolean));
+const isTestUid = (uid) => TEST_UIDS.has(String(uid || ''));
+
 // CORS 响应头
 function setCorsHeaders(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -256,6 +260,9 @@ function checkPackageGate(uid, examConfigId) {
   const pkg = db.getCoursePackageByExamConfig(examConfigId);
   if (!pkg || pkg.enabled === false) return { gated: false };
 
+  // 测试账号：闸门直接放行（无限考、无冷却、不看课程完成度）
+  if (isTestUid(uid)) return { gated: true, allowed: true };
+
   const latest = db.getLatestResult(uid, pkg.exam_config_id);
 
   // 已通过 → 禁止重复考
@@ -346,9 +353,9 @@ function buildPackageState(pkg, uid) {
   const completedCount = requiredList.filter(c => c.completed).length;
   const allCompleted = requiredList.length > 0 && completedCount === requiredList.length;
 
-  // 晋级链：培训师课包需先通过姐妹团考试（无论是否已配置考试都生效）
+  // 晋级链：培训师课包需先通过姐妹团考试（无论是否已配置考试都生效；测试账号不受限）
   let chainLocked = false;
-  if (pkg.key === 'trainer') {
+  if (pkg.key === 'trainer' && !isTestUid(uid)) {
     const sister = db.loadCoursePackages().find(p => p.key === 'sister');
     if (sister && sister.exam_config_id && uid) {
       const sr = db.getLatestResult(uid, sister.exam_config_id);
@@ -359,9 +366,11 @@ function buildPackageState(pkg, uid) {
     }
   }
 
-  // 考试状态
+  // 考试状态（测试账号：永远可考）
   let examStatus;
-  if (chainLocked) {
+  if (isTestUid(uid)) {
+    examStatus = pkg.exam_config_id ? { status: 'ready', exam_config_id: pkg.exam_config_id } : { status: 'no_exam' };
+  } else if (chainLocked) {
     examStatus = { status: 'locked', chain_locked: true, reason: '需先通过姐妹团考试' };
   } else if (!pkg.exam_config_id) {
     examStatus = { status: 'no_exam' };
@@ -917,8 +926,8 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    // 1. 检查设备指纹是否已被其他 UID 使用（同一设备只能绑定一个 UID）
-    if (deviceId) {
+    // 1. 检查设备指纹是否已被其他 UID 使用（同一设备只能绑定一个 UID；测试账号不受限）
+    if (deviceId && !isTestUid(uid)) {
       const existingByDevice = db.checkDeviceUsed(deviceId, uid);
       if (existingByDevice) {
         res.writeHead(200);
@@ -957,7 +966,7 @@ const server = http.createServer((req, res) => {
           }));
           return;
         }
-      } else if (db.checkExamTaken(uid, examId)) {
+      } else if (!isTestUid(uid) && db.checkExamTaken(uid, examId)) {
         res.writeHead(200);
         res.end(JSON.stringify({
           success: false,
@@ -1187,8 +1196,8 @@ const server = http.createServer((req, res) => {
       if (isAdminTest) {
         console.log('[ADMIN] 提交时使用管理员测试模式，跳过反作弊检查');
       } else {
-        // 1. 检查设备指纹是否已被其他 UID 使用（反作弊核心：设备只能绑定一个 UID）
-        if (deviceId) {
+        // 1. 检查设备指纹是否已被其他 UID 使用（反作弊核心：设备只能绑定一个 UID；测试账号不受限）
+        if (deviceId && !isTestUid(userUid)) {
           const existingByDevice = db.checkDeviceUsed(deviceId, userUid);
           if (existingByDevice) {
             res.writeHead(403);
@@ -1403,7 +1412,7 @@ const server = http.createServer((req, res) => {
             }));
             return;
           }
-        } else if (db.checkExamTaken(userUid, examConfig.id)) {
+        } else if (!isTestUid(userUid) && db.checkExamTaken(userUid, examConfig.id)) {
           res.writeHead(403);
           res.end(JSON.stringify({
             success: false,
@@ -2040,7 +2049,7 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ success: false, error: '考试通过后才能申请资质' }));
         return;
       }
-      if (db.hasActiveApplication(uid, pkgKey)) {
+      if (!isTestUid(uid) && db.hasActiveApplication(uid, pkgKey)) {
         res.writeHead(409);
         res.end(JSON.stringify({ success: false, error: '已有待审核或已通过的申请，请勿重复提交' }));
         return;
@@ -2131,7 +2140,7 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ success: false, error: 'Course not found' }));
         return;
       }
-      const requiredSeconds = (course.duration_minutes || 0) * 60;
+      const requiredSeconds = isTestUid(uid) ? 1 : (course.duration_minutes || 0) * 60;
       const progress = db.addHeartbeat(uid, body.nickname || '', courseId, seconds, requiredSeconds);
       res.writeHead(200);
       res.end(JSON.stringify({
@@ -2172,7 +2181,7 @@ const server = http.createServer((req, res) => {
       const progress = db.saveVideoProgress(
         uid, body.nickname || '', courseId,
         Number(body.watched_seconds) || 0,
-        Number(body.progress_percent) || 0
+        isTestUid(uid) ? 100 : (Number(body.progress_percent) || 0)
       );
       res.writeHead(200);
       res.end(JSON.stringify({
