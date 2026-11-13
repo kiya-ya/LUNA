@@ -7,6 +7,7 @@ export const useExamStore = defineStore('exam', () => {
   const userPhone = ref('')
   const currentIndex = ref(0)
   const timeLeft = ref(0)
+  const timeLimitMin = ref(0)
   const leaveCount = ref(0)
   const isSubmitted = ref(false)
   const isLoading = ref(false)
@@ -31,12 +32,24 @@ export const useExamStore = defineStore('exam', () => {
   }).length)
   const unansweredCount = computed(() => totalQuestions.value - answeredCount.value)
 
-  const timerText = computed(() => '不限时')
+  const timerText = computed(() => {
+    if (!timeLimitMin.value) return '不限时'
+    const s = Math.max(0, timeLeft.value)
+    const h = Math.floor(s / 3600)
+    const m = Math.floor((s % 3600) / 60)
+    const sec = s % 60
+    const p = (n) => String(n).padStart(2, '0')
+    return h > 0 ? `${h}:${p(m)}:${p(sec)}` : `${p(m)}:${p(sec)}`
+  })
 
-  const timerClass = computed(() => 'text-gray-500')
+  const timerClass = computed(() => {
+    if (isDanger.value) return 'text-red-300 font-extrabold'
+    if (isWarning.value) return 'text-amber-300 font-bold'
+    return 'text-white/80'
+  })
 
-  const isWarning = computed(() => false)
-  const isDanger = computed(() => false)
+  const isWarning = computed(() => timeLimitMin.value > 0 && timeLeft.value > 0 && timeLeft.value <= 300)
+  const isDanger = computed(() => timeLimitMin.value > 0 && timeLeft.value > 0 && timeLeft.value <= 60)
 
   // 清理选项文本中的重复前缀
   function cleanOption(opt, index) {
@@ -72,7 +85,8 @@ export const useExamStore = defineStore('exam', () => {
           keyPoints: q.keyPoints || '',
           blanks: q.blanks || []
         }))
-        timeLeft.value = data.data.timeLimit || 0
+        timeLimitMin.value = data.data.timeLimit || 0
+        timeLeft.value = timeLimitMin.value * 60
         examId.value = data.data.exam_id || 1
         examName.value = data.data.exam_name || ''
         currentIndex.value = 0
@@ -177,7 +191,7 @@ export const useExamStore = defineStore('exam', () => {
   }
 
   function tick() {
-    // 不再倒计时，考试时间由管理员手动截止
+    if (timeLimitMin.value > 0 && timeLeft.value > 0) timeLeft.value--
   }
 
   function addLeave() {
@@ -290,7 +304,7 @@ export const useExamStore = defineStore('exam', () => {
   }
 
   return {
-    userName, userPhone, currentIndex, timeLeft, leaveCount, isSubmitted,
+    userName, userPhone, currentIndex, timeLeft, timeLimitMin, leaveCount, isSubmitted,
     isLoading, loadError, examResult, examId, examName, startTime, deviceId,
     questions, userAnswers,
     totalQuestions, currentQuestion, isFirst, isLast, answeredCount, unansweredCount,

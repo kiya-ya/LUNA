@@ -1,4 +1,4 @@
-<template> <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-animated"> <!-- 动态背景光晕 --> <div class="absolute inset-0 overflow-hidden pointer-events-none"> <div class="absolute top-1/4 left-1/4 w-96 h-96 rounded-full opacity-20 animate-pulse-slow" style="background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%);"></div> <div class="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full opacity-20 animate-pulse-slow" style="background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%); animation-delay: 2s;"></div> <div class="absolute top-1/2 left-1/2 w-64 h-64 rounded-full opacity-15 animate-pulse-slow" style="background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%); animation-delay: 4s;"></div> </div> <div class="w-full max-w-[440px] relative z-10"> <!-- 主卡片 --> <div class="glass-card rounded-[2rem] p-6 md:p-8 shadow-2xl"> <!-- 星星评分区域（取代原来的考试完成标题） --> <div class="text-center mb-6"> <!-- 满分皇冠 --> <div v-if="isPerfect" class="mb-3"> <div class="crown-anim text-5xl mb-2"></div> <div class="text-sm font-bold text-yellow-500 crown-anim" style="animation-delay: 0.2s;">满分达成！</div> </div> <!-- 星星 --> <div class="flex items-center justify-center gap-3 mb-4"> <div
+<template> <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-animated"> <!-- 动态背景光晕 --> <div class="absolute inset-0 overflow-hidden pointer-events-none"> <div class="absolute top-1/4 left-1/4 w-96 h-96 rounded-full opacity-20 animate-pulse-slow" style="background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%);"></div> <div class="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full opacity-20 animate-pulse-slow" style="background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%); animation-delay: 2s;"></div> <div class="absolute top-1/2 left-1/2 w-64 h-64 rounded-full opacity-15 animate-pulse-slow" style="background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%); animation-delay: 4s;"></div> </div> <div class="w-full max-w-[440px] relative z-10"> <!-- 主卡片 --> <div class="glass-card rounded-[2rem] p-6 md:p-8 shadow-2xl"> <!-- 星星评分区域（取代原来的考试完成标题） --> <div class="text-center mb-6"> <!-- 满分皇冠 --> <div v-if="isPerfect" class="mb-3"> <svg class="crown-anim w-14 h-14 mx-auto mb-2" viewBox="0 0 24 24" fill="#F5B301" style="filter: drop-shadow(0 4px 12px rgba(245,179,1,.5))"><path d="M3 7.5 7 11l5-6 5 6 4-3.5V17a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17V7.5z"/><rect x="4.5" y="19" width="15" height="2" rx="1"/></svg> <div class="text-sm font-bold text-yellow-500 crown-anim" style="animation-delay: 0.2s;">满分达成！</div> </div> <!-- 星星 --> <div class="flex items-center justify-center gap-3 mb-4"> <div
               v-for="n in 3" :key="n"
               class="star-item"
               :class="{
@@ -7,7 +7,7 @@
                 'star-pop': starAnimReady
               }"
               :style="{ animationDelay: (n * 0.2) + 's' }"
-            > <span class="text-4xl">{{ n <= starCount ? '●' : '○' }}</span> </div> </div> <!-- 评级文字 --> <div class="star-text" :class="{ 'star-pop': starAnimReady }" style="animation-delay: 0.8s;"> <h1 class="text-2xl font-bold mb-1" :style="{ color: gradeColor }">
+            > <svg class="w-10 h-10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.6.7-4.9 4.5 1.4 6.5L12 16.9 6 20l1.4-6.5L2.5 9l6.6-.7z"/></svg> </div> </div> <!-- 评级文字 --> <div class="star-text" :class="{ 'star-pop': starAnimReady }" style="animation-delay: 0.8s;"> <h1 class="text-2xl font-bold mb-1" :style="{ color: gradeColor }">
               {{ gradeTitle }}
             </h1> <p class="text-sm" style="color: #333333;">{{ gradeSubtitle }}</p> </div> </div> <!-- 分数大字 --> <div class="text-center mb-6"> <div class="text-6xl font-bold mb-1" style="color: #8E6BC8; text-shadow: 0 2px 8px rgba(142,107,200,0.3);">{{ examScore }}</div> <div class="text-sm mb-2" style="color: #333333;">满分 {{ examMaxScore }} 分</div> </div> <!-- 统计信息 --> <div class="grid grid-cols-3 gap-3 mb-6"> <div class="rounded-2xl p-3 text-center" style="background: rgba(142,107,200,0.08);"> <div class="text-xl font-bold" style="color: #8E6BC8;">{{ correctCount }}</div> <div class="text-xs" style="color: #444444;">正确</div> </div> <div class="rounded-2xl p-3 text-center" style="background: rgba(255,59,48,0.08);"> <div class="text-xl font-bold" style="color: #FF3B30;">{{ totalQuestions - correctCount }}</div> <div class="text-xs" style="color: #444444;">错误</div> </div> <div class="rounded-2xl p-3 text-center" style="background: rgba(0,122,255,0.08);"> <div class="text-xl font-bold" style="color: #007AFF;">{{ timeUsed }}</div> <div class="text-xs" style="color: #444444;">用时</div> </div> </div> <!-- 用时详情 --> <div class="rounded-2xl p-4 mb-6" style="background: rgba(245, 245, 245, 0.95); border: 1px solid rgba(0,0,0,0.05);"> <div class="flex items-center justify-between mb-2"> <span class="text-sm font-medium" style="color: #1a1a2e;"> 答题用时</span> <span class="text-sm font-bold" style="color: #8E6BC8;">{{ timeUsed }}</span> </div> <div class="w-full h-2 rounded-full overflow-hidden" style="background: rgba(142,107,200,0.15);"> <div class="h-full rounded-full transition-all duration-500" :style="{ width: timePercent + '%', background: 'linear-gradient(90deg, #8E6BC8, #7451A8)' }"></div> </div> <div class="flex justify-between mt-1"> <span class="text-xs" style="color: #444444;">开始: {{ startTimeStr }}</span> <span class="text-xs" style="color: #444444;">结束: {{ endTimeStr }}</span> </div> </div> <!-- 答题明细 --> <div class="rounded-2xl overflow-hidden mb-6" style="background: rgba(245, 245, 245, 0.95); border: 1px solid rgba(0,0,0,0.05);"> <button @click="showDetail = !showDetail" class="w-full px-4 py-3 flex items-center justify-between text-sm hover:bg-white/30 transition-colors"> <span class="flex items-center gap-2 font-medium" style="color: #1a1a2e;"> <span></span> 查看答题明细
             </span> <svg :class="showDetail ? 'rotate-180' : ''" class="w-4 h-4 transform transition-transform" style="color: #444444;" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path> </svg> </button> <div v-show="showDetail" class="px-4 pb-4"> <div v-for="(q, i) in detail" :key="i" class="py-3 border-b last:border-0" style="border-color: rgba(0,0,0,0.05);"> <div class="flex items-start gap-2"> <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
@@ -21,11 +21,19 @@
                        正确答案：{{ formatCorrectAnswer(q.correctAnswer) }}
                     </p> <p v-if="q.feedback" class="text-xs mt-1" style="color: #444444;">
                        {{ q.feedback }}
-                    </p> </template> <!-- 简答题 AI 评分反馈（仅保留反馈文字，匹配/遗漏已单独显示） --> <div v-if="q.type === 'essay' && q.aiGrade && q.aiGrade.ai_feedback" class="mt-2 p-2 rounded-lg" style="background: rgba(100,200,255,0.15); border: 1px solid rgba(100,200,255,0.3);"> <p class="text-xs font-bold mb-1" style="color: #0066CC;"> AI 评分反馈：</p> <p class="text-xs" style="color: #1a1a2e;">{{ q.aiGrade.ai_feedback }}</p> <div v-if="q.aiGrade.ai_matched && q.aiGrade.ai_matched.length > 0" class="mt-1"> <p class="text-xs" style="color: #228B22;"> 匹配要点：</p> <p class="text-xs pl-2" style="color: #1a1a2e;">{{ q.aiGrade.ai_matched.join('、') }}</p> </div> </div> <!-- 非简答题的答案解析 --> <div v-if="q.type !== 'essay' && q.keyPoints && q.keyPoints.length > 0" class="mt-2 p-2 rounded-lg" style="background: rgba(245,179,1,0.15); border: 1px solid rgba(245,179,1,0.3);"> <p class="text-xs font-bold mb-1" style="color: #B8860B;"> 答案解析：</p> <p class="text-xs whitespace-pre-wrap" style="color: #1a1a2e;">{{ q.keyPoints }}</p> </div> </div> </div> </div> </div> </div> <!-- 按钮 --> <button
+                    </p> </template> <!-- 简答题 AI 评分反馈（仅保留反馈文字，匹配/遗漏已单独显示） --> <div v-if="q.type === 'essay' && q.aiGrade && q.aiGrade.ai_feedback" class="mt-2 p-2 rounded-lg" style="background: rgba(100,200,255,0.15); border: 1px solid rgba(100,200,255,0.3);"> <p class="text-xs font-bold mb-1" style="color: #0066CC;"> AI 评分反馈：</p> <p class="text-xs" style="color: #1a1a2e;">{{ q.aiGrade.ai_feedback }}</p> <div v-if="q.aiGrade.ai_matched && q.aiGrade.ai_matched.length > 0" class="mt-1"> <p class="text-xs" style="color: #228B22;"> 匹配要点：</p> <p class="text-xs pl-2" style="color: #1a1a2e;">{{ q.aiGrade.ai_matched.join('、') }}</p> </div> </div> <!-- 非简答题的答案解析 --> <div v-if="q.type !== 'essay' && q.keyPoints && q.keyPoints.length > 0" class="mt-2 p-2 rounded-lg" style="background: rgba(245,179,1,0.15); border: 1px solid rgba(245,179,1,0.3);"> <p class="text-xs font-bold mb-1" style="color: #B8860B;"> 答案解析：</p> <p class="text-xs whitespace-pre-wrap" style="color: #1a1a2e;">{{ q.keyPoints }}</p> </div> </div> </div> </div> </div> </div> <!-- 按钮区：及格 → 去申请资质；未及格 → 重考引导 --> <template v-if="passed"> <button
           @click="goHome"
           class="w-full h-12 rounded-xl font-bold text-white shadow-lg transition-all duration-200 hover:shadow-xl active:scale-[0.98]"
           style="background: linear-gradient(135deg, #8E6BC8, #7451A8);"
-        > <span class="flex items-center justify-center gap-2"> <span></span> <span>查看成绩与申请资质</span> </span> </button> </div> <!-- 底部文字 --> <div class="mt-6 text-center"> <p class="text-xs text-white/60">点点开黑 · 姐姐团考核系统</p> <p class="text-xs text-white/40 mt-1">design by Lu deng</p> </div> </div> </div>
+        > <span class="flex items-center justify-center gap-2"> <span>查看成绩与申请资质</span> </span> </button> </template> <template v-else> <div class="rounded-2xl p-4 mb-4 text-center" style="background: rgba(255,59,48,.10); border: 1px solid rgba(255,59,48,.25);"> <p class="font-extrabold text-base" style="color:#FF3B30">未及格（60 分合格）</p> <p class="text-xs mt-1" style="color:#666">{{ cooldownText || '冷却结束后可重新参加考试' }}</p> </div> <button
+          @click="goReview"
+          class="w-full h-12 rounded-xl font-bold text-white shadow-lg transition-all duration-200 hover:shadow-xl active:scale-[0.98]"
+          style="background: linear-gradient(135deg, #8E6BC8, #7451A8);"
+        >回到学习复习</button> <button
+          @click="goHome"
+          class="w-full h-11 mt-3 rounded-xl font-bold transition-all active:scale-[0.98]"
+          style="background: rgba(255,255,255,.55); color:#5b4a72; border: 1px solid rgba(142,107,200,.3);"
+        >查看成绩明细</button> </template> </div> <!-- 底部文字 --> <div class="mt-6 text-center"> <p class="text-xs text-white/60">点点开黑 · 姐姐团考核系统</p> <p class="text-xs text-white/40 mt-1">design by Lu deng</p> </div> </div> </div>
 </template> <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -36,7 +44,10 @@ const store = useExamStore()
 const showDetail = ref(false)
 const starAnimReady = ref(false)
 
-onMounted(() => {
+const passed = computed(() => examPercentage.value >= 60)
+const cooldownText = ref('')
+
+onMounted(async () => {
   // 延迟触发动画，确保元素已渲染
   setTimeout(() => { starAnimReady.value = true }, 100)
 
@@ -48,6 +59,21 @@ onMounted(() => {
     } catch (e) {
       console.warn('恢复考试结果失败', e)
     }
+  }
+
+  // 未及格：拉取该课包的重考冷却天数
+  if (!passed.value && store.userPhone) {
+    try {
+      const res = await fetch(`/api/learn/home?uid=${encodeURIComponent(store.userPhone)}`)
+      const data = await res.json()
+      if (data.success) {
+        const pkg = (data.data.packages || []).find(p => p.exam_config_id === store.examId)
+        if (pkg) {
+          const d = pkg.cooldown_days || 0
+          cooldownText.value = d > 0 ? `挂科冷却 ${d} 天，${d} 天后可重新参加考试` : '现在就可以重新参加考试'
+        }
+      }
+    } catch (e) { /* 冷却文案拉取失败时用默认文案 */ }
   }
 })
 
@@ -278,19 +304,20 @@ const detail = computed(() => {
 function goHome() {
   router.push('/mine')
 }
+
+function goReview() {
+  router.push('/learn')
+}
 </script> <style scoped>
-/* 动态渐变背景 */
+/* 夜幕紫背景（与登录页首尾呼应的仪式感） */
 .bg-animated {
-  background: linear-gradient(-45deg, #8E6BC8, #A88BD8, #C9A7EB, #F48A8A, #F5B301);
-  background-size: 300% 300%;
-  animation: gradient-flow 6s ease infinite;
+  background: linear-gradient(160deg, #2A2140 0%, #4A3663 45%, #6B4FA0 80%, #8E6BC8 100%);
+  background-size: 200% 200%;
+  animation: gradient-flow 14s ease-in-out infinite alternate;
 }
 @keyframes gradient-flow {
-  0% { background-position: 0% 50%; }
-  25% { background-position: 50% 100%; }
-  50% { background-position: 100% 50%; }
-  75% { background-position: 50% 0%; }
-  100% { background-position: 0% 50%; }
+  from { background-position: 0% 0%; }
+  to { background-position: 100% 100%; }
 }
 
 /* 光晕动画 */
@@ -313,10 +340,11 @@ function goHome() {
   animation: star-pop-in 0.6s ease forwards;
 }
 .star-filled {
-  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
+  color: #FFD54A;
+  filter: drop-shadow(0 0 8px rgba(255, 213, 74, 0.6));
 }
 .star-empty {
-  color: #cccccc;
+  color: rgba(255, 255, 255, 0.25);
   opacity: 1;
 }
 @keyframes star-pop-in {
