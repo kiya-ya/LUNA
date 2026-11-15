@@ -78,6 +78,7 @@
           <div v-if="results === null" class="glass-card p-10 text-center text-gray-400 font-bold">加载中…</div>
 
           <div v-else-if="results.length === 0" class="glass-card p-10 text-center">
+            <BookOpenIcon :size="48" color="#B39DF0" class="mx-auto mb-3" />
             <p class="text-gray-400 text-sm font-bold">暂无考试记录</p>
             <p class="text-xs text-gray-300 mt-1.5">去「考试科目」参加你的第一场考试吧</p>
             <button @click="switchTab('subjects')"
@@ -153,6 +154,7 @@
 import { ref, onMounted, onUnmounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useExamStore } from '../stores/exam.js'
+import { BookOpenIcon } from 'naive-icons-vue'
 import BottomNav from '../components/BottomNav.vue'
 
 const route = useRoute()

@@ -113,7 +113,10 @@
               {{ commentSending ? '发送中' : '发送' }}
             </button>
           </div>
-          <div v-if="social.comments.length === 0" class="text-center text-gray-400 py-6 text-sm font-bold">还没有评论，来抢沙发</div>
+          <div v-if="social.comments.length === 0" class="text-center text-gray-400 py-6 text-sm font-bold">
+            <MessageCircleIcon :size="40" color="#B39DF0" class="mx-auto mb-2" />
+            还没有评论，来抢沙发
+          </div>
           <div v-else class="space-y-3">
             <div v-for="c in social.comments" :key="c.id" class="pb-3 border-b border-gray-100 last:border-0">
               <div class="flex items-center gap-2">
@@ -164,6 +167,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { MessageCircleIcon } from 'naive-icons-vue'
 import BottomNav from '../components/BottomNav.vue'
 
 const route = useRoute()

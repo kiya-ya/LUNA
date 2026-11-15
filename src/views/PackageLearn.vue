@@ -100,7 +100,10 @@
           <!-- 右侧课程卡片 -->
           <section ref="listRef" class="flex-1 min-w-0 pb-3 pr-0.5">
             <div class="space-y-3">
-              <div v-if="pkg.courses.length === 0" class="course-card p-8 text-center text-gray-400 font-bold">课程筹备中，敬请期待</div>
+              <div v-if="pkg.courses.length === 0" class="course-card p-8 text-center text-gray-400 font-bold">
+                <HourglassIcon :size="44" color="#B39DF0" class="mx-auto mb-3" />
+                课程筹备中，敬请期待
+              </div>
               <div
                 v-for="(course, idx) in orderedCourses" :key="course.id"
                 :ref="el => setCourseRef(course.id, el)"
@@ -199,6 +202,7 @@
 import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useExamStore } from '../stores/exam.js'
+import { HourglassIcon } from 'naive-icons-vue'
 import BottomNav from '../components/BottomNav.vue'
 
 const route = useRoute()
