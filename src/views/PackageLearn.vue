@@ -107,26 +107,23 @@
                 class="course-card p-4 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5"
                 @click="openCourse(course)"
               >
-                <div class="flex gap-3">
+                <div class="flex gap-3 items-center">
                   <div class="w-16 h-16 rounded-2xl shrink-0 flex items-center justify-center text-xs font-extrabold shadow-inner"
                     :class="course.completed ? 'bg-success/15 text-success' : course.type === 'video' ? 'bg-rose-100 text-rose-500' : 'bg-sky-100 text-sky-500'">
                     {{ course.completed ? '已完成' : course.type === 'video' ? '视频课' : '图文课' }}
                   </div>
                   <div class="flex-1 min-w-0">
                     <p class="font-bold text-gray-800 text-sm"><span class="text-gray-400 text-xs mr-1">{{ idx + 1 }}.</span>{{ course.title }}</p>
-                    <p class="text-xs text-gray-400 mt-1">{{ course.category === 'optional' ? '选修' : '必修' }}<span v-if="course.duration_minutes"> · 约 {{ course.duration_minutes }} 分钟</span></p>
-                    <div v-if="!course.completed && course.progress_percent > 0" class="mt-2 flex items-center gap-2">
-                      <div class="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                        <div class="h-full bg-gradient-to-r from-secondary to-amber-300 rounded-full" :style="{ width: course.progress_percent + '%' }"></div>
-                      </div>
-                      <span class="text-xs font-bold text-secondary">{{ Math.floor(course.progress_percent) }}%</span>
+                    <p class="text-xs mt-1"><span class="font-extrabold" :class="course.category === 'optional' ? 'text-sky-600' : 'text-red-500'">{{ course.category === 'optional' ? '选修' : '必修' }}</span><span v-if="course.duration_minutes" class="text-gray-400"> · 约 {{ course.duration_minutes }} 分钟</span></p>
+                    <div v-if="!course.completed && course.progress_percent > 0" class="mt-2 h-1.5 bg-black/8 rounded-full overflow-hidden">
+                      <div class="h-full bg-gradient-to-r from-secondary to-amber-300 rounded-full" :style="{ width: course.progress_percent + '%' }"></div>
                     </div>
                   </div>
+                  <div class="shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all"
+                    :class="course.completed ? 'bg-success/10 text-success' : 'bg-secondary/20 text-[#8a6d00]'">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M9 6l6 6-6 6"/></svg>
+                  </div>
                 </div>
-                <button class="mt-3 w-full h-10 rounded-xl font-bold text-sm transition-all"
-                  :class="course.completed ? 'bg-success/10 text-success' : 'bg-secondary text-[#2A2140] hover:bg-amber-400'">
-                  {{ course.completed ? '复习一遍' : course.progress_percent > 0 ? '继续学习' : '开始学习' }}
-                </button>
               </div>
             </div>
           </section>
@@ -149,12 +146,8 @@
             <path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 5H4a2 2 0 0 0 2 4h1M17 5h3a2 2 0 0 1-2 4h-1"/>
           </svg>
         </button>
-        <div class="flex-1 min-w-0">
-          <div class="flex justify-between text-xs font-bold mb-1">
-            <span class="text-gray-500">学习进度</span>
-            <span :class="pkg.all_completed ? 'text-success' : 'text-secondary'">{{ pkg.completed_courses }}/{{ pkg.total_courses }}</span>
-          </div>
-          <div class="h-2 bg-gray-200/70 rounded-full overflow-hidden">
+        <div class="flex-1 min-w-0 flex items-center">
+          <div class="w-full h-2 bg-gray-200/70 rounded-full overflow-hidden">
             <div class="h-full rounded-full transition-all duration-500"
               :class="pkg.all_completed ? 'bg-gradient-to-r from-success to-emerald-400' : 'bg-gradient-to-r from-secondary to-amber-300'"
               :style="{ width: pkg.total_courses ? (pkg.completed_courses / pkg.total_courses * 100) + '%' : '0%' }"></div>
