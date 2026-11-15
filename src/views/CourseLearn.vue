@@ -3,7 +3,7 @@
     <!-- 顶部栏 -->
     <header class="relative z-10 sticky top-0">
       <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-        <button @click="goBack" class="text-accent font-bold text-sm bg-accent/10 px-3 py-1.5 rounded-lg hover:bg-accent/20 transition-all shrink-0">返回</button>
+        <button @click="goBack" class="text-accent bg-accent/10 p-2 rounded-lg hover:bg-accent/20 transition-all shrink-0" aria-label="返回"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg></button>
         <h1 class="text-sm sm:text-base font-bold text-accent truncate flex-1 text-center">{{ course ? course.title : '课程学习' }}</h1>
         <span v-if="completed" class="text-xs font-bold px-2.5 py-1 rounded-full bg-success text-white shrink-0">已完成</span>
         <span v-else class="text-xs font-bold px-2.5 py-1 rounded-full bg-accent/10 text-accent shrink-0">学习中</span>
@@ -20,33 +20,53 @@
       <template v-else>
         <!-- ===== 顶部：视频/图文内容 ===== -->
         <div v-if="course.type === 'video'" class="glass-card p-4 sm:p-5 mb-4">
-          <div class="rounded-2xl overflow-hidden bg-black shadow-lg">
+          <div ref="playerRef" class="rounded-2xl overflow-hidden bg-black shadow-lg relative">
             <video
               ref="videoRef"
               :src="course.video_path"
-              controls
               playsinline
-              class="w-full max-h-[60vh]"
+              class="w-full max-h-[60vh] bg-black"
               @timeupdate="onTimeUpdate"
               @play="onPlay"
               @pause="onPauseOrEnd"
               @ended="onPauseOrEnd"
               @ratechange="onRateChange"
               @loadedmetadata="onLoadedMetadata"
+              @click="togglePlay"
             ></video>
-          </div>
-          <div class="mt-4">
-            <div class="flex justify-between text-xs font-bold mb-1.5">
-              <span class="text-gray-500">观看进度（实际播放时长，看到 90% 即完成）</span>
-              <span :class="completed ? 'text-success' : 'text-primary'">{{ Math.floor(progressPercent) }}%</span>
+            <!-- 中央播放钮（暂停时显示） -->
+            <button v-if="!isPlaying" @click="togglePlay" class="absolute inset-0 flex items-center justify-center bg-black/25" aria-label="播放">
+              <span class="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center shadow-xl">
+                <svg class="w-7 h-7 text-[#2A2140] ml-1" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              </span>
+            </button>
+            <!-- 定制控制条 -->
+            <div class="absolute bottom-0 left-0 right-0 px-3 pb-2 pt-8 bg-gradient-to-t from-black/75 to-transparent">
+              <input type="range" class="player-seek w-full" min="0" :max="videoDuration || 0" step="0.1" :value="currentTime" @input="onSeek" aria-label="播放进度">
+              <div class="flex items-center gap-3 mt-1 text-white text-xs">
+                <button @click="togglePlay" class="p-1" aria-label="播放/暂停">
+                  <svg v-if="isPlaying" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>
+                  <svg v-else class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+                <span class="tabular-nums text-white/85">{{ fmtTime(currentTime) }} / {{ fmtTime(videoDuration) }}</span>
+                <span class="flex-1"></span>
+                <button @click="cycleRate" class="px-2 py-0.5 rounded-md bg-white/15 font-bold">{{ playbackRate }}x</button>
+                <button @click="toggleFullscreen" class="p-1" aria-label="全屏（手机横屏）">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
+                </button>
+              </div>
             </div>
-            <div class="h-2.5 bg-gray-200 rounded-full overflow-hidden">
+          </div>
+          <!-- 观看进度（极简：条 + 百分比/完成态） -->
+          <div class="mt-3 flex items-center gap-3">
+            <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
               <div class="h-full rounded-full transition-all duration-500"
-                :class="completed ? 'bg-gradient-to-r from-success to-emerald-400' : 'bg-gradient-to-r from-primary to-secondary'"
+                :class="completed ? 'bg-success' : 'bg-gradient-to-r from-primary to-secondary'"
                 :style="{ width: Math.min(100, progressPercent) + '%' }"></div>
             </div>
-            <p class="text-xs text-gray-400 mt-2">倍速最高 2x，切出页面自动暂停；已累计观看 {{ formatSeconds(watchedSeconds) }}</p>
+            <span class="text-xs font-bold shrink-0" :class="completed ? 'text-success' : 'text-primary'">{{ completed ? '已完成' : Math.floor(progressPercent) + '%' }}</span>
           </div>
+          <p class="text-xs text-gray-400 mt-1.5">看到 90% 即完成 · 切出页面自动暂停</p>
           <!-- 视频下方说明文案 -->
           <article v-if="course.content" class="article-content text-gray-800 mt-4 pt-4 border-t border-gray-100" v-html="course.content"></article>
         </div>
@@ -107,9 +127,10 @@
 
         <!-- ===== 完成提示 ===== -->
         <div v-if="completed" class="glass-card p-6 text-center mb-4">
-          <p class="text-lg font-extrabold text-success mb-1">恭喜完成本课程！</p>
-          <p class="text-sm text-gray-500 mb-5">返回课程列表继续学习，全部完成后解锁考试</p>
-          <button @click="goBack" class="px-8 h-12 bg-gradient-to-r from-primary to-secondary text-white font-extrabold rounded-2xl shadow-lg shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all">返回课程列表</button>
+          <svg class="w-12 h-12 mx-auto mb-2 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" opacity=".25"/><path d="m8 12.5 3 3 5-6"/></svg>
+          <p class="text-lg font-extrabold text-success mb-1">已完成</p>
+          <p class="text-xs text-gray-400 mb-4">全部必修课完成后解锁考试</p>
+          <button @click="goBack" class="px-8 h-11 bg-gradient-to-r from-primary to-secondary text-white font-extrabold rounded-2xl shadow-lg shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all">返回课程列表</button>
         </div>
 
         <!-- ===== 其余课程概览 ===== -->
@@ -126,8 +147,9 @@
                 <p class="font-bold text-gray-800 text-sm truncate">{{ c.title }}</p>
                 <p class="text-xs text-gray-400">{{ c.type === 'video' ? '视频课' : '图文课' }}<span v-if="c.duration_minutes"> · 约 {{ c.duration_minutes }} 分钟</span></p>
               </div>
-              <span class="text-xs font-bold shrink-0" :class="c.completed ? 'text-success' : c.progress_percent > 0 ? 'text-primary' : 'text-gray-300'">
-                {{ c.completed ? '已完成' : c.progress_percent > 0 ? Math.floor(c.progress_percent) + '%' : '未开始' }}
+              <span class="shrink-0 flex items-center justify-center w-5">
+                <svg v-if="c.completed" class="w-5 h-5 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+                <i v-else class="block w-2 h-2 rounded-full" :class="c.progress_percent > 0 ? 'bg-primary' : 'bg-gray-300'"></i>
               </span>
             </div>
           </div>
@@ -166,11 +188,70 @@ const commentSending = ref(false)
 
 // 视频状态
 const videoRef = ref(null)
+const playerRef = ref(null)
 const videoDuration = ref(0)
+const isPlaying = ref(false)
+const currentTime = ref(0)
+const playbackRate = ref(1)
 let lastTime = 0
 let playing = false
 let reportTimer = null
 let heartbeatTimer = null
+
+function togglePlay() {
+  const v = videoRef.value
+  if (!v) return
+  if (v.paused) v.play()
+  else v.pause()
+}
+
+function onSeek(e) {
+  const v = videoRef.value
+  if (!v) return
+  v.currentTime = Number(e.target.value)
+  currentTime.value = Number(e.target.value)
+}
+
+function cycleRate() {
+  const v = videoRef.value
+  if (!v) return
+  const rates = [1, 1.5, 2]
+  playbackRate.value = rates[(rates.indexOf(playbackRate.value) + 1) % rates.length]
+  v.playbackRate = playbackRate.value
+}
+
+function fmtTime(sec) {
+  if (!sec || !isFinite(sec)) return '0:00'
+  const m = Math.floor(sec / 60)
+  const s = Math.floor(sec % 60)
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+// 全屏：进入时尝试锁定横屏，退出时解锁回竖屏；iOS 走原生全屏（自行处理旋转）
+async function toggleFullscreen() {
+  const el = playerRef.value
+  const v = videoRef.value
+  try {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen()
+    } else if (el && el.requestFullscreen) {
+      await el.requestFullscreen()
+      if (screen.orientation && screen.orientation.lock) {
+        try { await screen.orientation.lock('landscape') } catch (e) { /* iOS 等不支持时忽略 */ }
+      }
+    } else if (v && v.webkitEnterFullscreen) {
+      v.webkitEnterFullscreen()
+    }
+  } catch (e) {
+    if (v && v.webkitEnterFullscreen) v.webkitEnterFullscreen()
+  }
+}
+
+function onFullscreenChange() {
+  if (!document.fullscreenElement && screen.orientation && screen.orientation.unlock) {
+    try { screen.orientation.unlock() } catch (e) { /* ignore */ }
+  }
+}
 
 const requiredSeconds = computed(() => (course.value ? (course.value.duration_minutes || 0) * 60 : 0))
 
@@ -280,17 +361,21 @@ function onLoadedMetadata() {
     videoDuration.value = v.duration
   }
   lastTime = v ? v.currentTime : 0
+  currentTime.value = v ? v.currentTime : 0
 }
 
 function onPlay() {
   playing = true
+  isPlaying.value = true
   lastTime = videoRef.value ? videoRef.value.currentTime : 0
 }
 
 function onTimeUpdate() {
   const v = videoRef.value
-  if (!v || !playing) return
+  if (!v) return
   const cur = v.currentTime
+  currentTime.value = cur
+  if (!playing) return
   const delta = cur - lastTime
   lastTime = cur
   if (delta > 0 && delta < 2) {
@@ -316,6 +401,7 @@ function onRateChange() {
 
 function onPauseOrEnd() {
   playing = false
+  isPlaying.value = false
   reportVideoProgress()
 }
 
@@ -400,6 +486,7 @@ onMounted(() => {
     return
   }
   document.addEventListener('visibilitychange', onVisibilityChange)
+  document.addEventListener('fullscreenchange', onFullscreenChange)
   loadCourse().then(() => {
     loadSocial()
     if (course.value && course.value.type === 'video') {
@@ -414,6 +501,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', onVisibilityChange)
+  document.removeEventListener('fullscreenchange', onFullscreenChange)
   if (reportTimer) clearInterval(reportTimer)
   if (heartbeatTimer) clearInterval(heartbeatTimer)
   if (course.value && course.value.type === 'video' && watchedSeconds.value > 0) {
@@ -477,4 +565,32 @@ onUnmounted(() => {
   color: #8E6BC8;
   text-decoration: underline;
 }
+
+/* 定制播放器 */
+.player-seek {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .3);
+  cursor: pointer;
+}
+.player-seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: #F5B301;
+  box-shadow: 0 0 6px rgba(245, 179, 1, .6);
+}
+.player-seek::-moz-range-thumb {
+  width: 12px; height: 12px; border: none; border-radius: 50%;
+  background: #F5B301;
+}
+
+/* 全屏时视频铺满（横屏观看） */
+:fullscreen video {
+  max-height: 100vh !important;
+  height: 100%;
+  object-fit: contain;
+}
+:fullscreen .rounded-2xl { border-radius: 0; }
 </style>
