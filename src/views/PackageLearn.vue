@@ -111,9 +111,13 @@
                 @click="openCourse(course)"
               >
                 <div class="flex gap-3 items-center">
-                  <div class="w-16 h-16 rounded-2xl shrink-0 flex items-center justify-center text-xs font-extrabold shadow-inner"
-                    :class="course.completed ? 'bg-success/15 text-success' : course.type === 'video' ? 'bg-rose-100 text-rose-500' : 'bg-sky-100 text-sky-500'">
-                    {{ course.completed ? '已完成' : course.type === 'video' ? '视频课' : '图文课' }}
+                  <img v-if="COURSE_ART[course.id]" :src="COURSE_ART[course.id]" :alt="course.title"
+                    class="w-16 h-16 rounded-2xl shrink-0 object-cover shadow-inner">
+                  <div v-else class="w-16 h-16 rounded-2xl shrink-0 flex items-center justify-center shadow-inner"
+                    :class="course.completed ? 'bg-success/15' : course.type === 'video' ? 'bg-rose-100' : 'bg-sky-100'">
+                    <CheckCircleIcon v-if="course.completed" :size="34" color="#16a34a" />
+                    <VideoIcon v-else-if="course.type === 'video'" :size="34" color="#f43f5e" />
+                    <BookOpenIcon v-else :size="34" color="#0284c7" />
                   </div>
                   <div class="flex-1 min-w-0">
                     <p class="font-bold text-gray-800 text-sm"><span class="text-gray-400 text-xs mr-1">{{ idx + 1 }}.</span>{{ course.title }}</p>
@@ -202,13 +206,16 @@
 import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useExamStore } from '../stores/exam.js'
-import { HourglassIcon } from 'naive-icons-vue'
+import { HourglassIcon, BookOpenIcon, VideoIcon, CheckCircleIcon } from 'naive-icons-vue'
 import BottomNav from '../components/BottomNav.vue'
 
 const route = useRoute()
 const router = useRouter()
 const store = useExamStore()
 const showToast = inject('showToast')
+
+// 课程定制插画（AI 生成的小图，有图的课程优先展示；文件生成后再填入映射）
+const COURSE_ART = {}
 
 const uid = ref('')
 const userName = ref('')

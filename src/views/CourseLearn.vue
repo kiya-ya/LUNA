@@ -142,9 +142,11 @@
           <div class="space-y-2.5">
             <div v-for="c in otherCourses" :key="c.id" @click="goCourse(c)"
               class="flex items-center gap-3 p-3 rounded-xl bg-white/70 border border-gray-100 cursor-pointer hover:shadow-md transition-all">
-              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-extrabold shrink-0"
-                :class="c.completed ? 'bg-success/15 text-success' : c.type === 'video' ? 'bg-rose-100 text-rose-500' : 'bg-sky-100 text-sky-500'">
-                {{ c.completed ? '完' : c.type === 'video' ? '视' : '文' }}
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                :class="c.completed ? 'bg-success/15' : c.type === 'video' ? 'bg-rose-100' : 'bg-sky-100'">
+                <CheckCircleIcon v-if="c.completed" :size="24" color="#16a34a" />
+                <VideoIcon v-else-if="c.type === 'video'" :size="24" color="#f43f5e" />
+                <BookOpenIcon v-else :size="24" color="#0284c7" />
               </div>
               <div class="flex-1 min-w-0">
                 <p class="font-bold text-gray-800 text-sm truncate">{{ c.title }}</p>
@@ -167,7 +169,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { MessageCircleIcon } from 'naive-icons-vue'
+import { MessageCircleIcon, BookOpenIcon, VideoIcon, CheckCircleIcon } from 'naive-icons-vue'
 import BottomNav from '../components/BottomNav.vue'
 
 const route = useRoute()
