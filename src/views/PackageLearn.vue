@@ -214,8 +214,12 @@ const router = useRouter()
 const store = useExamStore()
 const showToast = inject('showToast')
 
-// 课程定制插画（AI 生成的小图，有图的课程优先展示；文件生成后再填入映射）
-const COURSE_ART = {}
+// 课程定制插画（AI 生成的小图，有图的课程优先展示）
+const COURSE_ART = {
+  10: '/img/courses/course-10.jpg',
+  11: '/img/courses/course-11.jpg',
+  13: '/img/courses/course-13.jpg',
+}
 
 const uid = ref('')
 const userName = ref('')
