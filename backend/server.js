@@ -691,7 +691,9 @@ const server = http.createServer((req, res) => {
         return;
       }
       const file = fields.file;
-      console.log('[IMPORT] File received:', file.filename, 'size:', file.buffer.length);
+      // 导入目标题库：优先取前端当前选中的题库，兼容默认 1
+      const bankId = parseInt(fields.bank_id) || 1;
+      console.log('[IMPORT] File received:', file.filename, 'size:', file.buffer.length, 'bank_id:', bankId);
       const filename = file.filename || '';
       const ext = path.extname(filename).toLowerCase();
       let fileType;
@@ -747,12 +749,12 @@ const server = http.createServer((req, res) => {
               res.end(JSON.stringify({ success: false, error: '文件中未识别到题目' }));
               return;
             }
-            const beforeCount = db.getTotalQuestionsCount(1);
+            const beforeCount = db.getTotalQuestionsCount(bankId);
             console.log('[IMPORT] Current bank questions before:', beforeCount);
             for (const q of questions) {
               const newQuestion = {
                 id: db.nextQuestionId(),
-                bank_id: 1,
+                bank_id: bankId,
                 content: q.content || '',
                 type: q.type || 'single',
                 options: q.options || [],
@@ -763,7 +765,7 @@ const server = http.createServer((req, res) => {
               };
               db.saveQuestion(newQuestion);
             }
-            const afterCount = db.getTotalQuestionsCount(1);
+            const afterCount = db.getTotalQuestionsCount(bankId);
             console.log('[IMPORT] Saved, total questions now:', afterCount);
             res.writeHead(200);
             res.end(JSON.stringify({ success: true, data: { imported: questions.length } }));

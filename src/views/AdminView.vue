@@ -847,6 +847,7 @@ async function submitImport() {
   try {
     const formData = new FormData()
     formData.append('file', file)
+    formData.append('bank_id', currentBankId.value)
     const res = await fetch('/api/questions/import', {
       method: 'POST',
       body: formData
