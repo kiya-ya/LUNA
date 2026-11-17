@@ -219,6 +219,16 @@ const COURSE_ART = {
   10: '/img/courses/course-10.jpg',
   11: '/img/courses/course-11.jpg',
   13: '/img/courses/course-13.jpg',
+  16: '/img/courses/course-16.jpg',
+  17: '/img/courses/course-17.jpg',
+  19: '/img/courses/course-19.jpg',
+  20: '/img/courses/course-20.jpg',
+  23: '/img/courses/course-23.jpg',
+  24: '/img/courses/course-24.jpg',
+  25: '/img/courses/course-25.jpg',
+  26: '/img/courses/course-26.jpg',
+  27: '/img/courses/course-27.jpg',
+  28: '/img/courses/course-28.jpg',
 }
 
 const uid = ref('')
