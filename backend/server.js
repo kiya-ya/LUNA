@@ -233,7 +233,7 @@ function parseBody(req, callback) {
     let parsed = null;
     let err = null;
     try {
-      parsed = JSON.parse(body);
+      parsed = body.trim() === '' ? {} : JSON.parse(body);
     } catch (e) {
       err = e;
     }
@@ -545,6 +545,41 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // 删除题库（默认题库不可删；有题需 force 并连题一起删）。支持 DELETE /api/question-banks（body.id）和 /api/question-banks/<id>
+  const bankDelMatch = pathname.match(/^\/api\/question-banks\/(\d+)$/);
+  if ((pathname === '/api/question-banks' || bankDelMatch) && req.method === 'DELETE') {
+    parseBody(req, (err, body) => {
+      if (err) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }));
+        return;
+      }
+      const id = bankDelMatch ? parseInt(bankDelMatch[1]) : parseInt(body.id);
+      const banks = db.loadQuestionBanks();
+      const bank = banks.find(b => b.id === id);
+      if (!bank) {
+        res.writeHead(404);
+        res.end(JSON.stringify({ success: false, error: '题库不存在' }));
+        return;
+      }
+      if (bank.is_default) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ success: false, error: '默认题库不可删除' }));
+        return;
+      }
+      const count = db.getTotalQuestionsCount(id);
+      if (count > 0 && !body.force) {
+        res.writeHead(409);
+        res.end(JSON.stringify({ success: false, need_force: true, count, error: `该题库还有 ${count} 道题，删除将一并清除题目，请确认` }));
+        return;
+      }
+      db.deleteBank(id, count > 0);
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, data: { id, deleted_questions: count } }));
+    });
+    return;
+  }
+
   // 切换当前题库
   if (pathname === '/api/question-banks/activate' && req.method === 'PUT') {
     parseBody(req, (err, body) => {
@@ -663,7 +698,7 @@ const server = http.createServer((req, res) => {
       }
       const newQuestion = {
         id: db.nextQuestionId(),
-        bank_id: 1,
+        bank_id: parseInt(body.bank_id) || 1,
         content: body.content || '',
         type: body.type || 'single',
         options: body.options || [],
@@ -791,7 +826,7 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }));
         return;
       }
-      const data = loadQuestions();
+      const data = { questions: db.loadAllQuestions() };
       const idx = data.questions.findIndex(q => q.id === qId);
       if (idx === -1) {
         res.writeHead(404);

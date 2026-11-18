@@ -305,6 +305,13 @@ function nextQuestionId() {
   return (row.max_id || 0) + 1;
 }
 
+function deleteBank(id, cascade = false) {
+  runInTransaction(() => {
+    if (cascade) db.prepare('DELETE FROM questions WHERE bank_id = ?').run(id);
+    db.prepare('DELETE FROM question_banks WHERE id = ?').run(id);
+  });
+}
+
 function getTotalQuestionsCount(bankId) {
   if (bankId) {
     return db.prepare('SELECT COUNT(*) as count FROM questions WHERE bank_id = ?').get(bankId).count;
@@ -1047,6 +1054,7 @@ module.exports = {
   loadQuestionBanks,
   saveQuestionBanks,
   nextBankId,
+  deleteBank,
   // 题目
   loadQuestionsByBank,
   loadAllQuestions,
